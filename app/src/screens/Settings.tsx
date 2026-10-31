@@ -8,6 +8,7 @@ import { Icon } from '../icons';
 import type { SettingsPage } from '../nav';
 import { ensurePermission, remindersSupported } from '../reminders';
 import { ServerForm } from '../ServerForm';
+import { Connections } from './Connections';
 import { selectLogs, selectSettings, useStore } from '../store';
 import { colors } from '../theme';
 import { Btn, Card, Field, Muted, Page, Row, Section, Stepper, TopBar } from '../ui';
@@ -35,7 +36,7 @@ export function Settings({ page: initial, onClose }: { page: SettingsPage; onClo
   const [page, setPage] = useState<SettingsPage>(initial);
   const back = () => (page === 'main' || initial !== 'main' ? onClose() : setPage('main'));
   const titles: Record<SettingsPage, string> = {
-    main: 'Settings', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy mode', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units',
+    main: 'Settings', health: 'Health connections', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy mode', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units',
   };
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -47,6 +48,7 @@ export function Settings({ page: initial, onClose }: { page: SettingsPage; onClo
       {page === 'content' && <HideContent />}
       {page === 'units' && <Units />}
       {page === 'sync' && <Sync />}
+      {page === 'health' && <Connections onClose={back} embedded />}
       {page === 'data' && <Data />}
     </View>
   );
@@ -68,6 +70,7 @@ function Main({ go }: { go: (p: SettingsPage) => void }) {
         <Row icon="ruler" title="Units" subtitle={`°${st.unit} · ${st.weightUnit}`} onPress={() => go('units')} />
       </Card>
       <Card>
+        <Row icon="heart-pulse" title="Health connections" subtitle="Apple Health, Health Connect, Fitbit" onPress={() => go('health')} />
         <Row icon="cloud-lock-outline" title="Sync & encryption" subtitle={st.server ? `Connected · ${st.server.email}` : 'Off: data stays on this device'} onPress={() => go('sync')} />
         <Row icon="database-export-outline" title="Your data" subtitle="Export, doctor summary, delete" onPress={() => go('data')} />
       </Card>

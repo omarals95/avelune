@@ -62,7 +62,7 @@ export function PartnerTab() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 140, maxWidth: 640, width: '100%', alignSelf: 'center', paddingHorizontal: 20 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 220, maxWidth: 640, width: '100%', alignSelf: 'center', paddingHorizontal: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
           <Avatar onPress={() => nav.openSettings()} />
           <Text accessibilityRole="header" style={{ fontSize: 28, fontWeight: '700', marginLeft: 14, color: colors.heading }}>Partner</Text>
@@ -234,7 +234,7 @@ const pt = StyleSheet.create({
   feature: { width: 250, minHeight: 150, borderRadius: 24, padding: 20, marginRight: 12, justifyContent: 'center' },
   featureT: { fontSize: 21, fontWeight: '700', color: colors.heading, textAlign: 'center', marginBottom: 8 },
   featureS: { fontSize: 16, color: colors.text, textAlign: 'center', lineHeight: 22 },
-  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, backgroundColor: 'rgba(252,248,245,0.96)' },
+  bottom: { position: 'absolute', left: 0, right: 0, bottom: 96, paddingHorizontal: 20, paddingTop: 12, backgroundColor: 'rgba(252,248,245,0.96)' },
   code: { fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }), fontSize: 13, color: colors.text, backgroundColor: colors.bg, padding: 12, borderRadius: 12, marginVertical: 12 },
   codeIn: { minHeight: 90, borderRadius: 14, borderWidth: 1, borderColor: colors.border, padding: 12, fontSize: 14, marginVertical: 12, textAlignVertical: 'top', color: colors.text, backgroundColor: '#fff' },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, marginBottom: 12 },

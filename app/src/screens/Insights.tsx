@@ -39,7 +39,7 @@ export function Insights() {
     { k: 'sleep', title: 'Sleep', icon: 'sleep', tint: colors.pregnancySoft, ink: colors.pregnancy },
   ];
   return (
-    <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 40, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
+    <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 150, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 }}>
         <Avatar onPress={() => nav.openSettings()} />
         <Text accessibilityRole="header" style={{ fontSize: 28, fontWeight: '700', marginLeft: 14, color: colors.heading }}>Insights</Text>

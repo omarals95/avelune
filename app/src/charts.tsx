@@ -30,7 +30,8 @@ export function Chart({ points, kind, yMin, yMax, ticks = 6, target, markers = [
   const ch = height - T - B;
   const x = (i: number) => L + (n === 1 ? cw / 2 : (i + 0.5) * (cw / n));
   const y = (v: number) => T + ch - ((v - yMin) / (yMax - yMin || 1)) * ch;
-  const step = Math.max(1, Math.ceil(n / 9));
+  // Thin x labels by available width (≈38px per label) so they never collide.
+  const step = Math.max(1, Math.ceil((n * 38) / Math.max(1, cw)));
   const pts = points.filter((p) => p.y != null) as { i: number; y: number }[];
   let path = '';
   for (const p of pts) path += `${path ? 'L' : 'M'}${x(p.i).toFixed(1)},${y(p.y).toFixed(1)}`;

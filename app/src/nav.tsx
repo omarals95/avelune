@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
+import type { HealthTab } from './widgets';
 
-export type SettingsPage = 'main' | 'cycle' | 'reminders' | 'pregnancy' | 'content' | 'sync' | 'data' | 'units';
+export type SettingsPage = 'main' | 'health' | 'cycle' | 'reminders' | 'pregnancy' | 'content' | 'sync' | 'data' | 'units';
 export type ChartKind = 'cycles' | 'bbt' | 'weight' | 'activity' | 'water' | 'sleep';
 
 export interface Nav {
@@ -10,6 +11,11 @@ export interface Nav {
   openArticle: (id: string) => void;
   openWeek: (week: number) => void;
   openChart: (k: ChartKind) => void;
+  /** Switch to the Health tab, optionally on a section. */
+  openHealth: (tab?: HealthTab) => void;
+  healthTab?: HealthTab;
+  healthKey: number;
+  openConnections: () => void;
   /** Show the "Predictions updated" confirmation on the Today circle. */
   celebrate: () => void;
   celebrateKey: number;

@@ -11,6 +11,7 @@ import { useNav } from '../nav';
 import { selectLogs, selectSettings, useStore } from '../store';
 import { colors, shadow } from '../theme';
 import { GrowthMark } from '../growth';
+import { HomeWidgets } from '../widgets';
 import { Image } from 'react-native';
 
 export function Avatar({ onPress }: { onPress: () => void }) {
@@ -51,7 +52,7 @@ export function Today() {
   return (
     <View style={{ flex: 1 }}>
       <MoodBackground mood={preg ? 'pregnancy' : status.mood} />
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 40, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 150, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
         <View style={st.header}>
           <Avatar onPress={() => nav.openSettings()} />
           <Text style={st.date}>{fmtDay(selected)}</Text>
@@ -99,6 +100,8 @@ export function Today() {
             {tips.map((a) => <StoryCard key={a.id} title={a.title} tint={a.tint} ink={a.ink} icon={a.icon} onPress={() => nav.openArticle(a.id)} />)}
           </ScrollView>
         </FadeIn>
+
+        <HomeWidgets onOpen={(def) => (def.opens ? nav.openHealth(def.opens) : def.id === 'cycleStats' || def.id === 'nextPeriod' ? nav.openChart('cycles') : nav.openLog(today))} />
 
         {!preg && p.nextPeriodStart && (
           <FadeIn delay={320} style={st.summary}>

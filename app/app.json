@@ -7,14 +7,28 @@
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "app.cyclo.tracker",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {}
     },
     "android": {
       "package": "app.cyclo.tracker",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FCF8F5"
-      }
+      },
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_DISTANCE",
+        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_RESTING_HEART_RATE",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.READ_BASAL_BODY_TEMPERATURE",
+        "android.permission.health.READ_BODY_TEMPERATURE",
+        "android.permission.health.READ_OXYGEN_SATURATION",
+        "android.permission.health.READ_HYDRATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -42,10 +56,28 @@
           "resizeMode": "contain",
           "backgroundColor": "#FCF8F5"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          }
+        }
+      ],
+      "expo-health-connect",
+      [
+        "react-native-health",
+        {
+          "healthSharePermission": "Avelune reads steps, sleep, heart rate, weight, temperature and water to show them next to your cycle. Health data stays on your device."
+        }
       ]
     ],
     "icon": "./assets/icon.png",
     "backgroundColor": "#FCF8F5",
-    "primaryColor": "#482F49"
+    "primaryColor": "#482F49",
+    "scheme": "avelune"
   }
 }

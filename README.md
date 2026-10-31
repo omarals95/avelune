@@ -12,6 +12,8 @@ with an optional **self-hosted sync server**. Independent open-source project; n
 - **Daily log:** search, quick picks, flow, sex & sex drive, mood, symptoms, discharge, tests, pill, other, activity, water glasses, BBT, weight, sleep, distance, notes.
 - **Graphs & reports:** cycle-length history, BBT with automatic ovulation (temperature-shift) detection, weight, activity, water vs target, sleep, most-logged symptoms and moods.
 - **Pregnancy mode:** week and day, due date, progress ring, week-by-week size comparison and notes.
+- **Health:** Apple Health (iOS), Health Connect (Android, which also covers Samsung Health, Fitbit and Google), or Fitbit account sign-in. A dedicated Health page with Samsung-style icon navigation, Days/Weeks/Months charts and a cycle-phase overlay. Health data stays on the device.
+- **Home widgets:** 12 animated widgets (cycle stats rings, steps, sleep, heart, weight, temperature with phases, water, activity, mood, symptoms, SpO₂), with add, remove and reorder.
 - **Partner (view-only):** share a live, end-to-end encrypted view of your cycle with one person via an invite code; revoke any time. No chat, community or social features.
 - **Reminders (iOS/Android):** period soon/start/end, ovulation, fertile window, pill, water, weight, sleep, temperature, daily check-in; discreet wording by default.
 - **Privacy:** optional end-to-end encrypted sync to your own server; hide sex content; JSON export and doctor summary.
@@ -20,7 +22,13 @@ with an optional **self-hosted sync server**. Independent open-source project; n
 
 ## Design
 
-Brand tokens, typography and accessibility rules: [`design-system/avelune/MASTER.md`](design-system/avelune/MASTER.md). Latest audit: [`docs/design-audit.md`](docs/design-audit.md).
+Brand tokens, typography and accessibility rules: [`design-system/avelune/MASTER.md`](design-system/avelune/MASTER.md). Latest audit: [`docs/design-audit.md`](docs/design-audit.md). Health page, widgets and motion: [`design-system/avelune/pages/health.md`](design-system/avelune/pages/health.md).
+
+### Health integrations
+- **Apple Health:** native HealthKit (needs an iOS dev build; not available in Expo Go).
+- **Health Connect (Android 8+):** reads data written by Samsung Health, Fitbit, Google apps and most wearables. In Samsung Health, enable Settings → Health Connect.
+- **Fitbit account:** OAuth 2.0 + PKCE straight from the device. Create a free "Client" app at dev.fitbit.com, set the redirect URL shown in the app, and paste its Client ID in Health → Connections.
+- Google Fit's APIs are retired; Health Connect is the supported route.
 
 ## Layout
 

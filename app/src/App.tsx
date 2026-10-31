@@ -10,6 +10,11 @@ import { predict, today as todayFn } from '@cyclo/core';
 import { ND, PressScale } from './anim';
 import { Icon, type IconName } from './icons';
 import { NavContext, type ChartKind, type Nav, type SettingsPage } from './nav';
+import { useHealth } from './health/store';
+import type { HealthTab } from './widgets';
+import { Health } from './screens/Health';
+import { Connections } from './screens/Connections';
+import { todayISO } from './today';
 import { scheduleReminders } from './reminders';
 import { selectLogs, selectSettings, useStore } from './store';
 import { colors } from './theme';
@@ -25,10 +30,11 @@ import { Today } from './screens/Today';
 
 const TABS: [Tab, string, IconName, IconName][] = [
   ['today', 'Today', 'calendar-blank-outline', 'calendar-text'],
-  ['insights', 'Insights', 'view-grid-outline', 'view-grid'],
+  ['health', 'Health', 'heart-outline', 'heart'],
+  ['insights', 'Insights', 'chart-box-outline', 'chart-box'],
   ['partner', 'Partner', 'account-multiple-outline', 'account-multiple'],
 ];
-type Tab = 'today' | 'insights' | 'partner';
+type Tab = 'today' | 'health' | 'insights' | 'partner';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -63,6 +69,12 @@ function Main() {
   const [week, setWeek] = useState<number | null>(null);
   const [chart, setChart] = useState<ChartKind | null>(null);
   const [celebrateKey, setCelebrate] = useState(0);
+  const [healthTab, setHealthTab] = useState<HealthTab | undefined>();
+  const [healthKey, setHealthKey] = useState(0);
+  const [connections, setConnections] = useState(false);
+  const healthSync = useHealth((s) => s.sync);
+  const hasTrackers = useHealth((s) => Object.keys(s.connections).length > 0);
+  useEffect(() => { if (hasTrackers) void healthSync(); }, [hasTrackers, healthSync]);
 
   const connected = useStore((s) => !!s.server);
   const sync = useStore((s) => s.sync);
@@ -82,17 +94,6 @@ function Main() {
     return () => clearTimeout(t);
   }, [records, reminders, share, publishShare]);
 
-  const nav: Nav = useMemo(() => ({
-    openLog: setLogDate,
-    openCalendar: (edit) => setCalendar({ edit: !!edit }),
-    openSettings: (p) => setSettings(p ?? 'main'),
-    openArticle: setArticle,
-    openWeek: setWeek,
-    openChart: setChart,
-    celebrate: () => { setTab('today'); setCelebrate((n) => n + 1); },
-    celebrateKey,
-  }), [celebrateKey]);
-
   const fade = useRef(new Animated.Value(1)).current;
   const go = (t: Tab) => {
     if (t === tab) return;
@@ -101,21 +102,43 @@ function Main() {
     Animated.timing(fade, { toValue: 1, duration: 260, useNativeDriver: ND }).start();
   };
 
+  const nav: Nav = useMemo(() => ({
+    openLog: setLogDate,
+    openCalendar: (edit) => setCalendar({ edit: !!edit }),
+    openSettings: (p) => setSettings(p ?? 'main'),
+    openArticle: setArticle,
+    openWeek: setWeek,
+    openChart: setChart,
+    openHealth: (t) => { setHealthTab(t); setHealthKey((n) => n + 1); go('health'); },
+    healthTab, healthKey,
+    openConnections: () => setConnections(true),
+    celebrate: () => { setTab('today'); setCelebrate((n) => n + 1); },
+    celebrateKey,
+  }), [celebrateKey, healthTab, healthKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <NavContext.Provider value={nav}>
       <Animated.View style={{ flex: 1, opacity: fade }}>
         {tab === 'today' && <Today />}
+        {tab === 'health' && <Health />}
         {tab === 'insights' && <Insights />}
         {tab === 'partner' && <PartnerTab />}
       </Animated.View>
-      <View style={[st.tabs, { paddingBottom: Math.max(insets.bottom, 8) }]} accessibilityRole="tablist">
-        {TABS.map(([k, l, icon, active]) => (
-          <PressScale key={k} accessibilityRole="tab" accessibilityLabel={l} accessibilityState={{ selected: tab === k }} style={st.tab} onPress={() => go(k)}>
-            <Icon name={tab === k ? active : icon} size={28} color={tab === k ? colors.primary : colors.muted} />
-            <Text style={[st.tabT, tab === k && { color: colors.primary, fontWeight: '700' }]}>{l}</Text>
-            <View style={[st.tabDot, tab === k && { backgroundColor: colors.accent }]} />
-          </PressScale>
-        ))}
+      {/* Floating pill navigation (Samsung Health-style) + quick-log button. */}
+      <View pointerEvents="box-none" style={[st.navWrap, { bottom: Math.max(insets.bottom, 10) + 6 }]}>
+        <View style={st.tabs} accessibilityRole="tablist">
+          {TABS.map(([k, l, icon, active]) => (
+            <PressScale key={k} accessibilityRole="tab" accessibilityLabel={l} accessibilityState={{ selected: tab === k }} style={st.tab} onPress={() => go(k)}>
+              <View style={[st.tabInner, tab === k && st.tabActive]}>
+                <Icon name={tab === k ? active : icon} size={24} color="#fff" />
+                <Text style={[st.tabT, tab === k && { fontWeight: '700' }]} numberOfLines={1}>{l}</Text>
+              </View>
+            </PressScale>
+          ))}
+        </View>
+        <PressScale accessibilityRole="button" accessibilityLabel="Log today" onPress={() => setLogDate(todayISO())} style={st.fab}>
+          <Icon name="plus" size={28} color="#fff" />
+        </PressScale>
       </View>
 
       <Sheet visible={!!logDate} onClose={() => setLogDate(null)}>{logDate ? <LogSheet date={logDate} onClose={() => setLogDate(null)} /> : null}</Sheet>
@@ -126,13 +149,17 @@ function Main() {
       <Sheet visible={!!article} onClose={() => setArticle(null)} bg="#fff">{article ? <ArticleSheet id={article} onClose={() => setArticle(null)} /> : null}</Sheet>
       <Sheet visible={week != null} onClose={() => setWeek(null)}>{week != null ? <WeekSheet week={week} onClose={() => setWeek(null)} /> : null}</Sheet>
       <Sheet visible={!!chart} onClose={() => setChart(null)}>{chart ? <ChartScreen kind={chart} onClose={() => setChart(null)} /> : null}</Sheet>
+      <Sheet visible={connections} onClose={() => setConnections(false)}>{connections ? <Connections onClose={() => setConnections(false)} /> : null}</Sheet>
     </NavContext.Provider>
   );
 }
 
 const st = StyleSheet.create({
-  tabs: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.card, paddingTop: 6 },
-  tab: { flex: 1, alignItems: 'center', minHeight: 56, justifyContent: 'center' },
-  tabT: { color: colors.muted, fontSize: 14, marginTop: 2 },
-  tabDot: { width: 18, height: 3, borderRadius: 2, marginTop: 4, backgroundColor: 'transparent' },
+  navWrap: { position: 'absolute', left: 12, right: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  tabs: { flexDirection: 'row', flex: 1, maxWidth: 520, backgroundColor: 'rgba(72,47,73,0.96)', borderRadius: 999, padding: 6, shadowColor: '#302632', shadowOpacity: 0.25, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 10 },
+  tab: { flex: 1 },
+  tabInner: { alignItems: 'center', justifyContent: 'center', minHeight: 56, borderRadius: 999, paddingHorizontal: 4 },
+  tabActive: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  tabT: { color: '#fff', fontSize: 12, marginTop: 2 },
+  fab: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.bg, shadowColor: '#302632', shadowOpacity: 0.25, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 10 },
 });
