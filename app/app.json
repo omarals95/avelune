@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "Cyclo",
+    "slug": "cyclo",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": { "bundleIdentifier": "app.cyclo.tracker", "supportsTablet": true },
+    "android": { "package": "app.cyclo.tracker" },
+    "web": { "bundler": "metro", "output": "single" }
+  }
+}
