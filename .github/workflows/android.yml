@@ -28,7 +28,14 @@ jobs:
           CI: '1'
       - name: Build release APK
         working-directory: app/android
-        run: ./gradlew assembleRelease --no-daemon
+        run: |
+          set -o pipefail
+          if ! ./gradlew assembleRelease --no-daemon 2>&1 | tee build.log; then
+            # Surface the root cause as one annotation (readable from the API without downloading logs).
+            msg=$(grep -nE "What went wrong|error:|^e: |FAILED|Could not|Unresolved reference|Execution failed|> " build.log | grep -v "^.*> Task .* UP-TO-DATE" | tail -60 | sed -e 's/%/%25/g' -e 's/\r//g' | awk 'BEGIN{ORS="%0A"} {print}')
+            echo "::error title=Gradle build failed::${msg}"
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: cyclo-android-apk
