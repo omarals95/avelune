@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Alert, Platform, ScrollView, Share, Text } from 'react-native';
+import { Alert, Platform, ScrollView, Share, Text, View } from 'react-native';
 import { derivePeriods, predict, today as todayFn } from '@cyclo/core';
 import { selectLogs, selectSettings, useStore } from '../store';
-import { Btn, Card, H, Muted, Stepper } from '../ui';
+import { Btn, Card, Field, H, Muted, Stepper } from '../ui';
 import { ServerForm } from '../ServerForm';
+import { ensurePermission, remindersSupported } from '../reminders';
+import { Chip } from '../ui';
 import { monthLabel } from '../CalendarGrid';
 
 async function shareText(filename: string, text: string, mime: string) {
@@ -26,6 +28,13 @@ export function Settings() {
   const st = useStore();
   const settings = selectSettings(st.records);
   const [msg, setMsg] = useState('');
+  const [unlockPass, setUnlockPass] = useState('');
+  const [unlockMsg, setUnlockMsg] = useState('');
+  const r = st.reminders;
+  const toggle = async (k: 'periodSoon' | 'fertile' | 'daily') => {
+    if (!r[k] && !(await ensurePermission())) return setMsg('Notifications are blocked. Enable them for Cyclo in your system settings.');
+    setMsg(''); st.setReminders({ [k]: !r[k] });
+  };
 
   const summary = () => {
     const logs = selectLogs(st.records);
@@ -51,11 +60,40 @@ export function Settings() {
       </Card>
 
       <Card>
+        <Text style={{ fontWeight: '600' }}>Reminders</Text>
+        {remindersSupported ? (
+          <>
+            <Muted>Scheduled on this device from your own data. Nothing is sent to any server or push service.</Muted>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
+              <Chip label="Period coming up" on={r.periodSoon} onPress={() => void toggle('periodSoon')} />
+              <Chip label="Fertile window starts" on={r.fertile} onPress={() => void toggle('fertile')} />
+              <Chip label="Daily check-in" on={r.daily} onPress={() => void toggle('daily')} />
+              <Chip label="Discreet wording" on={r.discreet} onPress={() => st.setReminders({ discreet: !r.discreet })} />
+            </View>
+            {r.periodSoon && <Stepper label="Days before period" value={r.periodDaysBefore} min={0} max={5} onChange={(n) => st.setReminders({ periodDaysBefore: n })} />}
+            {(r.periodSoon || r.fertile) && <Stepper label="Reminder time" value={r.hour} min={0} max={23} suffix=":00" onChange={(n) => st.setReminders({ hour: n })} />}
+            {r.daily && <Stepper label="Daily check-in time" value={r.dailyHour} min={0} max={23} suffix=":00" onChange={(n) => st.setReminders({ dailyHour: n, dailyMinute: 0 })} />}
+            {r.discreet && <Muted style={{ marginTop: 6 }}>Notifications say only “You have a reminder” so your lock screen reveals nothing.</Muted>}
+          </>
+        ) : (
+          <Muted>Reminders are available in the iPhone and Android apps. Browsers can’t reliably deliver scheduled notifications when the page is closed.</Muted>
+        )}
+      </Card>
+
+      <Card>
         <Text style={{ fontWeight: '600' }}>Cloud sync (optional)</Text>
         {st.server ? (
           <>
             <Muted>Connected to {st.server.url} as {st.server.email}.{st.server.lastSync ? ` Last synced ${new Date(st.server.lastSync).toLocaleTimeString()}.` : ''}</Muted>
-            {st.syncError ? <Muted style={{ color: '#B3261E' }}>Sync error: {st.syncError}</Muted> : null}
+            <Muted>🔒 End-to-end encrypted: the server only stores ciphertext.</Muted>
+            {st.syncError === 'locked' ? (
+              <>
+                <Muted style={{ color: '#B3261E' }}>This device has no encryption key (it was cleared or restored from a backup). Enter your encryption passphrase to resume syncing.</Muted>
+                <Field label="Encryption passphrase" value={unlockPass} onChangeText={setUnlockPass} secureTextEntry />
+                {unlockMsg ? <Muted style={{ color: '#B3261E' }}>{unlockMsg}</Muted> : null}
+                <Btn title="Unlock" disabled={!unlockPass} onPress={() => { setUnlockMsg(''); st.unlock(unlockPass).then(() => setUnlockPass('')).catch((e: Error) => setUnlockMsg(e.message === 'wrong_passphrase' ? 'That passphrase does not match this account.' : e.message)); }} />
+              </>
+            ) : st.syncError ? <Muted style={{ color: '#B3261E' }}>Sync error: {st.syncError}</Muted> : null}
             <Btn title={st.syncing ? 'Syncing…' : 'Sync now'} onPress={() => void st.sync()} disabled={st.syncing} />
             <Btn kind="ghost" title="Disconnect (keep data on this device)" onPress={() => void st.disconnect()} />
           </>

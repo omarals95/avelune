@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useStore } from './store';
+import { predict, today as todayFn } from '@cyclo/core';
+import { selectLogs, selectSettings, useStore } from './store';
+import { scheduleReminders } from './reminders';
 import { colors } from './theme';
 import { Onboarding } from './screens/Onboarding';
 import { Home } from './screens/Home';
@@ -23,6 +25,18 @@ export default function App() {
 
   useEffect(() => useStore.persist.onFinishHydration(() => setHydrated(true)), []);
   useEffect(() => { if (hydrated && connected) void sync(); }, [hydrated, connected, sync]);
+
+  // Keep on-device reminders in step with the data (debounced; no network involved).
+  const records = useStore((s) => s.records);
+  const reminders = useStore((s) => s.reminders);
+  useEffect(() => {
+    if (!hydrated || !onboarded) return;
+    const t = setTimeout(() => {
+      const settings = selectSettings(records);
+      void scheduleReminders(predict(selectLogs(records), settings, todayFn()), settings, reminders).catch(() => undefined);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [hydrated, onboarded, records, reminders]);
 
   if (!hydrated) return <View style={st.root} />;
   return (

@@ -4,7 +4,8 @@ A private, local-first period, ovulation and fertile-window tracker for **iPhone
 with an optional **self-hosted sync server**. Independent open-source project; not affiliated with any other tracking app.
 
 - **Works fully offline.** All data is stored on the device. No account is needed.
-- **Optional sync.** Point the app at your own server to sync phone ⇄ web. Last-write-wins per day with tombstones.
+- **Optional end-to-end encrypted sync.** Point the app at your own server to sync phone ⇄ web. Everything is encrypted on-device before upload; the server stores only ciphertext. Last-write-wins per day with encrypted tombstones.
+- **Reminders (iOS/Android).** Period coming up, fertile window starts, daily check-in. Scheduled locally on the device from your own data; no push service. "Discreet wording" (default) keeps lock-screen text generic.
 - **Tracking:** flow, 12 symptoms, 8 moods, basal body temperature (°C/°F), tags (ovulation test, sex, medication…), notes.
 - **Predictions:** next period (with ± range when cycles are irregular), ovulation, 7-day fertile window, cycle phase.
 - **Insights:** average cycle/period, regularity, cycle-length history, most-logged symptoms and moods.
@@ -50,9 +51,25 @@ npm test            # core + server tests
 npm run typecheck
 ```
 
+## Encryption design
+
+```
+passphrase ──scrypt(N=2^14,r=8,p=1, public salt)──▶ master ──HKDF──▶ encKey  (XChaCha20-Poly1305)
+                                                           └─HKDF──▶ idKey   (HMAC-SHA256)
+```
+- You choose an **encryption passphrase** (≥10 chars, must differ from your account password). It never leaves the device.
+- Each record (a day log, the settings, or a deletion) is encrypted with a fresh random nonce. The ciphertext is bound to its record id (AEAD associated data), and the real timestamp is repeated inside the ciphertext, so a malicious server cannot swap, relabel or silently alter records.
+- Record ids are `HMAC(idKey, "day:2026-10-01")`, so the server cannot see which dates you logged.
+- The server stores the public salt + KDF cost + an encrypted key-check blob (set once) so a new device can verify the passphrase before syncing. Wrong passphrase → rejected.
+- The derived key is kept in the iOS Keychain / Android Keystore (`expo-secure-store`); on web it falls back to `localStorage`.
+- Crypto uses audited pure-JS `@noble/ciphers` and `@noble/hashes`, so it behaves identically on web, iOS and Android.
+
+**What the server can still see:** your email, when you sync, how many records you have, and when each was last edited (needed for last-write-wins). It cannot see content or which days you logged.
+**Not protected:** a compromised device or browser; the web build's key in `localStorage` is readable by any script on that origin, so only use the web app on devices you trust.
+**Recovery:** there is none by design. Lose the passphrase and synced data is unreadable (local data on your devices is unaffected; export JSON regularly).
+
 ## Privacy and security notes
 
-- Passwords are hashed with scrypt; session tokens are stored hashed; auth and sync routes are rate-limited.
-- Sync data is stored **unencrypted at rest on your server** (it is your server). Use full-disk encryption and HTTPS.
-  End-to-end encrypted sync is a natural next step.
-- Not yet implemented: push reminders, pregnancy mode, password reset, multi-factor auth.
+- Account passwords are hashed with scrypt; session tokens are stored hashed; auth and sync routes are rate-limited.
+- Use HTTPS in front of the server for anything beyond your LAN.
+- Not yet implemented: pregnancy mode, password reset, multi-factor auth, passphrase change/key rotation.

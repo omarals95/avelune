@@ -34,13 +34,31 @@ export interface SyncRecord {
   deleted: boolean;
 }
 
+
+/**
+ * What the server sees: an opaque id, an opaque encrypted blob and an edit timestamp
+ * (needed for last-write-wins). Tombstones are encrypted too.
+ */
+export interface WireRecord {
+  id: string;
+  blob: string;
+  updatedAt: number;
+}
+
 export interface SyncRequest {
-  /** Server cursor from the previous sync (0 on first sync). */
   since: number;
-  changes: SyncRecord[];
+  changes: WireRecord[];
 }
 
 export interface SyncResponse {
   cursor: number;
-  records: SyncRecord[];
+  records: WireRecord[];
+}
+
+/** Public key-derivation parameters stored on the server so any device can derive the same key. */
+export interface KeyInfo {
+  salt: string;
+  kdf: { N: number; r: number; p: number };
+  /** Encrypted known constant used to verify a passphrase before syncing. */
+  check: string;
 }

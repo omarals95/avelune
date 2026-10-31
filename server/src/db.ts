@@ -14,7 +14,8 @@ export function openDb(path: string): DB {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT NOT NULL UNIQUE,
       pw_hash TEXT NOT NULL,
-      created_at INTEGER NOT NULL
+      created_at INTEGER NOT NULL,
+      e2ee_info TEXT
     );
     CREATE TABLE IF NOT EXISTS sessions (
       token_hash TEXT PRIMARY KEY,
@@ -25,9 +26,8 @@ export function openDb(path: string): DB {
       seq INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       id TEXT NOT NULL,
-      data TEXT,
+      blob TEXT NOT NULL,
       updated_at INTEGER NOT NULL,
-      deleted INTEGER NOT NULL DEFAULT 0,
       UNIQUE (user_id, id)
     );
     CREATE INDEX IF NOT EXISTS records_user_seq ON records (user_id, seq);
