@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  Animated, Easing, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View,
-  type StyleProp, type TextInputProps, type TextStyle, type ViewStyle,
-} from 'react-native';
+import { Animated, Easing, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
+import { Text, TextInput } from './text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ND, PressScale } from './anim';
 import { Icon, type IconName } from './icons';
@@ -85,7 +83,7 @@ export function Row({ title, subtitle, value, onValueChange, onPress, icon, disa
       </View>
       {onValueChange ? (
         <Switch accessibilityLabel={title} value={!!value} onValueChange={onValueChange} disabled={disabled}
-          trackColor={{ true: '#8FD3CF', false: '#D9D6DF' }} thumbColor={value ? colors.fertile : '#fff'} {...(Platform.OS === 'web' ? { activeThumbColor: colors.fertile } as object : {})} />
+          trackColor={{ true: '#B79BB8', false: '#D8CED6' }} thumbColor={value ? colors.primary : '#fff'} {...(Platform.OS === 'web' ? { activeThumbColor: colors.primary } as object : {})} />
       ) : onPress ? <Icon name="chevron-right" size={22} color={colors.faint} /> : null}
     </View>
   );
@@ -148,35 +146,35 @@ export const Page = ({ children, style }: { children: React.ReactNode; style?: S
 
 export const s = StyleSheet.create({
   card: { backgroundColor: colors.card, borderRadius: radius.card, padding: 18, marginBottom: 14, ...shadow },
-  h: { fontSize: 20, fontWeight: '700', color: colors.text, marginBottom: 10 },
-  title: { fontSize: 26, fontWeight: '800', color: colors.text, marginBottom: 12 },
+  h: { fontSize: 20, fontWeight: '700', color: colors.heading, marginBottom: 10 },
+  title: { fontSize: 26, fontWeight: '700', color: colors.heading, marginBottom: 12 },
   muted: { color: colors.muted, fontSize: 14, lineHeight: 20 },
-  btn: { borderRadius: 999, paddingVertical: 16, paddingHorizontal: 22, alignItems: 'center', justifyContent: 'center', marginVertical: 5, flexDirection: 'row' },
+  btn: { borderRadius: 999, minHeight: 52, paddingVertical: 14, paddingHorizontal: 22, alignItems: 'center', justifyContent: 'center', marginVertical: 5, flexDirection: 'row' },
   btnP: { backgroundColor: colors.primary },
   btnG: { backgroundColor: colors.primarySoft },
-  btnD: { backgroundColor: '#FCE8E6' },
+  btnD: { backgroundColor: '#F6E1E1' },
   btnDark: { backgroundColor: colors.today },
   btnT: { fontWeight: '700', fontSize: 17 },
-  chip: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingLeft: 6, paddingRight: 16, borderRadius: radius.chip },
+  chip: { flexDirection: 'row', alignItems: 'center', minHeight: 46, paddingVertical: 6, paddingLeft: 6, paddingRight: 16, borderRadius: radius.chip },
   chipIcon: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
   chipT: { color: colors.text, fontSize: 16 },
-  label: { color: colors.muted, fontSize: 13, marginBottom: 4 },
+  label: { color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 6 },
   input: { borderWidth: 1, borderColor: colors.border, borderRadius: 14, padding: 14, fontSize: 16, color: colors.text, backgroundColor: '#fff' },
   stepRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  stepBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  stepBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   stepVal: { minWidth: 84, textAlign: 'center', fontSize: 17, color: colors.text, fontWeight: '600' },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  rowIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', minHeight: 56, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  rowIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   rowT: { fontSize: 17, color: colors.text },
   rowS: { fontSize: 14, color: colors.muted, marginTop: 2 },
-  section: { color: colors.fertile, fontSize: 15, fontWeight: '700', marginTop: 22, marginBottom: 4, letterSpacing: 0.2 },
-  seg: { flexDirection: 'row', backgroundColor: '#ECEAF0', borderRadius: 999, padding: 4, width: 220 },
+  section: { color: colors.heading, fontSize: 15, fontWeight: '700', marginTop: 24, marginBottom: 4, letterSpacing: 0.3 },
+  seg: { flexDirection: 'row', backgroundColor: colors.primarySoft, borderRadius: 999, padding: 4, width: 220 },
   segPill: { position: 'absolute', top: 4, left: 4, bottom: 4, borderRadius: 999, backgroundColor: '#fff', ...shadow },
-  segBtn: { flex: 1, paddingVertical: 9, alignItems: 'center' },
-  segT: { color: colors.muted, fontSize: 16 },
+  segBtn: { flex: 1, minHeight: 40, justifyContent: 'center', alignItems: 'center' },
+  segT: { color: colors.text, fontSize: 16 },
   topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, minHeight: 60 },
-  topTitle: { fontSize: 22, fontWeight: '700', color: colors.text },
-  iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  topTitle: { fontSize: 22, fontWeight: '700', color: colors.heading },
+  iconBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
 });
 
 export const fadeEasing = Easing.out(Easing.cubic);

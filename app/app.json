@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Cyclo",
+    "name": "Avelune",
     "slug": "cyclo",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -10,20 +10,42 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "app.cyclo.tracker"
+      "package": "app.cyclo.tracker",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FCF8F5"
+      }
     },
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "Avelune",
+      "shortName": "Avelune",
+      "themeColor": "#482F49",
+      "backgroundColor": "#FCF8F5"
     },
     "plugins": [
       "expo-secure-store",
       [
         "expo-notifications",
         {
-          "color": "#C2406B"
+          "color": "#482F49"
+        }
+      ],
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#FCF8F5"
         }
       ]
-    ]
+    ],
+    "icon": "./assets/icon.png",
+    "backgroundColor": "#FCF8F5",
+    "primaryColor": "#482F49"
   }
 }

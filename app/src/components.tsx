@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Text } from './text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
 import { addDays, diffDays, parseDate, type DateStr, type DayKind, type Phase } from '@cyclo/core';
 import { FadeIn, ND, PressScale, useLoop, usePop, useReduceMotion } from './anim';
 import { Icon, type IconName } from './icons';
-import { blobColor, colors, phaseGradient, shadow, type Mood } from './theme';
+import { blobColor, circleFill, colors, phaseGradient, shadow, type Mood } from './theme';
 
 export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 export const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -39,7 +40,7 @@ export function statusFor(i: StatusInput): Status {
     const map: Record<DayKind, Status> = {
       period: { mood: 'menstrual', kicker: cd, big: 'Period', sub: 'Logged period day' },
       'predicted-period': { mood: 'menstrual', kicker: cd, big: 'Period', sub: 'Predicted period day' },
-      fertile: { mood: 'ovulation', kicker: cd, big: 'Fertile', sub: 'Higher chance of getting pregnant' },
+      fertile: { mood: 'fertile', kicker: cd, big: 'Fertile', sub: 'Higher chance of getting pregnant' },
       ovulation: { mood: 'ovulation', kicker: cd, big: 'Ovulation', sub: 'Estimated ovulation day' },
       none: { mood: 'none', kicker: fmtDay(i.date), big: i.cycleDay ? `Day ${i.cycleDay}` : '—', sub: 'Lower chance of getting pregnant' },
     };
@@ -52,7 +53,7 @@ export function statusFor(i: StatusInput): Status {
   if (i.fertileWindow && i.ovulationDate && i.date >= i.fertileWindow[0] && i.date <= i.fertileWindow[1]) {
     const toOv = diffDays(i.date, i.ovulationDate);
     return {
-      mood: 'ovulation', kicker: 'Fertile window',
+      mood: toOv === 0 ? 'ovulation' : 'fertile', kicker: 'Fertile window',
       big: toOv > 0 ? `Ovulation in ${plural(toOv, 'day')}` : toOv === 0 ? 'Ovulation today' : 'High chance',
       sub: 'Higher chance of getting pregnant',
     };
@@ -109,14 +110,15 @@ export function WeekStrip({ today, selected, onSelect, kindOf }: {
                 const d = addDays(start, i);
                 const kind = kindOf(d);
                 const sel = d === selected;
-                const color = sel ? '#fff' : kind === 'period' || kind === 'predicted-period' ? colors.period : kind === 'fertile' || kind === 'ovulation' ? colors.fertile : colors.text;
+                const k = KIND_STYLE[kind];
                 return (
-                  <PressScale key={d} accessibilityLabel={`${fmtDay(d)}${kind !== 'none' ? `, ${kind.replace('-', ' ')}` : ''}`} onPress={() => onSelect(d)} style={{ flex: 1, alignItems: 'center' }}>
+                  <PressScale key={d} accessibilityRole="button" accessibilityState={{ selected: sel }}
+                    accessibilityLabel={`${fmtDay(d)}${d === today ? ', today' : ''}${kind !== 'none' ? `, ${KIND_LABEL[kind]}` : ''}`} onPress={() => onSelect(d)} style={{ flex: 1, alignItems: 'center' }}>
                     <Text style={[ws.dow, d === today && { color: colors.text, fontWeight: '700' }]}>{d === today ? 'TODAY' : DOW[i]}</Text>
-                    <View style={[ws.day, sel && ws.daySel, kind === 'period' && !sel && { backgroundColor: 'rgba(239,79,110,0.12)' }]}>
-                      <Text style={[ws.dayT, { color }, sel && { fontWeight: '700' }]}>{+d.slice(8)}</Text>
+                    <View style={[ws.day, !sel && k.box, sel && ws.daySel]}>
+                      <Text style={[ws.dayT, { color: sel ? '#fff' : k.color }, sel && { fontWeight: '700' }]}>{+d.slice(8)}</Text>
                     </View>
-                    {kind === 'ovulation' && !sel ? <View style={ws.ovDot} /> : <View style={{ height: 6 }} />}
+                    <View style={{ height: 6 }} />
                   </PressScale>
                 );
               })}
@@ -128,15 +130,24 @@ export function WeekStrip({ today, selected, onSelect, kindOf }: {
   );
 }
 
+/** Day kinds use shape + colour (filled, dashed ring, soft fill) so meaning never relies on colour alone. */
+export const KIND_LABEL: Record<DayKind, string> = { period: 'period', 'predicted-period': 'predicted period', fertile: 'fertile window', ovulation: 'ovulation', none: '' };
+export const KIND_STYLE: Record<DayKind, { box: object; color: string }> = {
+  period: { box: { backgroundColor: colors.period }, color: '#fff' },
+  'predicted-period': { box: { borderWidth: 2, borderStyle: 'dashed', borderColor: colors.period }, color: colors.period },
+  fertile: { box: { backgroundColor: colors.fertileSoft }, color: colors.fertile },
+  ovulation: { box: { backgroundColor: colors.ovulationSoft, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.ovulation }, color: colors.ovulation },
+  none: { box: {}, color: colors.text },
+};
+
 const ws = StyleSheet.create({
-  dow: { fontSize: 13, color: colors.muted, marginBottom: 6, letterSpacing: 0.3 },
+  dow: { fontSize: 13, color: colors.muted, marginBottom: 6, letterSpacing: 0.4 },
   day: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
-  daySel: { backgroundColor: colors.today, borderWidth: 4, borderColor: '#fff', ...shadow },
+  daySel: { backgroundColor: colors.today, borderWidth: 3, borderColor: '#fff', ...shadow },
   dayT: { fontSize: 22 },
-  ovDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.fertile, marginTop: 0 },
 });
 
-/** The big breathing circle. `children` renders extra content (e.g. pregnancy emoji). */
+/** The big breathing circle. `children` renders extra content (e.g. the pregnancy growth mark). */
 export function StatusCircle({ status, celebrateKey, ring, children }: {
   status: Status; celebrateKey?: number; ring?: number; children?: React.ReactNode;
 }) {
@@ -150,26 +161,29 @@ export function StatusCircle({ status, celebrateKey, ring, children }: {
     const t = setTimeout(() => setShowPop(false), 1800);
     return () => clearTimeout(t);
   }, [celebrateKey]);
-  const fertile = status.mood === 'ovulation';
+  const fill = circleFill[status.mood];
+  const fertile = !!fill; // filled circles use white text
   const late = status.mood === 'late';
   const D = 280;
   const scale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1, reduce ? 1 : 1.025] });
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', height: D + 30 }}>
       <Animated.View style={[cs.circle, { width: D, height: D, borderRadius: D / 2, transform: [{ scale }] },
-        fertile && { backgroundColor: colors.fertile }, late && { backgroundColor: 'rgba(255,255,255,0.35)' }]}>
+        fill ? { backgroundColor: fill, borderColor: 'rgba(255,255,255,0.6)' } : null, late && { backgroundColor: 'rgba(255,255,255,0.5)' }]}>
         {ring != null ? <ProgressRing size={D} progress={ring} /> : null}
         {showPop ? (
-          <Animated.View style={{ alignItems: 'center', opacity: pop, transform: [{ scale: pop }] }}>
+          <Animated.View accessibilityLiveRegion="polite" style={{ alignItems: 'center', opacity: pop, transform: [{ scale: pop }] }}>
             <Icon name="check-bold" size={72} color={fertile ? '#fff' : colors.text} />
             <Text style={[cs.sub, { fontSize: 20, marginTop: 6 }, fertile && { color: '#fff' }]}>Predictions updated!</Text>
           </Animated.View>
         ) : (
           <FadeIn key={status.kicker + status.big} style={{ alignItems: 'center', paddingHorizontal: 22 }} from={8}>
+            <View accessible accessibilityLabel={`${status.kicker} ${status.big}. ${status.sub}`} style={{ alignItems: 'center' }}>
             {children}
             <Text style={[cs.kicker, fertile && { color: '#fff' }]}>{status.kicker}</Text>
             <Text style={[cs.big, fertile && { color: '#fff' }, status.big.length > 10 && { fontSize: 34 }]} adjustsFontSizeToFit numberOfLines={2}>{status.big}</Text>
-            <Text style={[cs.sub, fertile && { color: 'rgba(255,255,255,0.9)' }]}>{status.sub}</Text>
+            <Text style={[cs.sub, fertile && { color: '#fff' }]}>{status.sub}</Text>
+            </View>
           </FadeIn>
         )}
       </Animated.View>
@@ -194,10 +208,10 @@ function ProgressRing({ size, progress }: { size: number; progress: number }) {
 }
 
 const cs = StyleSheet.create({
-  circle: { backgroundColor: 'rgba(255,255,255,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center', ...shadow },
+  circle: { backgroundColor: 'rgba(255,255,255,0.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center', ...shadow },
   kicker: { fontSize: 19, fontWeight: '600', color: colors.text, marginBottom: 4 },
-  big: { fontSize: 46, fontWeight: '800', color: colors.text, textAlign: 'center' },
-  sub: { fontSize: 15, color: colors.muted, textAlign: 'center', marginTop: 8, fontWeight: '500' },
+  big: { fontSize: 44, fontWeight: '700', color: colors.heading, textAlign: 'center' },
+  sub: { fontSize: 15, color: colors.text, textAlign: 'center', marginTop: 8, fontWeight: '500' },
 });
 
 export function QuickAction({ icon, label, onPress, filled, tint = colors.primary }: { icon: IconName; label: string; onPress: () => void; filled?: boolean; tint?: string }) {
@@ -215,23 +229,23 @@ const qa = StyleSheet.create({
   label: { marginTop: 8, fontSize: 16, color: colors.text, fontWeight: '500', textAlign: 'center' },
 });
 
-export function StoryCard({ title, tint, ink, icon, onPress, emoji }: { title: string; tint: string; ink: string; icon?: IconName; emoji?: string; onPress: () => void }) {
+export function StoryCard({ title, tint, ink, icon, onPress, art }: { title: string; tint: string; ink: string; icon?: IconName; art?: React.ReactNode; onPress: () => void }) {
   const floaty = useLoop(2600);
   return (
     <PressScale accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={[sc.wrap]}>
       <View style={[sc.card, { backgroundColor: tint }]}>
         <Text style={sc.t} numberOfLines={3}>{title}</Text>
         <Animated.View style={{ position: 'absolute', right: 12, bottom: 12, transform: [{ translateY: floaty.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }] }}>
-          {emoji ? <Text style={{ fontSize: 54 }}>{emoji}</Text> : icon ? <Icon name={icon} size={64} color={ink} /> : null}
+          {art ?? (icon ? <Icon name={icon} size={60} color={ink} /> : null)}
         </Animated.View>
       </View>
     </PressScale>
   );
 }
 const sc = StyleSheet.create({
-  wrap: { marginRight: 12, padding: 3, borderRadius: 22, borderWidth: 2.5, borderColor: colors.primary },
+  wrap: { marginRight: 12, padding: 3, borderRadius: 24, borderWidth: 2, borderColor: colors.accent },
   card: { width: 138, height: 178, borderRadius: 18, padding: 14, overflow: 'hidden' },
-  t: { fontSize: 17, fontWeight: '700', color: colors.text, lineHeight: 22 },
+  t: { fontSize: 17, fontWeight: '700', color: colors.text, lineHeight: 23 },
 });
 
 export function useNow() {

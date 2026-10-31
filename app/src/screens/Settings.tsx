@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, Platform, Share, Text, View } from 'react-native';
+import { Alert, Platform, Share, View } from 'react-native';
+import { Text } from '../text';
 import { addDays, derivePeriods, lmpFromDueDate, predict, pregnancyStatus, today as todayFn, type ReminderPrefs, type TimeOfDay } from '@cyclo/core';
 import { FadeIn, PressScale } from '../anim';
 import { fmtDay } from '../components';
@@ -70,7 +71,7 @@ function Main({ go }: { go: (p: SettingsPage) => void }) {
         <Row icon="cloud-lock-outline" title="Sync & encryption" subtitle={st.server ? `Connected · ${st.server.email}` : 'Off: data stays on this device'} onPress={() => go('sync')} />
         <Row icon="database-export-outline" title="Your data" subtitle="Export, doctor summary, delete" onPress={() => go('data')} />
       </Card>
-      <Muted style={{ textAlign: 'center' }}>Cyclo is an independent, private tracker. Predictions are estimates and not a method of contraception.</Muted>
+      <Muted style={{ textAlign: 'center' }}>Avelune is an independent, private tracker. Predictions are estimates and not a method of contraception.</Muted>
     </Page>
   );
 }
@@ -124,7 +125,7 @@ function Reminders() {
   const [open, setOpen] = useState<Key | null>(null);
   const [msg, setMsg] = useState('');
   const toggle = async (k: Key, on: boolean) => {
-    if (on && !(await ensurePermission())) return setMsg('Notifications are blocked. Allow them for Cyclo in your phone settings.');
+    if (on && !(await ensurePermission())) return setMsg('Notifications are blocked. Allow them for Avelune in your phone settings.');
     setMsg('');
     st.setReminders({ [k]: { ...r[k], on } } as Partial<ReminderPrefs>);
   };
@@ -149,7 +150,7 @@ function Reminders() {
       {!remindersSupported && (
         <View style={{ flexDirection: 'row', backgroundColor: '#FFF4E0', borderRadius: 18, padding: 16, marginBottom: 12, alignItems: 'center' }}>
           <Icon name="alert" size={26} color="#F5A524" />
-          <Text style={{ flex: 1, marginLeft: 12, fontSize: 15, color: colors.text }}>Reminders are delivered by the iPhone and Android apps. Set them up in Cyclo on your phone.</Text>
+          <Text style={{ flex: 1, marginLeft: 12, fontSize: 15, color: colors.text }}>Reminders are delivered by the iPhone and Android apps. Set them up in Avelune on your phone.</Text>
         </View>
       )}
       {msg ? <Muted style={{ color: colors.danger, marginBottom: 8 }}>{msg}</Muted> : null}
@@ -261,7 +262,7 @@ function Data() {
     const p = predict(logs, settings, todayFn());
     const periods = derivePeriods(logs);
     return [
-      'Cyclo cycle summary', `Generated ${todayFn()}`, '',
+      'Avelune cycle summary', `Generated ${todayFn()}`, '',
       `Average cycle: ${p.stats.avgCycle} days (${p.stats.regularity})`, `Average period: ${p.stats.avgPeriod} days`, '',
       'Recent periods:', ...periods.slice(-12).map((x) => `- ${x.start} to ${x.end} (${x.length} days)`),
     ].join('\n');
@@ -269,8 +270,8 @@ function Data() {
   return (
     <Page>
       <Card>
-        <Row icon="code-json" title="Export all data (JSON)" onPress={() => void shareText('cyclo-export.json', JSON.stringify({ version: 2, records: Object.values(st.records) }, null, 2), 'application/json')} />
-        <Row icon="stethoscope" title="Summary for my doctor" onPress={() => void shareText('cyclo-summary.txt', summary(), 'text/plain')} />
+        <Row icon="code-json" title="Export all data (JSON)" onPress={() => void shareText('avelune-export.json', JSON.stringify({ version: 2, records: Object.values(st.records) }, null, 2), 'application/json')} />
+        <Row icon="stethoscope" title="Summary for my doctor" onPress={() => void shareText('avelune-summary.txt', summary(), 'text/plain')} />
       </Card>
       <Card>
         <Row icon="delete-outline" danger title="Delete data on this device" onPress={() => confirm('Delete data on this device?', 'This cannot be undone. Data already synced stays on your server.', () => void st.wipe(false))} />

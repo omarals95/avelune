@@ -1,20 +1,24 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { classifyDay, cycleDayOf, predict, pregnancyStatus, today as todayFn, type DateStr } from '@cyclo/core';
 import { FadeIn, PressScale } from '../anim';
-import { ARTICLES, TIPS, pregnancyWeek } from '../content';
+import { ARTICLES, TIPS } from '../content';
 import { MoodBackground, QuickAction, StatusCircle, StoryCard, WeekStrip, fmtDay, statusFor } from '../components';
 import { Icon } from '../icons';
 import { useNav } from '../nav';
 import { selectLogs, selectSettings, useStore } from '../store';
-import { colors } from '../theme';
+import { colors, shadow } from '../theme';
+import { GrowthMark } from '../growth';
+import { Image } from 'react-native';
 
 export function Avatar({ onPress }: { onPress: () => void }) {
   const name = useStore((s) => s.name);
   return (
-    <PressScale accessibilityLabel="Settings" onPress={onPress} style={st.avatar}>
-      {name ? <Text style={{ color: '#fff', fontWeight: '800', fontSize: 20 }}>{name[0].toUpperCase()}</Text> : <Icon name="moon-waning-crescent" size={26} color="#fff" />}
+    <PressScale accessibilityRole="button" accessibilityLabel="Profile and settings" onPress={onPress} style={st.avatar}>
+      {name ? <Text style={{ color: colors.heading, fontWeight: '800', fontSize: 20 }}>{name[0].toUpperCase()}</Text>
+        : <Image source={require('../../assets/symbol.png')} style={{ width: 30, height: 31 }} resizeMode="contain" accessibilityIgnoresInvertColors />}
     </PressScale>
   );
 }
@@ -58,7 +62,7 @@ export function Today() {
         {preg ? (
           <StatusCircle celebrateKey={nav.celebrateKey} ring={(preg.week * 7 + preg.day) / 280}
             status={{ mood: 'pregnancy', kicker: `Week ${preg.week}`, big: `Day ${preg.day + 1}`, sub: preg.daysToGo > 0 ? `${Math.ceil(preg.daysToGo / 7)} weeks to go · due ${fmtDay(preg.dueDate)}` : `Due ${fmtDay(preg.dueDate)}` }}>
-            <Text style={{ fontSize: 44, marginBottom: 4 }}>{pregnancyWeek(preg.week).emoji}</Text>
+            <GrowthMark week={preg.week} size={64} />
           </StatusCircle>
         ) : (
           <StatusCircle status={status} celebrateKey={nav.celebrateKey} />
@@ -67,14 +71,14 @@ export function Today() {
         <FadeIn delay={120} style={st.actions}>
           {preg ? (
             <>
-              <QuickAction icon="baby-face-outline" label="Details" filled onPress={() => nav.openWeek(preg.week)} />
+              <QuickAction icon="baby-face-outline" label="Details" filled tint={colors.pregnancy} onPress={() => nav.openWeek(preg.week)} />
               <QuickAction icon="plus" label="Symptoms" onPress={() => nav.openLog(selected)} />
               {!hideSex && <QuickAction icon="heart-outline" label="Sex" onPress={() => nav.openLog(selected)} />}
               <QuickAction icon="scale-bathroom" label="Weight" onPress={() => nav.openLog(selected)} />
             </>
           ) : (
             <>
-              <QuickAction icon="water" label="Log period" filled onPress={() => nav.openCalendar(true)} />
+              <QuickAction icon="water" label="Log period" filled tint={colors.period} onPress={() => nav.openCalendar(true)} />
               <QuickAction icon="plus" label="Symptoms" onPress={() => nav.openLog(selected)} />
               {!hideSex && <QuickAction icon="heart-outline" label="Sex" onPress={() => nav.openLog(selected)} />}
             </>
@@ -86,11 +90,11 @@ export function Today() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
             {preg ? (
               <>
-                <StoryCard title={`Your baby at ${preg.week} weeks`} tint="#FBE3D6" ink={colors.pregnancy} emoji={pregnancyWeek(preg.week).emoji} onPress={() => nav.openWeek(preg.week)} />
-                <StoryCard title={`Your body at ${preg.week} weeks`} tint="#E4ECFA" ink="#4A6FB5" icon="human-pregnant" onPress={() => nav.openWeek(preg.week)} />
+                <StoryCard title={`Your baby at ${preg.week} weeks`} tint={colors.pregnancySoft} ink={colors.pregnancy} art={<GrowthMark week={preg.week} size={70} />} onPress={() => nav.openWeek(preg.week)} />
+                <StoryCard title={`Your body at ${preg.week} weeks`} tint={colors.ovulationSoft} ink={colors.ovulation} icon="human-pregnant" onPress={() => nav.openWeek(preg.week)} />
               </>
             ) : (
-              <StoryCard title={TIPS[tipKey][dayIdx % TIPS[tipKey].length]} tint="#FFFFFF" ink={colors.primary} icon="lightbulb-on-outline" onPress={() => nav.openArticle(tips[0].id)} />
+               <StoryCard title={TIPS[tipKey][dayIdx % TIPS[tipKey].length]} tint={colors.card} ink={colors.primary} icon="lightbulb-on-outline" onPress={() => nav.openArticle(tips[0].id)} />
             )}
             {tips.map((a) => <StoryCard key={a.id} title={a.title} tint={a.tint} ink={a.ink} icon={a.icon} onPress={() => nav.openArticle(a.id)} />)}
           </ScrollView>
@@ -111,18 +115,18 @@ export function Today() {
 const SummaryItem = ({ icon, color, label, value }: { icon: 'water' | 'flower-outline' | 'refresh'; color: string; label: string; value: string }) => (
   <View style={st.sumRow}>
     <View style={[st.sumIcon, { backgroundColor: color + '22' }]}><Icon name={icon} size={20} color={color} /></View>
-    <Text style={{ flex: 1, fontSize: 16, color: colors.muted }}>{label}</Text>
+    <Text style={{ flex: 1, fontSize: 16, color: colors.text }}>{label}</Text>
     <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>{value}</Text>
   </View>
 );
 
 const st = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 14 },
-  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: colors.fertile, alignItems: 'center', justifyContent: 'center' },
-  date: { fontSize: 22, fontWeight: '600', color: colors.text },
+  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', ...shadow },
+  date: { fontSize: 22, fontWeight: '700', color: colors.heading },
   iconBtn: { width: 50, height: 50, alignItems: 'center', justifyContent: 'center' },
   actions: { flexDirection: 'row', justifyContent: 'space-evenly', paddingHorizontal: 12, marginTop: 4, marginBottom: 24 },
-  section: { fontSize: 18, fontWeight: '600', color: colors.text, marginHorizontal: 20, marginBottom: 12 },
+  section: { fontSize: 18, fontWeight: '700', color: colors.heading, marginHorizontal: 20, marginBottom: 12 },
   summary: { backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 22, marginHorizontal: 20, marginTop: 24, padding: 8, paddingHorizontal: 16 },
   sumRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
   sumIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 12 },

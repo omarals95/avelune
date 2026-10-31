@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Text, View } from 'react-native';
+import { Animated, Easing, View } from 'react-native';
+import { Text } from './text';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { ND, useReduceMotion } from './anim';
 import { colors } from './theme';
@@ -44,13 +45,13 @@ export function Chart({ points, kind, yMin, yMax, ticks = 6, target, markers = [
                 <G key={k}>
                   <Line x1={L} x2={w - R} y1={y(v)} y2={y(v)} stroke={colors.border} strokeWidth={1} />
                   <Line x1={L - 6} x2={L} y1={y(v)} y2={y(v)} stroke={colors.text} strokeWidth={1.5} />
-                  <SvgText x={L - 10} y={y(v) + 4} fontSize={12} fill={colors.text} textAnchor="end">{v.toFixed(digits)}</SvgText>
+                  <SvgText x={L - 10} y={y(v) + 4} fontSize={12} fontFamily="NunitoSans_400Regular" fill={colors.text} textAnchor="end">{v.toFixed(digits)}</SvgText>
                 </G>
               );
             })}
             <Line x1={L} x2={L} y1={T} y2={T + ch} stroke={colors.text} strokeWidth={1.5} />
-            <Line x1={L} x2={w - R} y1={T + ch + 6} y2={T + ch + 6} stroke="#F28A72" strokeWidth={3} />
-            {xLabels.map((l, i) => i % step === 0 ? <SvgText key={i} x={x(i)} y={height - 6} fontSize={12} fill={colors.muted} textAnchor="middle">{l}</SvgText> : null)}
+            <Line x1={L} x2={w - R} y1={T + ch + 6} y2={T + ch + 6} stroke={colors.accent} strokeWidth={3} />
+            {xLabels.map((l, i) => i % step === 0 ? <SvgText key={i} x={x(i)} y={height - 6} fontSize={12} fontFamily="NunitoSans_400Regular" fill={colors.muted} textAnchor="middle">{l}</SvgText> : null)}
             {markers.map((m, k) => (
               <G key={k}>
                 <Rect x={x(m.i) - cw / n / 2} y={T} width={Math.max(4, cw / n)} height={ch} fill={m.color} opacity={0.14} />
@@ -73,7 +74,7 @@ export function Chart({ points, kind, yMin, yMax, ticks = 6, target, markers = [
           <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Target</Text>
         </View>
       )}
-      {empty && <View style={{ position: 'absolute', left: 48, right: 0, top: 0, bottom: 30, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.faint, fontSize: 20, textAlign: 'center' }}>No data for this cycle</Text></View>}
+      {empty && <View style={{ position: 'absolute', left: 48, right: 0, top: 0, bottom: 30, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.muted, fontSize: 18, textAlign: 'center' }}>No data for this cycle</Text></View>}
     </View>
   );
 }
@@ -86,8 +87,8 @@ export function CycleBar({ label, length, periodDays, max, current }: { label: s
     <View style={{ marginBottom: 22 }}>
       <Text style={{ fontSize: 15, color: colors.muted, fontWeight: '700', marginBottom: 8 }}>{current ? 'CURRENT CYCLE: ' : ''}<Text style={{ fontWeight: '400' }}>{label}</Text></Text>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <View style={{ flex: 1, height: 26, borderRadius: 13, backgroundColor: '#ECE9F0', overflow: 'hidden' }}>
-          <Animated.View style={{ height: 26, width: `${pct * 100}%`, borderRadius: 13, flexDirection: 'row', overflow: 'hidden', backgroundColor: current ? '#BDE7E4' : '#CFEDEA',
+        <View style={{ flex: 1, height: 26, borderRadius: 13, backgroundColor: colors.primarySoft, overflow: 'hidden' }}>
+          <Animated.View style={{ height: 26, width: `${pct * 100}%`, borderRadius: 13, flexDirection: 'row', overflow: 'hidden', backgroundColor: colors.fertileSoft,
             transform: [{ translateX: grow.interpolate({ inputRange: [0, 1], outputRange: [-240, 0] }) }] }}>
             <View style={{ width: `${Math.min(100, (periodDays / Math.max(1, length)) * 100)}%`, backgroundColor: colors.period }} />
           </Animated.View>
@@ -106,8 +107,8 @@ export function MiniBars({ values, highlight }: { values: number[]; highlight: n
       {values.map((v, i) => {
         const h = 20 + (v / max) * 56;
         return i === highlight
-          ? <Rect key={i} x={i * 22 + 3} y={78 - h} width={14} height={h} fill="#FFC145" />
-          : <Rect key={i} x={i * 22 + 4} y={79 - h} width={12} height={h - 2} fill="none" stroke={colors.fertile} strokeWidth={2.5} />;
+          ? <Rect key={i} x={i * 22 + 3} y={78 - h} width={14} height={h} rx={3} fill={colors.accent} />
+          : <Rect key={i} x={i * 22 + 4} y={79 - h} width={12} height={h - 2} rx={3} fill="none" stroke={colors.primary} strokeWidth={2.5} />;
       })}
     </Svg>
   );

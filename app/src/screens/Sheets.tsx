@@ -1,10 +1,12 @@
 import React, { useRef, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FadeIn, PressScale, useLoop } from '../anim';
 import { ARTICLES, DISCLAIMER, pregnancyWeek } from '../content';
 import { Icon } from '../icons';
-import { colors } from '../theme';
+import { colors, phase } from '../theme';
+import { GrowthMark } from '../growth';
 import { Muted, TopBar } from '../ui';
 
 export function ArticleSheet({ id, onClose }: { id: string; onClose: () => void }) {
@@ -31,19 +33,18 @@ export function ArticleSheet({ id, onClose }: { id: string; onClose: () => void 
 export function WeekSheet({ week: initial, onClose }: { week: number; onClose: () => void }) {
   const [week, setWeek] = useState(Math.max(4, Math.min(40, initial)));
   const w = pregnancyWeek(week);
-  const pulse = useLoop(1800);
   const chips = useRef<ScrollView>(null);
   return (
     <View style={{ flex: 1 }}>
-      <LinearGradient colors={['#F4B996', '#FAD7C3', '#FDEDE3']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#EBD3BA', phase.pregnancy.soft, '#FCF8F5']} style={StyleSheet.absoluteFill} />
       <TopBar onClose={onClose} />
       <View style={{ alignItems: 'center', justifyContent: 'center', height: 260 }}>
-        <Animated.Text key={week} style={{ fontSize: 120, transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1.06] }) }] }}>{w.emoji}</Animated.Text>
+        <GrowthMark key={week} week={week} size={210} />
       </View>
       <ScrollView ref={chips} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 14 }}
         onLayout={() => chips.current?.scrollTo({ x: Math.max(0, (week - 6) * 92), animated: false })}>
         {Array.from({ length: 37 }, (_, i) => i + 4).map((n) => (
-          <PressScale key={n} onPress={() => setWeek(n)} style={[sh.wk, n === week && { backgroundColor: '#fff' }]}>
+          <PressScale key={n} accessibilityRole="button" accessibilityState={{ selected: n === week }} accessibilityLabel={`Week ${n}`} onPress={() => setWeek(n)} style={[sh.wk, n === week && { backgroundColor: '#fff' }]}>
             <Text style={[sh.wkT, n === week && { color: colors.text, fontWeight: '700' }]}>{n} weeks</Text>
           </PressScale>
         ))}
@@ -66,11 +67,11 @@ export function WeekSheet({ week: initial, onClose }: { week: number; onClose: (
 }
 
 const sh = StyleSheet.create({
-  title: { fontSize: 30, fontWeight: '800', color: colors.text, marginBottom: 14 },
-  h: { fontSize: 19, fontWeight: '700', color: colors.muted, marginTop: 18, marginBottom: 6 },
-  p: { fontSize: 18, lineHeight: 28, color: '#4A4652', marginBottom: 12 },
-  wk: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.35)', marginRight: 10 },
-  wkT: { fontSize: 17, color: 'rgba(29,27,36,0.6)' },
+  title: { fontSize: 30, fontWeight: '700', color: colors.heading, marginBottom: 14 },
+  h: { fontSize: 18, fontWeight: '700', color: colors.heading, marginTop: 18, marginBottom: 6 },
+  p: { fontSize: 17, lineHeight: 27, color: colors.text, marginBottom: 12 },
+  wk: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 18, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.45)', marginRight: 10 },
+  wkT: { fontSize: 16, color: colors.text },
   panel: { flex: 1, backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28 },
   grab: { width: 48, height: 5, borderRadius: 3, backgroundColor: '#D5D2DA', alignSelf: 'center', marginBottom: 14 },
 });

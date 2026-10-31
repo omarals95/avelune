@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
+import { Text } from './text';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts, VarelaRound_400Regular } from '@expo-google-fonts/varela-round';
+import { NunitoSans_400Regular, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold } from '@expo-google-fonts/nunito-sans';
 import { predict, today as todayFn } from '@cyclo/core';
 import { ND, PressScale } from './anim';
 import { Icon, type IconName } from './icons';
@@ -26,6 +30,8 @@ const TABS: [Tab, string, IconName, IconName][] = [
 ];
 type Tab = 'today' | 'insights' | 'partner';
 
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
 export default function App() {
   return <SafeAreaProvider><Root /></SafeAreaProvider>;
 }
@@ -34,8 +40,11 @@ function Root() {
   const [hydrated, setHydrated] = useState(useStore.persist.hasHydrated());
   const onboarded = useStore((s) => s.onboarded);
   const partner = useStore((s) => s.partner);
+  const [fontsLoaded, fontError] = useFonts({ VarelaRound_400Regular, NunitoSans_400Regular, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold });
+  const ready = hydrated && (fontsLoaded || !!fontError);
   useEffect(() => useStore.persist.onFinishHydration(() => setHydrated(true)), []);
-  if (!hydrated) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
+  useEffect(() => { if (ready) SplashScreen.hideAsync().catch(() => undefined); }, [ready]);
+  if (!ready) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style="dark" />
@@ -102,8 +111,9 @@ function Main() {
       <View style={[st.tabs, { paddingBottom: Math.max(insets.bottom, 8) }]} accessibilityRole="tablist">
         {TABS.map(([k, l, icon, active]) => (
           <PressScale key={k} accessibilityRole="tab" accessibilityLabel={l} accessibilityState={{ selected: tab === k }} style={st.tab} onPress={() => go(k)}>
-            <Icon name={tab === k ? active : icon} size={30} color={tab === k ? colors.text : colors.faint} />
-            <Text style={[st.tabT, tab === k && { color: colors.text }]}>{l}</Text>
+            <Icon name={tab === k ? active : icon} size={28} color={tab === k ? colors.primary : colors.muted} />
+            <Text style={[st.tabT, tab === k && { color: colors.primary, fontWeight: '700' }]}>{l}</Text>
+            <View style={[st.tabDot, tab === k && { backgroundColor: colors.accent }]} />
           </PressScale>
         ))}
       </View>
@@ -121,7 +131,8 @@ function Main() {
 }
 
 const st = StyleSheet.create({
-  tabs: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: '#fff', paddingTop: 8 },
-  tab: { flex: 1, alignItems: 'center' },
-  tabT: { color: colors.faint, fontSize: 15, marginTop: 2 },
+  tabs: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.card, paddingTop: 6 },
+  tab: { flex: 1, alignItems: 'center', minHeight: 56, justifyContent: 'center' },
+  tabT: { color: colors.muted, fontSize: 14, marginTop: 2 },
+  tabDot: { width: 18, height: 3, borderRadius: 2, marginTop: 4, backgroundColor: 'transparent' },
 });

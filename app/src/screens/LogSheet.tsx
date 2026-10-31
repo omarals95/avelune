@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../text';
 import { addDays, cycleDayOf, today as todayFn, type DateStr, type DayLog, type Flow } from '@cyclo/core';
 import { FadeIn, PressScale } from '../anim';
 import { CATEGORIES, tagId, type Category } from '../catalog';
@@ -70,7 +71,7 @@ export function LogSheet({ date: initial, onClose }: { date: DateStr; onClose: (
         </View>
         <View style={ls.search}>
           <Icon name="magnify" size={24} color={colors.muted} />
-          <TextInput accessibilityLabel="Search" value={q} onChangeText={setQ} placeholder="Search" placeholderTextColor={colors.faint} style={ls.searchIn} />
+          <TextInput accessibilityLabel="Search symptoms, moods and more" value={q} onChangeText={setQ} placeholder="Search" placeholderTextColor={colors.faint} style={ls.searchIn} />
         </View>
       </View>
 
@@ -114,8 +115,8 @@ export function LogSheet({ date: initial, onClose }: { date: DateStr; onClose: (
               {Array.from({ length: Math.max(8, Math.ceil((log.water ?? 0) / GLASS) + 1) }, (_, i) => {
                 const full = (log.water ?? 0) >= (i + 1) * GLASS;
                 return (
-                  <PressScale key={i} accessibilityLabel={`${i + 1} glasses`} onPress={() => update({ water: full && (log.water ?? 0) === (i + 1) * GLASS ? i * GLASS : (i + 1) * GLASS })} style={{ marginRight: 6, marginBottom: 6 }}>
-                    <Icon name={full ? 'cup-water' : 'cup-outline'} size={34} color={full ? '#2F95D6' : colors.faint} />
+                  <PressScale key={i} accessibilityRole="button" accessibilityLabel={`${i + 1} glass${i ? 'es' : ''} of water`} accessibilityState={{ selected: full }} hitSlop={6} onPress={() => update({ water: full && (log.water ?? 0) === (i + 1) * GLASS ? i * GLASS : (i + 1) * GLASS })} style={{ marginRight: 6, marginBottom: 6 }}>
+                    <Icon name={full ? 'cup-water' : 'cup-outline'} size={34} color={full ? '#3D5F8A' : colors.faint} />
                   </PressScale>
                 );
               })}
@@ -170,7 +171,7 @@ function Measure({ icon, label, unit, value, start, step, digits, onChange }: {
           <PressScale accessibilityLabel={`Decrease ${label}`} onPress={() => onChange(round(value - step))} style={ls.step}><Icon name="minus" size={18} color={colors.primary} /></PressScale>
           <Text style={ls.mVal}>{value.toFixed(digits)} {unit}</Text>
           <PressScale accessibilityLabel={`Increase ${label}`} onPress={() => onChange(round(value + step))} style={ls.step}><Icon name="plus" size={18} color={colors.primary} /></PressScale>
-          <PressScale accessibilityLabel={`Clear ${label}`} onPress={() => onChange(null)} style={{ padding: 6 }}><Icon name="close-circle-outline" size={20} color={colors.faint} /></PressScale>
+          <PressScale accessibilityLabel={`Clear ${label}`} onPress={() => onChange(null)} hitSlop={8} style={{ padding: 10 }}><Icon name="close-circle-outline" size={20} color={colors.faint} /></PressScale>
         </>
       )}
     </View>
@@ -182,19 +183,19 @@ const ls = StyleSheet.create({
   close: { width: 48, height: 48, justifyContent: 'center' },
   dayNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   navBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 28, fontWeight: '800', color: colors.text },
+  title: { fontSize: 28, fontWeight: '700', color: colors.heading },
   sub: { fontSize: 16, color: colors.muted, marginTop: 2 },
-  search: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E6E4EA', borderRadius: 999, paddingHorizontal: 18, height: 54 },
+  search: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 18, height: 54 },
   searchIn: { flex: 1, fontSize: 18, marginLeft: 10, color: colors.text },
   card: { backgroundColor: '#fff', borderRadius: 22, padding: 18, marginBottom: 14, ...shadow, shadowOpacity: 0.04 },
-  cardT: { fontSize: 21, fontWeight: '700', color: colors.text, marginBottom: 14 },
-  catHead: { fontSize: 24, fontWeight: '700', color: colors.text, marginVertical: 10 },
+  cardT: { fontSize: 20, fontWeight: '700', color: colors.heading, marginBottom: 14 },
+  catHead: { fontSize: 24, fontWeight: '700', color: colors.heading, marginVertical: 10 },
   bigIcon: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   bigLabel: { fontSize: 14, color: colors.text },
   mRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
   mIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   mVal: { minWidth: 86, textAlign: 'center', fontSize: 16, fontWeight: '700', color: colors.text },
-  step: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  addBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 999, backgroundColor: colors.primarySoft },
+  step: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  addBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 18, borderRadius: 999, backgroundColor: colors.primarySoft },
   notes: { minHeight: 90, borderRadius: 14, backgroundColor: colors.bg, padding: 14, fontSize: 16, textAlignVertical: 'top', color: colors.text },
 });

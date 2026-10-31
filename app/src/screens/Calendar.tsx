@@ -1,13 +1,31 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../text';
 import { addDays, classifyDay, cycleDayOf, predict, toDateStr, today as todayFn, type DateStr, type DayKind } from '@cyclo/core';
 import { ND, PressScale } from '../anim';
-import { DOW, MONTHS, mondayIndex } from '../components';
+import { DOW, KIND_LABEL, KIND_STYLE, MONTHS, mondayIndex } from '../components';
 import { Icon } from '../icons';
 import { useNav } from '../nav';
 import { selectLogs, selectSettings, useStore } from '../store';
 import { colors, shadow } from '../theme';
 import { Segmented, TopBar } from '../ui';
+
+const fmtA11y = (d: DateStr) => `${+d.slice(8)} ${MONTHS[+d.slice(5, 7) - 1]} ${d.slice(0, 4)}`;
+
+/** Visible key for the calendar symbols (shape + colour). */
+function Legend() {
+  const items: [DayKind, string][] = [['period', 'Period'], ['predicted-period', 'Predicted'], ['fertile', 'Fertile'], ['ovulation', 'Ovulation']];
+  return (
+    <View style={cal.legend} accessibilityRole="text" accessibilityLabel="Legend: filled rose is a logged period, dashed rose ring is predicted, green fill is fertile, dashed violet ring is ovulation">
+      {items.map(([k, l]) => (
+        <View key={k} style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 6 }}>
+          <View style={[{ width: 16, height: 16, borderRadius: 8, marginRight: 6 }, KIND_STYLE[k].box]} />
+          <Text style={{ fontSize: 13, color: colors.text }}>{l}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 const monthKey = (y: number, m: number) => `${y}-${String(m + 1).padStart(2, '0')}`;
 
@@ -66,7 +84,8 @@ export function CalendarView({ startEditing, onClose, onDay, kindOf: kindOverrid
       <View style={{ alignItems: 'center', marginTop: -50, marginBottom: 8 }} pointerEvents="box-none">
         {!title && <Segmented options={[['month', 'Month'], ['year', 'Year']]} value={mode} onChange={(m) => { if (m === 'month') setTarget(monthKey(ty, tm)); setMode(m); }} />}
       </View>
-      <View style={cal.dowRow}>{DOW.map((d, i) => <Text key={i} style={cal.dow}>{d}</Text>)}</View>
+      <Legend />
+      <View style={cal.dowRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{DOW.map((d, i) => <Text key={i} style={cal.dow}>{d}</Text>)}</View>
 
       {mode === 'month' ? (
         <ScrollView ref={scroll} contentContainerStyle={{ paddingBottom: 120 }}>
@@ -133,15 +152,13 @@ function DayCell({ d, today, kind, editing, checked, onPress, cycleDay }: {
   const future = d > today;
   const pop = useRef(new Animated.Value(1)).current;
   const press = () => { pop.setValue(0.8); Animated.spring(pop, { toValue: 1, useNativeDriver: ND, speed: 30, bounciness: 14 }).start(); onPress(); };
-  const filled = kind === 'period';
-  const dashed = kind === 'predicted-period' || kind === 'ovulation';
-  const txt = isToday && !editing ? '#fff' : filled && !editing ? '#fff' : kind === 'fertile' || kind === 'ovulation' ? colors.fertile : kind === 'predicted-period' ? colors.period : colors.text;
+  const k = KIND_STYLE[kind];
+  const txt = isToday && !editing ? '#fff' : editing ? colors.text : k.color;
   return (
-    <Pressable style={cal.cell} onPress={press} disabled={editing && future} accessibilityLabel={`${d}${kind !== 'none' ? ', ' + kind.replace('-', ' ') : ''}${isToday ? ', today' : ''}`}>
+    <Pressable style={cal.cell} onPress={press} disabled={editing && future} accessibilityRole={editing ? 'checkbox' : 'button'} accessibilityState={editing ? { checked, disabled: future } : undefined}
+      accessibilityLabel={`${fmtA11y(d)}${isToday ? ', today' : ''}${kind !== 'none' ? ', ' + KIND_LABEL[kind] : ''}`}>
       <Text style={[cal.cd, isToday && !editing && { color: colors.text, fontWeight: '700' }]}>{isToday && !editing ? 'TODAY' : cycleDay ?? ' '}</Text>
-      <Animated.View style={[cal.day, { transform: [{ scale: pop }] },
-        !editing && filled && { backgroundColor: colors.period },
-        !editing && dashed && { borderWidth: 2, borderStyle: 'dashed', borderColor: kind === 'ovulation' ? colors.fertile : colors.period },
+      <Animated.View style={[cal.day, { transform: [{ scale: pop }] }, !editing && k.box,
         !editing && isToday && { backgroundColor: colors.today, borderWidth: 0 }]}>
         <Text style={[cal.dayT, { color: txt }, editing && future && { color: colors.faint }]}>{+d.slice(8)}</Text>
       </Animated.View>
@@ -159,16 +176,16 @@ function MiniMonth({ y, m, today, kindOf }: { y: number; m: number; today: DateS
   const first = toDateStr(new Date(y, m, 1));
   const cells: (DateStr | null)[] = [...Array(mondayIndex(first)).fill(null), ...Array.from({ length: days }, (_, i) => toDateStr(new Date(y, m, i + 1)))];
   return (
-    <View>
-      <Text style={{ fontWeight: '700', fontSize: 15, marginBottom: 4, color: colors.text }}>{MONTHS[m].slice(0, 3)}</Text>
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Text style={{ fontWeight: '700', fontSize: 15, marginBottom: 4, color: colors.heading }}>{MONTHS[m].slice(0, 3)}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
         {cells.map((d, i) => {
           const k = d ? kindOf(d) : 'none';
-          const bg = !d ? 'transparent' : d === today ? colors.today : k === 'period' ? colors.period : k === 'predicted-period' ? colors.predictedSoft : k === 'ovulation' ? colors.fertile : k === 'fertile' ? colors.fertileSoft : 'transparent';
+          const bg = !d ? 'transparent' : d === today ? colors.today : k === 'period' ? colors.period : k === 'predicted-period' ? colors.predictedSoft : k === 'ovulation' ? colors.ovulation : k === 'fertile' ? colors.fertileSoft : 'transparent';
           return (
             <View key={i} style={{ width: `${100 / 7}%`, aspectRatio: 1, padding: 1 }}>
               <View style={{ flex: 1, borderRadius: 99, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 8, color: d === today || k === 'period' || k === 'ovulation' ? '#fff' : colors.muted }}>{d ? +d.slice(8) : ''}</Text>
+                <Text style={{ fontSize: 9, color: d === today || k === 'period' || k === 'ovulation' ? '#fff' : colors.text }}>{d ? +d.slice(8) : ''}</Text>
               </View>
             </View>
           );
@@ -179,15 +196,16 @@ function MiniMonth({ y, m, today, kindOf }: { y: number; m: number; today: DateS
 }
 
 const cal = StyleSheet.create({
+  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', paddingVertical: 8 },
   dowRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 8, paddingHorizontal: 6 },
   dow: { flex: 1, textAlign: 'center', color: colors.muted, fontSize: 15 },
-  mTitle: { textAlign: 'center', fontSize: 24, fontWeight: '700', color: colors.text, marginBottom: 6 },
+  mTitle: { textAlign: 'center', fontSize: 24, fontWeight: '700', color: colors.heading, marginBottom: 6 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 6, paddingBottom: 12 },
   cell: { width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 2 },
-  cd: { fontSize: 10, color: colors.muted, height: 14, fontWeight: '600' },
+  cd: { fontSize: 11, color: colors.muted, height: 15, fontWeight: '600' },
   day: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   dayT: { fontSize: 20 },
-  check: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: colors.faint, marginTop: 2, alignItems: 'center', justifyContent: 'center' },
+  check: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.faint, marginTop: 2, alignItems: 'center', justifyContent: 'center' },
   fabWrap: { position: 'absolute', bottom: 28, left: 0, right: 0, alignItems: 'center' },
   fab: { backgroundColor: colors.primary, borderRadius: 999, paddingVertical: 16, paddingHorizontal: 30, ...shadow, shadowOpacity: 0.2 },
   fabT: { color: '#fff', fontSize: 18, fontWeight: '700' },

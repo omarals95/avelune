@@ -34,7 +34,9 @@ describe('partner snapshot', () => {
     const inv = { url: 'https://cyclo.example.com', ...k };
     expect(decodeInvite(encodeInvite(inv))).toEqual(inv);
     expect(decodeInvite(`  ${encodeInvite(inv)}\n`)).toEqual(inv);
-    expect(() => decodeInvite('cyclo-partner:abc')).toThrow();
+    expect(() => decodeInvite('avelune-partner:abc')).toThrow();
+    expect(encodeInvite(inv).startsWith('avelune-partner:')).toBe(true);
+    expect(decodeInvite(encodeInvite(inv).replace('avelune-partner:', 'cyclo-partner:'))).toEqual(inv); // pre-rebrand codes
     expect(() => decodeInvite('hello')).toThrow();
   });
 });

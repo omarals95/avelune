@@ -1,45 +1,97 @@
 import type { Phase } from '@cyclo/core';
 
-export const colors = {
-  bg: '#F3F3F6',
-  card: '#FFFFFF',
-  text: '#1D1B24',
-  muted: '#7B7687',
-  faint: '#B9B5C2',
-  border: '#E8E5ED',
-  primary: '#EF4F6E',
-  primaryDark: '#D63D5C',
-  primarySoft: '#FDE4E9',
-  period: '#EF4F6E',
-  fertile: '#159E99',
-  fertileSoft: '#D6F0EE',
-  predictedSoft: '#FBC9D4',
-  ovulation: '#159E99',
-  today: '#4B5268',
-  danger: '#C62828',
+/** Avelune brand palette (source of truth: docs/design-system/MASTER.md). */
+export const brand = {
+  deepPlum: '#482F49',
+  dustyRose: '#CB8F9B', // decorative only: 2.5:1 on ivory, never for text or meaningful icons
+  warmIvory: '#FCF8F5',
+  softBlush: '#F3E3E7',
+  quietSage: '#DDE9DF',
+  mistLavender: '#E8E1F1',
+  mutedMauve: '#756776',
+  inkPlum: '#302632',
   white: '#FFFFFF',
-  pregnancy: '#E9875A',
 };
 
-export const radius = { card: 22, chip: 999, tile: 18 };
+/** Phase accents (text/fills, all ≥4.5:1 with white) and their soft backgrounds. */
+export const phase = {
+  period: { accent: '#A84461', soft: '#F3E3E7' },
+  fertile: { accent: '#426B53', soft: '#DDE9DF' },
+  ovulation: { accent: '#765399', soft: '#E8E1F1' },
+  pregnancy: { accent: '#936039', soft: '#F5E8D9' },
+};
 
-export type Mood = Phase | 'late' | 'none' | 'pregnancy';
+/** Semantic tokens used by components. Keep raw hex out of screens. */
+export const colors = {
+  bg: brand.warmIvory,
+  card: brand.white,
+  text: brand.inkPlum,
+  heading: brand.deepPlum,
+  muted: brand.mutedMauve, // 5.0:1 on ivory; on tinted surfaces use `text` for small copy
+  faint: '#8E808F', // 3.7:1: placeholders, disabled glyphs, decorative strokes only
+  border: '#EADFE3',
+  primary: brand.deepPlum,
+  primaryDark: brand.inkPlum,
+  primarySoft: brand.softBlush,
+  accent: brand.dustyRose,
+  period: phase.period.accent,
+  periodSoft: phase.period.soft,
+  predictedSoft: '#EBCBD3',
+  fertile: phase.fertile.accent,
+  fertileSoft: phase.fertile.soft,
+  ovulation: phase.ovulation.accent,
+  ovulationSoft: phase.ovulation.soft,
+  pregnancy: phase.pregnancy.accent,
+  pregnancySoft: phase.pregnancy.soft,
+  today: brand.deepPlum,
+  danger: '#9E2A2B',
+  white: brand.white,
+};
 
-/** Background gradient per phase; animated cross-fades between them. */
+export const radius = { card: 22, chip: 999, tile: 20 };
+
+/** Spacing rhythm (4/8dp). */
+export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
+
+/** Minimum touch target (iOS 44pt / Android 48dp). */
+export const TOUCH = 48;
+
+export type Mood = Phase | 'fertile' | 'late' | 'none' | 'pregnancy';
+
+/** Background gradient per mood; animated cross-fades between them. All end in Warm Ivory. */
 export const phaseGradient: Record<Mood, [string, string, string]> = {
-  menstrual: ['#FFD9E1', '#FFE9EE', '#FFF6F8'],
-  follicular: ['#DDE4F6', '#E9EDF9', '#F5F7FD'],
-  ovulation: ['#C9EEEA', '#DFF5F3', '#F2FBFA'],
-  luteal: ['#E7DDF6', '#F0E9FA', '#F8F5FD'],
-  late: ['#D7DAE6', '#E5E7EF', '#F2F3F8'],
-  none: ['#E6E3EE', '#EEECF3', '#F7F6FA'],
-  pregnancy: ['#F8C7AE', '#FBDCCB', '#FDEFE6'],
+  menstrual: ['#F3E3E7', '#F8EEF0', brand.warmIvory],
+  follicular: ['#EEE7F2', '#F6F1F5', brand.warmIvory],
+  fertile: ['#DDE9DF', '#ECF3ED', brand.warmIvory],
+  ovulation: ['#E8E1F1', '#F2EDF7', brand.warmIvory],
+  luteal: ['#F1E5E9', '#F7EFF1', brand.warmIvory],
+  late: ['#ECE5EB', '#F4EFF2', brand.warmIvory],
+  none: ['#F3E9EC', '#F8F2F2', brand.warmIvory],
+  pregnancy: ['#F5E8D9', '#F9F0E6', brand.warmIvory],
 };
 
 export const blobColor: Record<Mood, string> = {
-  menstrual: '#FFC2CF', follicular: '#C8D3F1', ovulation: '#ABE3DD', luteal: '#D7C6F1', late: '#C3C7D8', none: '#D8D4E4', pregnancy: '#F5B08D',
+  menstrual: '#E9C7CF', follicular: '#DCD2E8', fertile: '#C6DCCB', ovulation: '#D6CBE8', luteal: '#E6CDD5', late: '#DCD3DC', none: '#EBD5DB', pregnancy: '#EBD3BA',
+};
+
+/** Accent used for the big status circle fill (null = translucent white with ink text). */
+export const circleFill: Partial<Record<Mood, string>> = {
+  fertile: phase.fertile.accent,
+  ovulation: phase.ovulation.accent,
 };
 
 export const shadow = {
-  shadowColor: '#3A2E4D', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 6 }, elevation: 3,
+  shadowColor: brand.deepPlum, shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 6 }, elevation: 3,
 };
+
+/** Type families (Soft Rounded pairing: Varela Round headings, Nunito Sans body). */
+export const font = {
+  heading: 'VarelaRound_400Regular',
+  body: 'NunitoSans_400Regular',
+  medium: 'NunitoSans_600SemiBold',
+  bold: 'NunitoSans_700Bold',
+  black: 'NunitoSans_800ExtraBold',
+};
+
+/** Motion tokens (ms). Exits are faster than entrances. */
+export const motion = { press: 120, fast: 180, base: 260, enter: 420, crossfade: 700 };

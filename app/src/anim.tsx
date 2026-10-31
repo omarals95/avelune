@@ -51,7 +51,7 @@ const OUTER_KEYS = new Set(['flex', 'flexGrow', 'flexShrink', 'flexBasis', 'widt
 /** Pressable that springs down slightly when touched. */
 export function PressScale({ children, style, scaleTo = 0.94, ...rest }: PressableProps & { style?: StyleProp<ViewStyle>; scaleTo?: number; children: React.ReactNode }) {
   const v = useRef(new Animated.Value(1)).current;
-  const to = (n: number) => Animated.spring(v, { toValue: n, useNativeDriver: ND, speed: 40, bounciness: 8 }).start();
+  const to = (n: number) => Animated.spring(v, { toValue: n, useNativeDriver: ND, speed: 48, bounciness: 6 }).start();
   // Layout keys belong on the outer Pressable so flex/width/margins behave; visuals stay on the scaled view.
   const flat = (StyleSheet.flatten(style) ?? {}) as Record<string, unknown>;
   const outer: Record<string, unknown> = {};
@@ -69,10 +69,12 @@ export function PressScale({ children, style, scaleTo = 0.94, ...rest }: Pressab
 export function usePop(trigger: unknown) {
   const v = useRef(new Animated.Value(1)).current;
   const first = useRef(true);
+  const reduce = useReduceMotion();
   useEffect(() => {
     if (first.current) { first.current = false; return; }
+    if (reduce) { v.setValue(1); return; }
     v.setValue(0);
     Animated.spring(v, { toValue: 1, useNativeDriver: ND, speed: 14, bounciness: 14 }).start();
-  }, [trigger, v]);
+  }, [trigger, v, reduce]);
   return v;
 }

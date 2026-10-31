@@ -20,7 +20,7 @@ export const tagId = (c: CategoryId, id: string) => (c === 'symptoms' || c === '
 
 export const CATEGORIES: Category[] = [
   {
-    id: 'flow', title: 'Period flow', field: 'flow', tint: '#FDE4E9', ink: '#EF4F6E', single: true,
+    id: 'flow', title: 'Period flow', field: 'flow', tint: '#F3E3E7', ink: '#A84461', single: true,
     options: [
       { id: '2', label: 'Light', icon: 'water-outline' },
       { id: '3', label: 'Medium', icon: 'water' },
@@ -29,7 +29,7 @@ export const CATEGORIES: Category[] = [
     ],
   },
   {
-    id: 'sex', title: 'Sex and sex drive', field: 'tags', tint: '#FDE6E8', ink: '#E2445C', sensitive: true,
+    id: 'sex', title: 'Sex and sex drive', field: 'tags', tint: '#F6E4EA', ink: '#8E3B5A', sensitive: true,
     options: [
       { id: 'none', label: "Didn't have sex", icon: 'heart-off-outline' },
       { id: 'protected', label: 'Protected sex', icon: 'lock-outline' },
@@ -40,7 +40,7 @@ export const CATEGORIES: Category[] = [
     ],
   },
   {
-    id: 'mood', title: 'Mood', field: 'moods', tint: '#FFF0DF', ink: '#F0952A',
+    id: 'mood', title: 'Mood', field: 'moods', tint: '#F8EBD9', ink: '#7E5418',
     options: [
       { id: 'calm', label: 'Calm', icon: 'emoticon-outline' },
       { id: 'happy', label: 'Happy', icon: 'emoticon-happy-outline' },
@@ -57,7 +57,7 @@ export const CATEGORIES: Category[] = [
     ],
   },
   {
-    id: 'symptoms', title: 'Symptoms', field: 'symptoms', tint: '#F5E6F5', ink: '#B24C9C',
+    id: 'symptoms', title: 'Symptoms', field: 'symptoms', tint: '#F1E4F3', ink: '#7A4A86',
     options: [
       { id: 'fine', label: 'Everything is fine', icon: 'thumb-up-outline' },
       { id: 'cramps', label: 'Cramps', icon: 'lightning-bolt-outline' },
@@ -82,7 +82,7 @@ export const CATEGORIES: Category[] = [
     ],
   },
   {
-    id: 'discharge', title: 'Vaginal discharge', field: 'tags', tint: '#E3EFFB', ink: '#3778C2',
+    id: 'discharge', title: 'Vaginal discharge', field: 'tags', tint: '#E3EAF3', ink: '#3D5F8A',
     options: [
       { id: 'none', label: 'No discharge', icon: 'cancel' },
       { id: 'creamy', label: 'Creamy', icon: 'water-circle' },
@@ -94,7 +94,7 @@ export const CATEGORIES: Category[] = [
     ],
   },
   {
-    id: 'tests', title: 'Tests', field: 'tags', tint: '#DDF2F0', ink: '#159E99',
+    id: 'tests', title: 'Tests', field: 'tags', tint: '#DCEDEB', ink: '#2F6A66',
     options: [
       { id: 'ovu-pos', label: 'Ovulation test: positive', icon: 'test-tube' },
       { id: 'ovu-neg', label: 'Ovulation test: negative', icon: 'test-tube-empty' },
@@ -103,14 +103,14 @@ export const CATEGORIES: Category[] = [
     ],
   },
   {
-    id: 'pill', title: 'Pill', field: 'tags', tint: '#E7E6FA', ink: '#5B55C9', single: true,
+    id: 'pill', title: 'Pill', field: 'tags', tint: '#E7E4F5', ink: '#5A4E99', single: true,
     options: [
       { id: 'taken', label: 'Took pill', icon: 'pill' },
       { id: 'missed', label: 'Missed pill', icon: 'close-circle-outline' },
     ],
   },
   {
-    id: 'other', title: 'Other', field: 'tags', tint: '#FFEDE2', ink: '#EA7A3B',
+    id: 'other', title: 'Other', field: 'tags', tint: '#F7E6DA', ink: '#8C4E2B',
     options: [
       { id: 'travel', label: 'Travel', icon: 'map-marker-outline' },
       { id: 'stress', label: 'Stress', icon: 'flash-outline' },
@@ -120,7 +120,7 @@ export const CATEGORIES: Category[] = [
     ],
   },
   {
-    id: 'activity', title: 'Physical activity', field: 'tags', tint: '#E2F4E8', ink: '#2E9A59',
+    id: 'activity', title: 'Physical activity', field: 'tags', tint: '#DDE9DF', ink: '#426B53',
     options: [
       { id: 'none', label: "Didn't exercise", icon: 'sofa-outline' },
       { id: 'yoga', label: 'Yoga', icon: 'yoga' },

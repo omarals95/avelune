@@ -1,6 +1,9 @@
-# Cyclo
+# Avelune
 
-A private, local-first period, ovulation and fertile-window tracker for **iPhone, Android and the web**,
+*Your rhythm. Your space.*
+
+
+Avelune (code name Cyclo) is a private, local-first period, ovulation and fertile-window tracker for **iPhone, Android and the web**,
 with an optional **self-hosted sync server**. Independent open-source project; not affiliated with any other tracking app.
 
 - **Works fully offline.** All data is stored on the device. No account is needed.
@@ -14,6 +17,10 @@ with an optional **self-hosted sync server**. Independent open-source project; n
 - **Privacy:** optional end-to-end encrypted sync to your own server; hide sex content; JSON export and doctor summary.
 
 > Predictions are estimates for personal awareness. Not a medical device; not for contraception.
+
+## Design
+
+Brand tokens, typography and accessibility rules: [`design-system/avelune/MASTER.md`](design-system/avelune/MASTER.md). Latest audit: [`docs/design-audit.md`](docs/design-audit.md).
 
 ## Layout
 

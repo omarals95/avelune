@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DEFAULT_SETTINGS, addDays, today as todayFn, toDateStr, type DateStr } from '@cyclo/core';
 import { FadeIn, PressScale, useLoop } from '../anim';
@@ -7,16 +8,18 @@ import { DOW, MONTHS, MoodBackground, fmtDay, mondayIndex } from '../components'
 import { Icon } from '../icons';
 import { ServerForm } from '../ServerForm';
 import { useStore } from '../store';
-import { colors, shadow } from '../theme';
+import { colors } from '../theme';
 import { Btn, Card, Muted, Stepper } from '../ui';
 import { JoinPartner } from './Partner';
-import { Animated } from 'react-native';
+import { Animated, Image } from 'react-native';
 
+/** Official Avelune lockup (symbol + wordmark), used unaltered with clear space around it. */
 function Logo() {
-  const v = useLoop(2600);
+  const v = useLoop(3200);
   return (
-    <Animated.View style={[ob.logo, { transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }) }] }]}>
-      <Icon name="moon-waning-crescent" size={44} color="#fff" />
+    <Animated.View style={{ transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] }) }] }}>
+      <Image source={require('../../assets/logo-full.png')} style={{ width: 240, height: 60 }} resizeMode="contain"
+        accessible accessibilityRole="image" accessibilityLabel="Avelune" />
     </Animated.View>
   );
 }
@@ -40,7 +43,7 @@ function PickDate({ value, onChange, today }: { value: DateStr; onChange: (d: Da
           <View key={i} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 3 }}>
             {d ? (
               <PressScale accessibilityLabel={d} disabled={d > today} onPress={() => onChange(d)}
-                style={[{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }, d === value && { backgroundColor: colors.period }]}>
+                style={[{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }, d === value && { backgroundColor: colors.period }]}>
                 <Text style={{ fontSize: 17, color: d === value ? '#fff' : d > today ? colors.faint : colors.text }}>{+d.slice(8)}</Text>
               </PressScale>
             ) : null}
@@ -62,18 +65,18 @@ export function Onboarding() {
 
   return (
     <View style={{ flex: 1 }}>
-      <MoodBackground mood={step === 'partner' ? 'ovulation' : 'menstrual'} />
+      <MoodBackground mood={step === 'partner' ? 'ovulation' : 'none'} />
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: insets.top + 30, maxWidth: 560, width: '100%', alignSelf: 'center' }} keyboardShouldPersistTaps="handled">
         <FadeIn style={{ alignItems: 'center', marginBottom: 20 }}>
           <Logo />
-          <Text style={ob.brand}>Cyclo</Text>
-          <Text style={ob.tag}>Your cycle, private. Shared only with the one you choose.</Text>
+          <Text style={ob.tag} accessibilityRole="header">Your rhythm. Your space.</Text>
+          <Text style={ob.sub}>Period, fertility and pregnancy tracking that stays private, shared only with the one you choose.</Text>
         </FadeIn>
 
         {step === 'welcome' && (
           <FadeIn delay={120}>
             <Btn title="Start tracking" onPress={() => setStep('date')} />
-            <Btn kind="ghost" title="I already use a Cyclo server" onPress={() => setStep('restore')} />
+            <Btn kind="ghost" title="I already use a Avelune server" onPress={() => setStep('restore')} />
             <Btn kind="ghost" title="My partner shared their cycle" onPress={() => setStep('partner')} />
             <Muted style={{ textAlign: 'center', marginTop: 16 }}>No account needed. Your data stays on this device unless you connect your own encrypted server.</Muted>
           </FadeIn>
@@ -116,15 +119,14 @@ export function Onboarding() {
 
         {step === 'partner' && <FadeIn key="partner"><JoinPartner onCancel={() => setStep('welcome')} /></FadeIn>}
 
-        <Muted style={{ textAlign: 'center', marginTop: 20 }}>Cyclo gives estimates for personal awareness. It is not a medical device and must not be used for contraception.</Muted>
+        <Muted style={{ textAlign: 'center', marginTop: 20 }}>Avelune gives estimates for personal awareness. It is not a medical device and must not be used for contraception.</Muted>
       </ScrollView>
     </View>
   );
 }
 
 const ob = StyleSheet.create({
-  logo: { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...shadow, shadowOpacity: 0.25 },
-  brand: { fontSize: 36, fontWeight: '800', color: colors.text, marginTop: 14 },
-  tag: { fontSize: 17, color: colors.muted, textAlign: 'center', marginTop: 6 },
-  q: { fontSize: 22, fontWeight: '700', color: colors.text, marginBottom: 10 },
+  tag: { fontSize: 22, fontWeight: '700', color: colors.heading, textAlign: 'center', marginTop: 18 },
+  sub: { fontSize: 16, color: colors.muted, textAlign: 'center', marginTop: 8, lineHeight: 23, maxWidth: 340 },
+  q: { fontSize: 22, fontWeight: '700', color: colors.heading, marginBottom: 10 },
 });

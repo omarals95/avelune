@@ -61,7 +61,8 @@ export interface PlannedReminder {
   body: string;
 }
 
-export const DISCREET = { title: 'Cyclo', body: 'You have a reminder.' };
+export const APP_NAME = 'Avelune';
+export const DISCREET = { title: APP_NAME, body: 'You have a reminder.' };
 
 const MAX_PLANNED = 40; // iOS caps pending local notifications at 64; leave room for the daily ones.
 
@@ -77,7 +78,7 @@ export function planReminders(p: Prediction, settings: Settings, prefs: Reminder
   const luteal = Math.min(16, Math.max(10, settings.lutealLength));
   const add = (kind: ReminderKind, pref: TimeOfDay, date: DateStr, body: string) => {
     if (!pref.on) return;
-    out.push({ kind, date, at: at(date, pref.hour, pref.minute), ...(prefs.discreet ? DISCREET : { title: 'Cyclo', body }) });
+    out.push({ kind, date, at: at(date, pref.hour, pref.minute), ...(prefs.discreet ? DISCREET : { title: APP_NAME, body }) });
   };
   for (let i = 0; i < cycles; i++) {
     const start = addDays(p.nextPeriodStart, i * p.stats.avgCycle);
@@ -98,7 +99,7 @@ export interface DailyReminder { kind: string; hour: number; minute: number; tit
 export function dailyReminders(prefs: ReminderPrefs): DailyReminder[] {
   const out: DailyReminder[] = [];
   const add = (kind: string, p: TimeOfDay, body: string, hour = p.hour) => {
-    if (p.on) out.push({ kind, hour, minute: p.minute, ...(prefs.discreet ? DISCREET : { title: 'Cyclo', body }) });
+    if (p.on) out.push({ kind, hour, minute: p.minute, ...(prefs.discreet ? DISCREET : { title: APP_NAME, body }) });
   };
   add('pill', prefs.pill, 'Time for your pill.');
   add('temperature', prefs.temperature, 'Take your temperature before getting up.');

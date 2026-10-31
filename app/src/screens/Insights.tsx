@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDays, derivePeriods, diffDays, predict, today as todayFn, type DateStr, type DayLog } from '@cyclo/core';
 import { FadeIn, PressScale, useLoop } from '../anim';
@@ -31,17 +32,17 @@ export function Insights() {
     return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
   };
   const tiles: { k: ChartKind; title: string; icon: IconName; tint: string; ink: string }[] = [
-    { k: 'bbt', title: 'BBT and ovulation', icon: 'thermometer', tint: '#FFF6E5', ink: '#F5A524' },
-    { k: 'weight', title: 'Weight', icon: 'scale-bathroom', tint: '#E1F5F6', ink: '#17A7B5' },
-    { k: 'activity', title: 'Activity', icon: 'shoe-sneaker', tint: '#FFF6E5', ink: '#F5A524' },
-    { k: 'water', title: 'Water', icon: 'cup-water', tint: '#E1F5F6', ink: '#17A7B5' },
-    { k: 'sleep', title: 'Sleep', icon: 'sleep', tint: '#ECE9FA', ink: '#6A5ACD' },
+    { k: 'bbt', title: 'BBT and ovulation', icon: 'thermometer', tint: colors.ovulationSoft, ink: colors.ovulation },
+    { k: 'weight', title: 'Weight', icon: 'scale-bathroom', tint: colors.primarySoft, ink: colors.period },
+    { k: 'activity', title: 'Activity', icon: 'shoe-sneaker', tint: colors.fertileSoft, ink: colors.fertile },
+    { k: 'water', title: 'Water', icon: 'cup-water', tint: '#E3EAF3', ink: '#3D5F8A' },
+    { k: 'sleep', title: 'Sleep', icon: 'sleep', tint: colors.pregnancySoft, ink: colors.pregnancy },
   ];
   return (
     <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 40, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 }}>
         <Avatar onPress={() => nav.openSettings()} />
-        <Text style={{ fontSize: 28, fontWeight: '800', marginLeft: 14, color: colors.text }}>Insights</Text>
+        <Text accessibilityRole="header" style={{ fontSize: 28, fontWeight: '700', marginLeft: 14, color: colors.heading }}>Insights</Text>
       </View>
 
       <FadeIn style={{ paddingHorizontal: 20 }}>
@@ -51,7 +52,7 @@ export function Insights() {
         </View>
         <View style={[is.statRow, { marginTop: 0 }]}>
           <Stat label="Regularity" value={REG[p.stats.regularity]} color={colors.today} small />
-          <Stat label="Cycles logged" value={`${derivePeriods(logs).length}`} color="#F5A524" />
+          <Stat label="Cycles logged" value={`${derivePeriods(logs).length}`} color={colors.ovulation} />
         </View>
       </FadeIn>
 
@@ -74,7 +75,7 @@ export function Insights() {
             {top.map(([id, c]) => (
               <View key={id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
                 <Text style={{ flex: 1, fontSize: 16, color: colors.text }}>{labelOf(id)}</Text>
-                <View style={{ height: 10, borderRadius: 5, backgroundColor: k === 'moods' ? '#F0952A' : '#B24C9C', width: Math.max(14, (c / top[0][1]) * 120), marginRight: 10 }} />
+                <View style={{ height: 10, borderRadius: 5, backgroundColor: k === 'moods' ? '#7E5418' : '#7A4A86', width: Math.max(14, (c / top[0][1]) * 120), marginRight: 10 }} />
                 <Text style={{ width: 34, color: colors.muted, textAlign: 'right' }}>{c}×</Text>
               </View>
             ))}
@@ -194,31 +195,31 @@ export function ChartScreen({ kind, onClose }: { kind: ChartKind; onClose: () =>
     const pts = series((l) => (l.bbt == null ? undefined : cToDisplay(l.bbt, unit)));
     const ov = detectOvulation(pts.map((x) => x.y));
     const markers = [
-      ...(ov != null ? [{ i: ov, label: 'Ovul.', color: colors.fertile }] : []),
+      ...(ov != null ? [{ i: ov, label: 'Ovul.', color: colors.ovulation }] : []),
       ...days.map((d, i) => ((by.get(d)?.flow ?? 0) >= 2 ? { i, label: '', color: colors.period } : null)).filter(Boolean) as { i: number; label: string; color: string }[],
     ];
     const [lo, hi] = unit === 'C' ? [35, 38.5] : [95, 101.3];
     headline = ov != null ? `Temperature shift detected · ovulation ≈ ${fmtShort(days[ov])}` : null;
-    chart = <Chart kind="line" points={pts} yMin={lo} yMax={hi} ticks={7} digits={unit === 'C' ? 2 : 1} xLabels={xLabels} markers={markers} color={colors.fertile} empty={!pts.some((x) => x.y != null)} height={420} />;
+    chart = <Chart kind="line" points={pts} yMin={lo} yMax={hi} ticks={7} digits={unit === 'C' ? 2 : 1} xLabels={xLabels} markers={markers} color={colors.ovulation} empty={!pts.some((x) => x.y != null)} height={420} />;
   } else if (kind === 'weight') {
     const pts = series((l) => (l.weight == null ? undefined : kgToDisplay(l.weight, wUnit)));
     const vals = pts.map((x) => x.y).filter((v): v is number => v != null);
     const lo = vals.length ? Math.floor(Math.min(...vals) - 5) : wUnit === 'kg' ? 25 : 55;
     const hi = vals.length ? Math.ceil(Math.max(...vals) + 5) : wUnit === 'kg' ? 95 : 210;
     if (vals.length > 1) { const d = vals[vals.length - 1] - vals[0]; headline = `${d >= 0 ? '+' : ''}${d.toFixed(1)} ${wUnit} during the cycle`; }
-    chart = <Chart kind="line" points={pts} yMin={lo} yMax={hi} ticks={7} digits={0} xLabels={xLabels} color="#2F79C9" empty={!vals.length} />;
+    chart = <Chart kind="line" points={pts} yMin={lo} yMax={hi} ticks={7} digits={0} xLabels={xLabels} color={colors.period} empty={!vals.length} />;
   } else if (kind === 'water') {
     const pts = series((l) => (l.water ? l.water / 1000 : undefined));
-    chart = <Chart kind="bar" points={pts} yMin={0} yMax={3.5} ticks={7} digits={1} target={(settings.waterTarget ?? 2250) / 1000} xLabels={xLabels} color="#2F95D6" empty={!pts.some((x) => x.y != null)} />;
+    chart = <Chart kind="bar" points={pts} yMin={0} yMax={3.5} ticks={7} digits={1} target={(settings.waterTarget ?? 2250) / 1000} xLabels={xLabels} color="#3D5F8A" empty={!pts.some((x) => x.y != null)} />;
     headline = `Target ${((settings.waterTarget ?? 2250) / 1000).toFixed(2)} L a day`;
   } else if (kind === 'sleep') {
     const pts = series((l) => l.sleep);
-    chart = <Chart kind="bar" points={pts} yMin={0} yMax={12} ticks={6} target={8} xLabels={xLabels} color="#6A5ACD" empty={!pts.some((x) => x.y != null)} />;
+    chart = <Chart kind="bar" points={pts} yMin={0} yMax={12} ticks={6} target={8} xLabels={xLabels} color={colors.pregnancy} empty={!pts.some((x) => x.y != null)} />;
   } else {
     const pts = series((l) => l.distance);
     const total = pts.reduce((a, b) => a + (b.y ?? 0), 0);
     headline = `${total.toFixed(1)} km during the cycle`;
-    chart = <Chart kind="bar" points={pts} yMin={0} yMax={Math.max(10, Math.ceil(Math.max(0, ...pts.map((x) => x.y ?? 0)) / 2) * 2 + 2)} ticks={5} target={5} xLabels={xLabels} color="#F5A524" empty={!total} />;
+    chart = <Chart kind="bar" points={pts} yMin={0} yMax={Math.max(10, Math.ceil(Math.max(0, ...pts.map((x) => x.y ?? 0)) / 2) * 2 + 2)} ticks={5} target={5} xLabels={xLabels} color={colors.fertile} empty={!total} />;
   }
 
   return (
@@ -242,15 +243,15 @@ export function ChartScreen({ kind, onClose }: { kind: ChartKind; onClose: () =>
 }
 
 const is = StyleSheet.create({
-  section: { fontSize: 22, fontWeight: '700', color: colors.text, marginHorizontal: 20, marginTop: 22, marginBottom: 12 },
+  section: { fontSize: 22, fontWeight: '700', color: colors.heading, marginHorizontal: 20, marginTop: 24, marginBottom: 12 },
   statRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   stat: { flex: 1, backgroundColor: '#fff', borderRadius: 20, padding: 16, ...shadow },
   statDot: { width: 10, height: 10, borderRadius: 5, marginBottom: 8 },
-  statL: { color: colors.muted, fontSize: 14 },
-  statV: { fontSize: 30, fontWeight: '800', color: colors.text, marginTop: 2 },
-  wide: { backgroundColor: '#FAFAFB', marginHorizontal: 20, borderRadius: 4, padding: 18, alignItems: 'center', marginBottom: 6 },
+  statL: { color: colors.muted, fontSize: 14, fontWeight: '600' },
+  statV: { fontSize: 30, fontWeight: '800', color: colors.heading, marginTop: 2 },
+  wide: { backgroundColor: colors.card, marginHorizontal: 20, borderRadius: 20, padding: 18, alignItems: 'center', marginBottom: 6, ...shadow },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: 17 },
-  tile: { width: '47%', margin: '1.5%', backgroundColor: '#FAFAFB', borderRadius: 4, padding: 16, alignItems: 'center' },
+  tile: { width: '47%', margin: '1.5%', backgroundColor: colors.card, borderRadius: 20, padding: 16, alignItems: 'center', ...shadow },
   tileT: { fontSize: 19, color: colors.text, marginBottom: 12, textAlign: 'center' },
   tileArt: { width: 110, height: 90, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   card: { backgroundColor: '#fff', borderRadius: 20, padding: 18, marginHorizontal: 20, marginTop: 16, ...shadow },
