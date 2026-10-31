@@ -4,15 +4,15 @@ import { Text } from '../text';
 import { addDays, derivePeriods, exportCSV, lmpFromDueDate, predict, pregnancyStatus, today as todayFn, type ReminderPrefs, type TimeOfDay } from '@cyclo/core';
 import { FadeIn, PressScale } from '../anim';
 import { fmtDay } from '../components';
-import { Icon } from '../icons';
-import type { SettingsPage } from '../nav';
+import { Icon, type IconName } from '../icons';
+import { resume, type SettingsPage } from '../nav';
 import { ensurePermission, remindersSupported } from '../reminders';
 import { ServerForm } from '../ServerForm';
 import { Connections } from './Connections';
 import { ImportCSV } from './ImportCSV';
 import { labelOf } from '../catalog';
 import { selectLogs, selectSettings, useStore } from '../store';
-import { colors } from '../theme';
+import { colors, type ThemePref } from '../theme';
 import { Btn, Card, Field, Muted, Page, Row, Section, Stepper, TopBar } from '../ui';
 
 async function shareText(filename: string, text: string, mime: string) {
@@ -38,12 +38,13 @@ export function Settings({ page: initial, onClose }: { page: SettingsPage; onClo
   const [page, setPage] = useState<SettingsPage>(initial);
   const back = () => (page === 'main' || initial !== 'main' ? onClose() : setPage('main'));
   const titles: Record<SettingsPage, string> = {
-    main: 'Settings', health: 'Health connections', import: 'Import data', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy mode', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units',
+    main: 'Settings', appearance: 'Appearance', health: 'Health connections', import: 'Import data', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy mode', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units',
   };
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <TopBar title={titles[page]} onBack={back} />
       {page === 'main' && <Main go={setPage} />}
+      {page === 'appearance' && <Appearance />}
       {page === 'cycle' && <CycleSettings />}
       {page === 'reminders' && <Reminders />}
       {page === 'pregnancy' && <Pregnancy />}
@@ -66,6 +67,7 @@ function Main({ go }: { go: (p: SettingsPage) => void }) {
         <Field label="Your name (shown to your partner)" value={st.name} onChangeText={(name) => st.setPrefs({ name })} autoCapitalize="words" placeholder="Optional" />
       </Card>
       <Card>
+        <Row icon="palette" title="Appearance" subtitle={({ system: 'Match phone', light: 'Light', dark: 'Dark' } as const)[st.theme ?? 'system']} onPress={() => go('appearance')} />
         <Row icon="refresh" title="Cycle and ovulation" onPress={() => go('cycle')} />
         <Row icon="bell-outline" title="Reminders" onPress={() => go('reminders')} />
         <Row icon="human-pregnant" title="Pregnancy mode" subtitle={settings.pregnancyLmp ? 'On' : 'Off'} onPress={() => go('pregnancy')} />
@@ -78,6 +80,37 @@ function Main({ go }: { go: (p: SettingsPage) => void }) {
         <Row icon="database-export-outline" title="Your data" subtitle="Export, doctor summary, delete" onPress={() => go('data')} />
       </Card>
       <Muted style={{ textAlign: 'center' }}>Avelune is an independent, private tracker. Predictions are estimates and not a method of contraception.</Muted>
+    </Page>
+  );
+}
+
+function Appearance() {
+  const st = useStore();
+  const cur = st.theme ?? 'system';
+  const opts: [ThemePref, string, string, IconName][] = [
+    ['system', 'Match phone', 'Follows your phone’s light or dark setting', 'theme-system'],
+    ['light', 'Light', 'Warm ivory with editorial serif headings', 'theme-light'],
+    ['dark', 'Dark', 'Deep plum, easy on the eyes at night', 'theme-dark'],
+  ];
+  return (
+    <Page>
+      <Card>
+        {opts.map(([k, t, sub, icon]) => (
+          <PressScale key={k} accessibilityRole="radio" accessibilityState={{ checked: cur === k }} accessibilityLabel={t}
+            onPress={() => { if (k !== cur) { resume.settings = 'appearance'; st.setPrefs({ theme: k }); } }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, minHeight: 64 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.tile, alignItems: 'center', justifyContent: 'center', marginRight: 14 }}><Icon name={icon} size={22} color={colors.heading} /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 17, color: colors.heading }}>{t}</Text>
+                <Text style={{ fontSize: 14, color: colors.muted, marginTop: 2 }}>{sub}</Text>
+              </View>
+              <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: cur === k ? colors.primary : colors.faint, alignItems: 'center', justifyContent: 'center' }}>
+                {cur === k ? <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary }} /> : null}
+              </View>
+            </View>
+          </PressScale>
+        ))}
+      </Card>
     </Page>
   );
 }
@@ -154,8 +187,8 @@ function Reminders() {
   return (
     <Page>
       {!remindersSupported && (
-        <View style={{ flexDirection: 'row', backgroundColor: '#FFF4E0', borderRadius: 18, padding: 16, marginBottom: 12, alignItems: 'center' }}>
-          <Icon name="alert" size={26} color="#F5A524" />
+        <View style={{ flexDirection: 'row', backgroundColor: colors.pregnancySoft, borderRadius: 18, padding: 16, marginBottom: 12, alignItems: 'center' }}>
+          <Icon name="alert" size={26} color={colors.pregnancy} />
           <Text style={{ flex: 1, marginLeft: 12, fontSize: 15, color: colors.text }}>Reminders are delivered by the iPhone and Android apps. Set them up in Avelune on your phone.</Text>
         </View>
       )}

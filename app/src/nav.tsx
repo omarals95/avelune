@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 import type { HealthTab } from './widgets';
 
-export type SettingsPage = 'main' | 'health' | 'import' | 'cycle' | 'reminders' | 'pregnancy' | 'content' | 'sync' | 'data' | 'units';
+export type SettingsPage = 'main' | 'appearance' | 'health' | 'import' | 'cycle' | 'reminders' | 'pregnancy' | 'content' | 'sync' | 'data' | 'units';
 export type ChartKind = 'cycles' | 'bbt' | 'weight' | 'activity' | 'water' | 'sleep';
 
 export interface Nav {
@@ -27,3 +27,6 @@ export function useNav(): Nav {
   if (!n) throw new Error('NavContext missing');
   return n;
 }
+
+/** Screen to reopen after the theme switch remounts the app. */
+export const resume: { settings?: SettingsPage } = {};

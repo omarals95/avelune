@@ -63,7 +63,7 @@ export function Connections({ onClose, embedded }: { onClose: () => void; embedd
                     <Field label="Fitbit app Client ID" value={st.fitbitClientId} onChangeText={st.setFitbitClientId} placeholder="e.g. 23ABCD" autoCorrect={false} />
                     <Muted style={{ color: colors.text }}>Create a free “Client” app at dev.fitbit.com and set its redirect URL to:</Muted>
                     <Text selectable style={{ fontSize: 13, color: colors.heading, marginVertical: 6 }}>{fitbitRedirectUri()}</Text>
-                    <Btn kind="ghost" icon={copied ? 'check' : 'content-copy'} title={copied ? 'Copied' : 'Copy redirect URL'} onPress={() => { void Clipboard.setStringAsync(fitbitRedirectUri()); setCopied(true); setTimeout(() => setCopied(false), 1500); }} />
+                    <Btn kind="ghost" icon={copied ? 'check' : 'copy'} title={copied ? 'Copied' : 'Copy redirect URL'} onPress={() => { void Clipboard.setStringAsync(fitbitRedirectUri()); setCopied(true); setTimeout(() => setCopied(false), 1500); }} />
                   </View>
                 )}
                 {a && !a.ok && !c ? <Muted style={{ marginTop: 8, color: colors.text }}>{a.reason}</Muted> : null}

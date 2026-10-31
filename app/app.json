@@ -4,7 +4,7 @@
     "slug": "cyclo",
     "version": "0.1.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "app.cyclo.tracker",
       "supportsTablet": true,
@@ -55,7 +55,11 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#FCF8F5"
+          "backgroundColor": "#FCF8F5",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#1C1418"
+          }
         }
       ],
       [
@@ -83,10 +87,6 @@
     "androidStatusBar": {
       "translucent": true,
       "backgroundColor": "#00000000",
-      "barStyle": "dark-content"
-    },
-    "androidNavigationBar": {
-      "backgroundColor": "#FCF8F5",
       "barStyle": "dark-content"
     }
   }

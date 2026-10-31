@@ -11,7 +11,7 @@ import { DEFAULT_WIDGETS, useHealth, withManual, type WidgetId } from './health/
 import { Icon, type IconName } from './icons';
 import { cToDisplay, kgToDisplay, selectLogs, selectSettings, useStore } from './store';
 import { Text } from './text';
-import { colors, shadow } from './theme';
+import { colors, shadow, themed } from './theme';
 import { Btn, Muted, Sheet, TopBar } from './ui';
 
 export type HealthTab = 'overview' | 'activity' | 'sleep' | 'heart' | 'body' | 'water';
@@ -28,7 +28,7 @@ export interface WidgetDef {
   describe: string;
 }
 
-export const WIDGETS: Record<WidgetId, WidgetDef> = {
+export const WIDGETS: Record<WidgetId, WidgetDef> = themed(() => ({
   cycleStats: { id: 'cycleStats', title: 'Cycle statistics', icon: 'chart-donut', size: 'full', describe: 'Period length, cycle variation and cycle length' },
   nextPeriod: { id: 'nextPeriod', title: 'Next period', icon: 'calendar-heart', size: 'half', tint: colors.periodSoft, describe: 'Countdown ring to your next period' },
   steps: { id: 'steps', title: 'Steps', icon: 'shoe-print', size: 'half', opens: 'activity', describe: 'Today’s steps and the last 7 days' },
@@ -36,12 +36,12 @@ export const WIDGETS: Record<WidgetId, WidgetDef> = {
   heart: { id: 'heart', title: 'Heart rate', icon: 'heart-pulse', size: 'half', opens: 'heart', describe: '14-day trend' },
   weight: { id: 'weight', title: 'Weight', icon: 'scale-bathroom', size: 'half', opens: 'body', describe: '30-day trend' },
   temperature: { id: 'temperature', title: 'Temperature & cycle', icon: 'thermometer', size: 'full', opens: 'body', describe: 'BBT or skin temperature with your cycle phases' },
-  water: { id: 'water', title: 'Water', icon: 'cup-water', size: 'half', opens: 'water', tint: '#E3EAF3', describe: 'Today against your target' },
+  water: { id: 'water', title: 'Water', icon: 'cup-water', size: 'half', opens: 'water', tint: colors.waterSoft, describe: 'Today against your target' },
   activity: { id: 'activity', title: 'Activity', icon: 'run', size: 'half', opens: 'activity', tint: colors.fertileSoft, describe: 'Distance and active calories' },
-  mood: { id: 'mood', title: 'Mood this cycle', icon: 'emoticon-outline', size: 'half', tint: '#F8EBD9', describe: 'Your most-logged moods' },
+  mood: { id: 'mood', title: 'Mood this cycle', icon: 'emoticon-outline', size: 'half', tint: colors.pregnancySoft, describe: 'Your most-logged moods' },
   symptoms: { id: 'symptoms', title: 'Top symptoms', icon: 'chart-bar', size: 'half', describe: 'Most-logged symptoms this cycle' },
   oxygen: { id: 'oxygen', title: 'Blood oxygen', icon: 'water-percent', size: 'half', opens: 'heart', describe: 'Latest SpO₂ reading' },
-};
+}));
 
 /** Shared data for every widget, computed once per render of the grid. */
 export function useWidgetData() {
@@ -61,12 +61,13 @@ type WD = ReturnType<typeof useWidgetData>;
 
 function Tile({ def, children, onPress, edit, wide }: { def: WidgetDef; children: React.ReactNode; onPress?: () => void; edit?: React.ReactNode; wide: boolean }) {
   // Half tiles share one fixed height so the grid stays even while values load and animate.
-  const style = [w.tile, { backgroundColor: def.tint ?? colors.card }, wide ? { minHeight: 0 } : { height: edit ? 248 : 192 }];
+  const style = [w.tile, wide ? { minHeight: 0 } : { height: edit ? 248 : 192 }];
   const body = (
     <>
       <View style={w.head}>
+        <View style={[w.disc, { backgroundColor: def.tint ?? colors.tile }]}><Icon name={def.icon} size={18} color={colors.heading} /></View>
         <Text style={w.title} numberOfLines={1} maxFontSizeMultiplier={1.2}>{def.title}</Text>
-        <Icon name={def.icon} size={20} color={colors.heading} />
+        {onPress ? <Icon name="chevron-right" size={16} color={colors.muted} /> : null}
       </View>
       {children}
       {edit}
@@ -112,7 +113,7 @@ function Body({ id, d, width }: { id: WidgetId; d: WD; width: number }) {
       const prog = 1 - Math.max(0, Math.min(1, n / d.p.stats.avgCycle));
       return (
         <View style={{ alignItems: 'center', marginTop: 8 }}>
-          <Ring progress={n < 0 ? 1 : prog} size={Math.min(110, inner)} stroke={10} color={colors.period} track="#fff">
+          <Ring progress={n < 0 ? 1 : prog} size={Math.min(110, inner)} stroke={10} color={colors.period} track={colors.tile}>
             <CountUp value={Math.abs(n)} style={{ fontSize: 30, color: colors.heading }} />
             <Text style={{ fontSize: 12, color: colors.text }}>{n < 0 ? 'days late' : n === 1 ? 'day' : 'days'}</Text>
           </Ring>
@@ -143,7 +144,7 @@ function Body({ id, d, width }: { id: WidgetId; d: WD; width: number }) {
         <View>
           <Text style={w.big}>{fmtSleep(last.value)}</Text>
           {day?.sleepStart != null ? <Text style={w.unit} numberOfLines={1} maxFontSizeMultiplier={1.2}>{clock(day.sleepStart)} – {clock(day.sleepEnd)}</Text> : <Text style={w.unit} numberOfLines={1} maxFontSizeMultiplier={1.2}>last night</Text>}
-          <View style={{ marginTop: 10 }}><MiniBars values={s} width={inner} height={40} color={colors.ovulation} faint="#D8CFE6" max={600} /></View>
+          <View style={{ marginTop: 10 }}><MiniBars values={s} width={inner} height={40} color={colors.ovulation} faint={colors.tile} max={600} /></View>
         </View>
       );
     }
@@ -199,7 +200,7 @@ function Body({ id, d, width }: { id: WidgetId; d: WD; width: number }) {
             <CountUp value={ml / 1000} decimals={2} separator={false} style={w.big} />
             <Text style={w.unit} numberOfLines={1} maxFontSizeMultiplier={1.2}>of {(target / 1000).toFixed(2)} L</Text>
           </View>
-          <Glass progress={ml / target} color="#3D5F8A" track="#fff" />
+          <Glass progress={ml / target} color={colors.water} track={colors.tile} />
         </View>
       );
     }
@@ -212,7 +213,7 @@ function Body({ id, d, width }: { id: WidgetId; d: WD; width: number }) {
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}><CountUp value={km ?? 0} decimals={1} style={w.big} /><Text style={[w.unit, { marginLeft: 4, marginBottom: 6 }]}>km</Text></View>
           {kcal != null ? <Text style={w.unit} numberOfLines={1} maxFontSizeMultiplier={1.2}>{kcal.toLocaleString('en-US')} active kcal</Text> : null}
-          <View style={{ marginTop: 8 }}><MiniBars values={s} width={inner} height={36} color={colors.fertile} faint="#C6DCCB" /></View>
+          <View style={{ marginTop: 8 }}><MiniBars values={s} width={inner} height={36} color={colors.fertile} faint={colors.tile} /></View>
         </View>
       );
     }
@@ -223,7 +224,7 @@ function Body({ id, d, width }: { id: WidgetId; d: WD; width: number }) {
       for (const l of d.logs) if (l.date >= start) for (const v of l[key]) if (v !== 'fine') counts.set(v, (counts.get(v) ?? 0) + 1);
       const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
       if (!top.length) return <Empty text={`No ${key} logged this cycle`} />;
-      const ink = id === 'mood' ? '#7E5418' : '#7A4A86';
+      const ink = id === 'mood' ? colors.pregnancy : colors.ovulation;
       return (
         <View style={{ marginTop: 6 }}>
           {top.map(([k, c]) => (
@@ -266,7 +267,7 @@ export function WidgetGrid({ ids, edit, onOpen, onChange, padding = 20 }: {
                 <View style={w.editBar}>
                   <PressScale accessibilityLabel={`Move ${def.title} earlier`} disabled={i === 0} onPress={() => move(i, -1)} style={[w.editBtn, i === 0 && { opacity: 0.35 }]}><Icon name="arrow-left" size={20} color={colors.heading} /></PressScale>
                   <PressScale accessibilityLabel={`Move ${def.title} later`} disabled={i === ids.length - 1} onPress={() => move(i, 1)} style={[w.editBtn, i === ids.length - 1 && { opacity: 0.35 }]}><Icon name="arrow-right" size={20} color={colors.heading} /></PressScale>
-                  <PressScale accessibilityLabel={`Remove ${def.title}`} onPress={() => onChange?.(ids.filter((x) => x !== id))} style={[w.editBtn, { backgroundColor: colors.period }]}><Icon name="minus" size={20} color="#fff" /></PressScale>
+                  <PressScale accessibilityLabel={`Remove ${def.title}`} onPress={() => onChange?.(ids.filter((x) => x !== id))} style={[w.editBtn, { backgroundColor: colors.period }]}><Icon name="minus" size={20} color={colors.white} /></PressScale>
                 </View>
               ) : null}>
               <Body id={id} d={d} width={width} />
@@ -310,7 +311,7 @@ export function HomeWidgets({ onOpen }: { onOpen: (def: WidgetDef) => void }) {
                 <Text style={{ fontSize: 17, fontWeight: '700', color: colors.heading }}>{WIDGETS[id].title}</Text>
                 <Text style={{ fontSize: 14, color: colors.muted }}>{WIDGETS[id].describe}</Text>
               </View>
-              <PressScale accessibilityLabel={`Add ${WIDGETS[id].title}`} onPress={() => { setIds([...ids, id]); setAdding(false); }} style={w.addBtn}><Icon name="plus" size={22} color="#fff" /></PressScale>
+              <PressScale accessibilityLabel={`Add ${WIDGETS[id].title}`} onPress={() => { setIds([...ids, id]); setAdding(false); }} style={w.addBtn}><Icon name="plus" size={22} color={colors.onPrimary} /></PressScale>
             </Reanimated.View>
           )) : <Muted style={{ margin: 20 }}>All widgets are already on your home page.</Muted>}
         </Reanimated.ScrollView>
@@ -321,20 +322,21 @@ export function HomeWidgets({ onOpen }: { onOpen: (def: WidgetDef) => void }) {
 
 export type { DayLog, HealthDay };
 
-const w = StyleSheet.create({
-  tile: { borderRadius: 24, padding: 16, overflow: 'hidden', ...shadow },
-  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+const w = themed(() => StyleSheet.create({
+  tile: { borderRadius: 24, padding: 16, overflow: 'hidden', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, ...shadow },
+  disc: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
+  head: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   title: { fontSize: 16, fontWeight: '600', color: colors.heading, flex: 1, marginRight: 6 },
   big: { fontSize: 30, color: colors.heading, marginTop: 4 },
   unit: { fontSize: 14, color: colors.text },
-  track: { height: 8, borderRadius: 4, backgroundColor: 'rgba(72,47,73,0.10)', marginTop: 8, overflow: 'hidden' },
+  track: { height: 8, borderRadius: 4, backgroundColor: colors.tile, marginTop: 8, overflow: 'hidden' },
   fill: { height: 8, borderRadius: 4 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 12 },
-  section: { fontSize: 20, fontWeight: '700', color: colors.heading },
-  editToggle: { minHeight: 44, minWidth: 64, paddingHorizontal: 14, borderRadius: 22, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  section: { fontSize: 22, fontWeight: '700', color: colors.heading },
+  editToggle: { minHeight: 44, minWidth: 64, paddingHorizontal: 14, borderRadius: 22, backgroundColor: colors.tile, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   editBar: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 },
-  editBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
+  editBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.tile, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
   addRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 14 },
   addIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   addBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-});
+}));

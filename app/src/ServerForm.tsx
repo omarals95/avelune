@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { MIN_PASSPHRASE } from '@cyclo/core';
 import { useStore } from './store';
 import { Btn, Field, Muted } from './ui';
+import { colors } from './theme';
 
 const ERRORS: Record<string, string> = {
   invalid_credentials: 'Wrong email or password.',
@@ -43,7 +44,7 @@ export function ServerForm({ allowRegister = true }: { allowRegister?: boolean }
       <Field label="Encryption passphrase" value={pass} onChangeText={setPass} secureTextEntry />
       {allowRegister && <Field label="Confirm encryption passphrase (new accounts)" value={pass2} onChangeText={setPass2} secureTextEntry />}
       <Muted style={{ marginBottom: 8 }}>The passphrase never leaves your device and cannot be recovered. If you forget it, your synced data cannot be read by anyone, including you. Use the same passphrase on every device.</Muted>
-      {msg ? <Muted style={{ color: '#B3261E' }}>{msg}</Muted> : null}
+      {msg ? <Muted style={{ color: colors.danger }}>{msg}</Muted> : null}
       <Btn title={busy ? 'Working…' : 'Sign in'} onPress={() => void go('login')} disabled={disabled} />
       {allowRegister && <Btn kind="ghost" title="Create account on this server" onPress={() => void go('register')} disabled={disabled || !pass2} />}
     </>

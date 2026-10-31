@@ -6,7 +6,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { addDays, diffDays, parseDate, type DateStr, type DayKind, type Phase } from '@cyclo/core';
 import { FadeIn, ND, PressScale, useLoop, usePop, useReduceMotion } from './anim';
 import { Icon, type IconName } from './icons';
-import { blobColor, circleFill, colors, phaseGradient, shadow, type Mood } from './theme';
+import { blobColor, circleFill, colors, phaseGradient, scheme, shadow, type Mood, themed } from './theme';
 
 export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 export const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -114,11 +114,13 @@ export function WeekStrip({ today, selected, onSelect, kindOf }: {
                 return (
                   <PressScale key={d} accessibilityRole="button" accessibilityState={{ selected: sel }}
                     accessibilityLabel={`${fmtDay(d)}${d === today ? ', today' : ''}${kind !== 'none' ? `, ${KIND_LABEL[kind]}` : ''}`} onPress={() => onSelect(d)} style={{ flex: 1, alignItems: 'center' }}>
-                    <Text style={[ws.dow, d === today && { color: colors.heading, fontWeight: '700' }]} numberOfLines={1} maxFontSizeMultiplier={1.1}>{d === today ? 'Today' : DOW[i]}</Text>
-                    <View style={[ws.day, !sel && k.box, sel && ws.daySel]}>
-                      <Text style={[ws.dayT, { color: sel ? '#fff' : k.color }, sel && { fontWeight: '700' }]} maxFontSizeMultiplier={1.15}>{+d.slice(8)}</Text>
+                    <View style={[ws.col, sel && ws.colSel]}>
+                      <Text style={[ws.dow, sel && ws.dowSel]} numberOfLines={1} maxFontSizeMultiplier={1.1}>{DOW3[i]}</Text>
+                      <View style={[ws.day, sel && ws.daySel]}>
+                        <Text style={[ws.dayT, sel && ws.dayTSel, d === today && !sel && { fontWeight: '700' }]} maxFontSizeMultiplier={1.15}>{+d.slice(8)}</Text>
+                      </View>
                     </View>
-                    <View style={{ height: 6 }} />
+                    <KindDot kind={kind} today={d === today} />
                   </PressScale>
                 );
               })}
@@ -132,20 +134,34 @@ export function WeekStrip({ today, selected, onSelect, kindOf }: {
 
 /** Day kinds use shape + colour (filled, dashed ring, soft fill) so meaning never relies on colour alone. */
 export const KIND_LABEL: Record<DayKind, string> = { period: 'period', 'predicted-period': 'predicted period', fertile: 'fertile window', ovulation: 'ovulation', none: '' };
-export const KIND_STYLE: Record<DayKind, { box: object; color: string }> = {
-  period: { box: { backgroundColor: colors.period }, color: '#fff' },
+export const KIND_STYLE: Record<DayKind, { box: object; color: string }> = themed(() => ({
+  period: { box: { backgroundColor: colors.period }, color: colors.white },
   'predicted-period': { box: { borderWidth: 2, borderStyle: 'dashed', borderColor: colors.period }, color: colors.period },
   fertile: { box: { backgroundColor: colors.fertileSoft }, color: colors.fertile },
   ovulation: { box: { backgroundColor: colors.ovulationSoft, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.ovulation }, color: colors.ovulation },
   none: { box: {}, color: colors.text },
-};
+}));
 
-const ws = StyleSheet.create({
-  dow: { fontSize: 12, height: 18, lineHeight: 18, color: colors.muted, marginBottom: 6, letterSpacing: 0.3 },
-  day: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
-  daySel: { backgroundColor: colors.today, borderWidth: 3, borderColor: '#fff', ...shadow },
-  dayT: { fontSize: 20 },
-});
+const DOW3 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+/** Small marker under each day: shape + colour (filled dot, ring, or soft dot) so meaning never relies on colour alone. */
+function KindDot({ kind, today }: { kind: DayKind; today: boolean }) {
+  const c = kind === 'period' || kind === 'predicted-period' ? colors.period : kind === 'fertile' ? colors.fertile : kind === 'ovulation' ? colors.ovulation : today ? colors.heading : colors.faint;
+  const ring = kind === 'predicted-period' || kind === 'ovulation';
+  const size = kind === 'none' ? 4 : 7;
+  return <View style={{ height: 12, justifyContent: 'center' }}><View style={{ width: size, height: size, borderRadius: size, backgroundColor: ring ? 'transparent' : c, borderWidth: ring ? 1.5 : 0, borderColor: c, opacity: kind === 'none' && !today ? 0.7 : 1 }} /></View>;
+}
+
+const ws = themed(() => StyleSheet.create({
+  col: { alignItems: 'center', paddingVertical: 6, paddingHorizontal: 2, borderRadius: 18, minWidth: 46 },
+  colSel: scheme === 'dark' ? { backgroundColor: colors.tileSelected } : { backgroundColor: colors.primarySoft },
+  dow: { fontSize: 12, color: colors.muted, marginBottom: 4 },
+  dowSel: { color: colors.heading, fontWeight: '700' },
+  day: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  daySel: scheme === 'dark' ? {} : { backgroundColor: colors.primary },
+  dayT: { fontSize: 19, color: colors.heading },
+  dayTSel: { color: scheme === 'dark' ? colors.heading : colors.onPrimary, fontWeight: '700' },
+}));
 
 /** The big breathing circle. `children` renders extra content (e.g. the pregnancy growth mark). */
 export function StatusCircle({ status, celebrateKey, ring, children }: {
@@ -207,13 +223,13 @@ function ProgressRing({ size, progress }: { size: number; progress: number }) {
   );
 }
 
-const cs = StyleSheet.create({
+const cs = themed(() => StyleSheet.create({
   // No elevation on Android: shadows on semi-transparent views render as a grey polygon there.
   circle: { backgroundColor: 'rgba(255,255,255,0.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center', ...(Platform.OS === 'android' ? {} : shadow) },
   kicker: { fontSize: 19, fontWeight: '600', color: colors.text, marginBottom: 4 },
   big: { fontSize: 44, fontWeight: '700', color: colors.heading, textAlign: 'center' },
   sub: { fontSize: 15, color: colors.text, textAlign: 'center', marginTop: 8, fontWeight: '500' },
-});
+}));
 
 export function QuickAction({ icon, label, onPress, filled, tint = colors.primary }: { icon: IconName; label: string; onPress: () => void; filled?: boolean; tint?: string }) {
   return (
@@ -225,10 +241,10 @@ export function QuickAction({ icon, label, onPress, filled, tint = colors.primar
     </PressScale>
   );
 }
-const qa = StyleSheet.create({
+const qa = themed(() => StyleSheet.create({
   btn: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', ...shadow },
   label: { marginTop: 8, fontSize: 16, color: colors.text, fontWeight: '500', textAlign: 'center' },
-});
+}));
 
 export function StoryCard({ title, tint, ink, icon, onPress, art }: { title: string; tint: string; ink: string; icon?: IconName; art?: React.ReactNode; onPress: () => void }) {
   const floaty = useLoop(2600);
@@ -243,11 +259,11 @@ export function StoryCard({ title, tint, ink, icon, onPress, art }: { title: str
     </PressScale>
   );
 }
-const sc = StyleSheet.create({
+const sc = themed(() => StyleSheet.create({
   wrap: { marginRight: 12, padding: 3, borderRadius: 24, borderWidth: 2, borderColor: colors.accent },
   card: { width: 150, height: 178, borderRadius: 18, padding: 14, overflow: 'hidden' },
   t: { fontSize: 16, fontWeight: '700', color: colors.text, lineHeight: 21 },
-});
+}));
 
 export function useNow() {
   const [now, setNow] = useState(() => Date.now());

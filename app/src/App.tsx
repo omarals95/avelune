@@ -1,15 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, Platform, StyleSheet, View, useColorScheme } from 'react-native';
+import * as NavigationBar from 'expo-navigation-bar';
+import * as SystemUI from 'expo-system-ui';
 import { Text } from './text';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts, VarelaRound_400Regular } from '@expo-google-fonts/varela-round';
+import { PlayfairDisplay_500Medium, PlayfairDisplay_600SemiBold } from '@expo-google-fonts/playfair-display';
 import { NunitoSans_400Regular, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold } from '@expo-google-fonts/nunito-sans';
 import { predict, today as todayFn } from '@cyclo/core';
 import { ND, PressScale } from './anim';
 import { Icon, type IconName } from './icons';
-import { NavContext, type ChartKind, type Nav, type SettingsPage } from './nav';
+import { NavContext, resume, type ChartKind, type Nav, type SettingsPage } from './nav';
 import { useHealth } from './health/store';
 import type { HealthTab } from './widgets';
 import { Health } from './screens/Health';
@@ -17,7 +20,7 @@ import { Connections } from './screens/Connections';
 import { todayISO } from './today';
 import { scheduleReminders } from './reminders';
 import { selectLogs, selectSettings, useStore } from './store';
-import { colors } from './theme';
+import { applyScheme, colors, scheme, themed } from './theme';
 import { Sheet } from './ui';
 import { CalendarView } from './screens/Calendar';
 import { ChartScreen, Insights } from './screens/Insights';
@@ -29,10 +32,10 @@ import { ArticleSheet, WeekSheet } from './screens/Sheets';
 import { Today } from './screens/Today';
 
 const TABS: [Tab, string, IconName, IconName][] = [
-  ['today', 'Today', 'calendar-blank-outline', 'calendar-text'],
-  ['health', 'Health', 'heart-outline', 'heart'],
-  ['insights', 'Insights', 'chart-box-outline', 'chart-box'],
-  ['partner', 'Partner', 'account-multiple-outline', 'account-multiple'],
+  ['today', 'Today', 'home', 'home-fill'],
+  ['health', 'Health', 'chart-bar', 'chart-bar-fill'],
+  ['insights', 'Insights', 'book', 'book-fill'],
+  ['partner', 'Partner', 'users', 'users-fill'],
 ];
 type Tab = 'today' | 'health' | 'insights' | 'partner';
 
@@ -46,14 +49,26 @@ function Root() {
   const [hydrated, setHydrated] = useState(useStore.persist.hasHydrated());
   const onboarded = useStore((s) => s.onboarded);
   const partner = useStore((s) => s.partner);
-  const [fontsLoaded, fontError] = useFonts({ VarelaRound_400Regular, NunitoSans_400Regular, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold });
+  const pref = useStore((s) => s.theme) ?? 'system';
+  const system = useColorScheme();
+  const eff = pref === 'system' ? (system === 'dark' ? 'dark' : 'light') : pref;
+  // Swap the live token objects before any child renders; the keyed view below remounts the tree.
+  applyScheme(eff);
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(colors.bg).catch(() => undefined);
+    if (Platform.OS === 'android') {
+      void NavigationBar.setBackgroundColorAsync(colors.bg).catch(() => undefined);
+      void NavigationBar.setButtonStyleAsync(eff === 'dark' ? 'light' : 'dark').catch(() => undefined);
+    }
+  }, [eff]);
+  const [fontsLoaded, fontError] = useFonts({ PlayfairDisplay_500Medium, PlayfairDisplay_600SemiBold, VarelaRound_400Regular, NunitoSans_400Regular, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold });
   const ready = hydrated && (fontsLoaded || !!fontError);
   useEffect(() => useStore.persist.onFinishHydration(() => setHydrated(true)), []);
   useEffect(() => { if (ready) SplashScreen.hideAsync().catch(() => undefined); }, [ready]);
   if (!ready) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <StatusBar style="dark" />
+    <View key={eff} style={{ flex: 1, backgroundColor: colors.bg }}>
+      <StatusBar style={eff === 'dark' ? 'light' : 'dark'} />
       {partner && !onboarded ? <PartnerRoot /> : !onboarded ? <Onboarding /> : <Main />}
     </View>
   );
@@ -64,7 +79,7 @@ function Main() {
   const [tab, setTab] = useState<Tab>('today');
   const [logDate, setLogDate] = useState<string | null>(null);
   const [calendar, setCalendar] = useState<{ edit: boolean } | null>(null);
-  const [settings, setSettings] = useState<SettingsPage | null>(null);
+  const [settings, setSettings] = useState<SettingsPage | null>(() => { const r = resume.settings ?? null; resume.settings = undefined; return r; });
   const [article, setArticle] = useState<string | null>(null);
   const [week, setWeek] = useState<number | null>(null);
   const [chart, setChart] = useState<ChartKind | null>(null);
@@ -124,29 +139,36 @@ function Main() {
         {tab === 'insights' && <Insights />}
         {tab === 'partner' && <PartnerTab />}
       </Animated.View>
-      {/* Floating pill navigation (Samsung Health-style) + quick-log button. */}
-      <View pointerEvents="box-none" style={[st.navWrap, { bottom: Math.max(insets.bottom, 10) + 6 }]}>
-        <View style={st.tabs} accessibilityRole="tablist">
-          {TABS.map(([k, l, icon, active]) => (
-            <PressScale key={k} accessibilityRole="tab" accessibilityLabel={l} accessibilityState={{ selected: tab === k }} style={st.tab} onPress={() => go(k)}>
-              <View style={[st.tabInner, tab === k && st.tabActive]}>
-                <Icon name={tab === k ? active : icon} size={24} color="#fff" />
-                <Text style={[st.tabT, tab === k && { fontWeight: '700' }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.1}>{l}</Text>
-              </View>
-            </PressScale>
-          ))}
+      {/* Floating tab bar card with the quick-log button inside (reference: Avelune daily screens). */}
+      <View pointerEvents="box-none" style={[st.navWrap, { bottom: Math.max(insets.bottom, 8) + 4 }]}>
+        <View style={st.bar}>
+          <View style={st.tabs} accessibilityRole="tablist">
+            {TABS.map(([k, l, icon, active]) => {
+              const on = tab === k;
+              const tint = on ? colors.navIconActive : colors.navIcon;
+              return (
+                <PressScale key={k} accessibilityRole="tab" accessibilityLabel={l} accessibilityState={{ selected: on }} style={st.tab} onPress={() => go(k)}>
+                  <View style={[st.tabInner, on && scheme === 'light' && st.tabActive]}>
+                    <Icon name={on ? active : icon} size={26} color={tint} />
+                    <Text style={[st.tabT, { color: tint }, on && { fontWeight: '700' }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.1}>{l}</Text>
+                    {on && scheme === 'dark' ? <View style={st.tabUnderline} /> : null}
+                  </View>
+                </PressScale>
+              );
+            })}
+          </View>
+          <PressScale accessibilityRole="button" accessibilityLabel="Log today" onPress={() => setLogDate(todayISO())} style={st.fab}>
+            <Icon name="plus" size={30} color={colors.fabIcon} />
+          </PressScale>
         </View>
-        <PressScale accessibilityRole="button" accessibilityLabel="Log today" onPress={() => setLogDate(todayISO())} style={st.fab}>
-          <Icon name="plus" size={28} color="#fff" />
-        </PressScale>
       </View>
 
       <Sheet visible={!!logDate} onClose={() => setLogDate(null)}>{logDate ? <LogSheet date={logDate} onClose={() => setLogDate(null)} /> : null}</Sheet>
-      <Sheet visible={!!calendar} onClose={() => setCalendar(null)} bg="#fff">
+      <Sheet visible={!!calendar} onClose={() => setCalendar(null)} >
         {calendar ? <CalendarView startEditing={calendar.edit} onClose={() => setCalendar(null)} onDay={(d) => { setCalendar(null); setLogDate(d); }} /> : null}
       </Sheet>
       <Sheet visible={!!settings} onClose={() => setSettings(null)}>{settings ? <Settings page={settings} onClose={() => setSettings(null)} /> : null}</Sheet>
-      <Sheet visible={!!article} onClose={() => setArticle(null)} bg="#fff">{article ? <ArticleSheet id={article} onClose={() => setArticle(null)} /> : null}</Sheet>
+      <Sheet visible={!!article} onClose={() => setArticle(null)} >{article ? <ArticleSheet id={article} onClose={() => setArticle(null)} /> : null}</Sheet>
       <Sheet visible={week != null} onClose={() => setWeek(null)}>{week != null ? <WeekSheet week={week} onClose={() => setWeek(null)} /> : null}</Sheet>
       <Sheet visible={!!chart} onClose={() => setChart(null)}>{chart ? <ChartScreen kind={chart} onClose={() => setChart(null)} /> : null}</Sheet>
       <Sheet visible={connections} onClose={() => setConnections(false)}>{connections ? <Connections onClose={() => setConnections(false)} /> : null}</Sheet>
@@ -154,12 +176,14 @@ function Main() {
   );
 }
 
-const st = StyleSheet.create({
-  navWrap: { position: 'absolute', left: 12, right: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  tabs: { flexDirection: 'row', flex: 1, maxWidth: 520, backgroundColor: 'rgba(72,47,73,0.96)', borderRadius: 999, padding: 6, shadowColor: '#302632', shadowOpacity: 0.25, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 10 },
+const st = themed(() => StyleSheet.create({
+  navWrap: { position: 'absolute', left: 10, right: 10, alignItems: 'center' },
+  bar: { flexDirection: 'row', alignItems: 'center', width: '100%', maxWidth: 560, backgroundColor: colors.navBg, borderRadius: 30, paddingVertical: 8, paddingLeft: 6, paddingRight: 8, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: scheme === 'dark' ? 0.4 : 0.08, shadowRadius: 20, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
+  tabs: { flexDirection: 'row', flex: 1 },
   tab: { flex: 1 },
-  tabInner: { alignItems: 'center', justifyContent: 'center', minHeight: 56, borderRadius: 999, paddingHorizontal: 4 },
-  tabActive: { backgroundColor: 'rgba(255,255,255,0.18)' },
-  tabT: { color: '#fff', fontSize: 12, marginTop: 2 },
-  fab: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.bg, shadowColor: '#302632', shadowOpacity: 0.25, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 10 },
-});
+  tabInner: { alignItems: 'center', justifyContent: 'center', minHeight: 62, borderRadius: 999, marginHorizontal: 2, paddingHorizontal: 2 },
+  tabActive: { backgroundColor: colors.navActive, width: 70, height: 68, alignSelf: 'center' },
+  tabT: { fontSize: 12.5, marginTop: 3 },
+  tabUnderline: { position: 'absolute', bottom: 0, width: 22, height: 3, borderRadius: 2, backgroundColor: colors.navIconActive },
+  fab: { width: 62, height: 62, borderRadius: 31, backgroundColor: colors.fab, alignItems: 'center', justifyContent: 'center', marginLeft: 6, shadowColor: colors.fab, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
+}));

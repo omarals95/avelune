@@ -7,7 +7,7 @@ import { DOW, KIND_LABEL, KIND_STYLE, MONTHS, mondayIndex } from '../components'
 import { Icon } from '../icons';
 import { useNav } from '../nav';
 import { selectLogs, selectSettings, useStore } from '../store';
-import { colors, shadow } from '../theme';
+import { colors, shadow, themed } from '../theme';
 import { Segmented, TopBar } from '../ui';
 
 const fmtA11y = (d: DateStr) => `${+d.slice(8)} ${MONTHS[+d.slice(5, 7) - 1]} ${d.slice(0, 4)}`;
@@ -84,7 +84,7 @@ export function CalendarView({ startEditing, onClose, onDay, kindOf: kindOverrid
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, backgroundColor: colors.card }}>
       <TopBar onClose={onClose} title={title}
         right={!readOnly ? <PressScale accessibilityLabel="Cycle settings" onPress={() => { onClose(); nav?.openSettings('cycle'); }} style={{ padding: 8 }}><Icon name="cog-outline" size={28} color={colors.text} /></PressScale> : null} />
       <View style={{ alignItems: 'center', marginTop: -50, marginBottom: 8 }} pointerEvents="box-none">
@@ -116,7 +116,7 @@ export function CalendarView({ startEditing, onClose, onDay, kindOf: kindOverrid
         <View style={cal.fabWrap} pointerEvents="box-none">
           {editing ? (
             <View style={{ flexDirection: 'row' }}>
-              <PressScale onPress={() => setEditing(false)} style={[cal.fab, { backgroundColor: '#fff', marginRight: 12 }]}><Text style={[cal.fabT, { color: colors.primary }]}>Cancel</Text></PressScale>
+              <PressScale onPress={() => setEditing(false)} style={[cal.fab, { backgroundColor: colors.tile, marginRight: 12 }]}><Text style={[cal.fabT, { color: colors.primary }]}>Cancel</Text></PressScale>
               <PressScale onPress={save} style={cal.fab}><Text style={cal.fabT}>Save</Text></PressScale>
             </View>
           ) : (
@@ -159,7 +159,7 @@ function DayCell({ d, today, kind, editing, checked, onPress, cycleDay }: {
   const pop = useRef(new Animated.Value(1)).current;
   const press = () => { pop.setValue(0.8); Animated.spring(pop, { toValue: 1, useNativeDriver: ND, speed: 30, bounciness: 14 }).start(); onPress(); };
   const k = KIND_STYLE[kind];
-  const txt = isToday && !editing ? '#fff' : editing ? colors.text : k.color;
+  const txt = isToday && !editing ? colors.onPrimary : editing ? colors.text : k.color;
   return (
     <Pressable style={cal.cell} onPress={press} disabled={editing && future} accessibilityRole={editing ? 'checkbox' : 'button'} accessibilityState={editing ? { checked, disabled: future } : undefined}
       accessibilityLabel={`${fmtA11y(d)}${isToday ? ', today' : ''}${kind !== 'none' ? ', ' + KIND_LABEL[kind] : ''}`}>
@@ -201,7 +201,7 @@ function MiniMonth({ y, m, today, kindOf }: { y: number; m: number; today: DateS
   );
 }
 
-const cal = StyleSheet.create({
+const cal = themed(() => StyleSheet.create({
   legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', paddingVertical: 8 },
   dowRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 8, paddingHorizontal: 6 },
   dow: { flex: 1, textAlign: 'center', color: colors.muted, fontSize: 15 },
@@ -214,5 +214,5 @@ const cal = StyleSheet.create({
   check: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.faint, marginTop: 2, alignItems: 'center', justifyContent: 'center' },
   fabWrap: { position: 'absolute', bottom: 28, left: 0, right: 0, alignItems: 'center' },
   fab: { backgroundColor: colors.primary, borderRadius: 999, paddingVertical: 16, paddingHorizontal: 30, ...shadow, shadowOpacity: 0.2 },
-  fabT: { color: '#fff', fontSize: 18, fontWeight: '700' },
-});
+  fabT: { color: colors.onPrimary, fontSize: 18, fontWeight: '700' },
+}));

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Image, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDays, derivePeriods, diffDays, predict, today as todayFn, type DateStr, type DayLog } from '@cyclo/core';
@@ -11,117 +11,168 @@ import { ARTICLES, DISCLAIMER } from '../content';
 import { Icon, type IconName } from '../icons';
 import { useNav, type ChartKind } from '../nav';
 import { cToDisplay, kgToDisplay, selectLogs, selectSettings, useStore } from '../store';
-import { colors, shadow } from '../theme';
-import { Btn, Muted, TopBar } from '../ui';
-import { Avatar } from './Today';
+import { colors, flowers, scheme, shadow, themed, type Bloom } from '../theme';
+import { Btn, Muted, PillTabs, TopBar } from '../ui';
+import { TabHeader } from './Today';
 
 const REG = { unknown: 'Log 3+ cycles', regular: 'Regular', 'somewhat-irregular': 'Somewhat irregular', irregular: 'Irregular' } as const;
+
+type InsTab = 'cycle' | 'trends' | 'patterns';
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** Decorative bloom tucked into the top-right corner of a tab screen. */
+export function CornerBloom({ bloom = 'menstrual', top = 0 }: { bloom?: Bloom; top?: number }) {
+  const v = useLoop(6000);
+  return (
+    <Animated.View pointerEvents="none" style={{ position: 'absolute', right: -112, top: top - 138, width: 260, height: 260, opacity: scheme === 'dark' ? 0.9 : 0.95,
+      transform: [{ rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['-4deg', '4deg'] }) }] }}>
+      <Image source={flowers[bloom]} style={{ width: 260, height: 260 }} resizeMode="contain" accessibilityIgnoresInvertColors />
+    </Animated.View>
+  );
+}
 
 export function Insights() {
   const nav = useNav();
   const insets = useSafeAreaInsets();
   const records = useStore((s) => s.records);
   const hideSex = useStore((s) => s.hideSex);
+  const unit = useStore((s) => s.unit);
+  const [tab, setTab] = useState<InsTab>('cycle');
   const logs = useMemo(() => selectLogs(records), [records]);
   const settings = selectSettings(records);
-  const p = predict(logs, settings, todayFn());
-  const lengths = p.stats.cycleLengths.slice(-11);
+  const today = todayFn();
+  const p = predict(logs, settings, today);
+  const periods = derivePeriods(logs);
+  const recent = periods.slice(0, -1).map((x, i) => ({ start: x.start, len: diffDays(x.start, periods[i + 1].start) })).slice(-6);
   const count = (key: 'symptoms' | 'moods') => {
     const m = new Map<string, number>();
     for (const l of logs) for (const v of l[key]) if (v !== 'fine') m.set(v, (m.get(v) ?? 0) + 1);
-    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
   };
-  const tiles: { k: ChartKind; title: string; icon: IconName; tint: string; ink: string }[] = [
-    { k: 'bbt', title: 'BBT and ovulation', icon: 'thermometer', tint: colors.ovulationSoft, ink: colors.ovulation },
-    { k: 'weight', title: 'Weight', icon: 'scale-bathroom', tint: colors.primarySoft, ink: colors.period },
-    { k: 'activity', title: 'Activity', icon: 'shoe-sneaker', tint: colors.fertileSoft, ink: colors.fertile },
-    { k: 'water', title: 'Water', icon: 'cup-water', tint: '#E3EAF3', ink: '#3D5F8A' },
-    { k: 'sleep', title: 'Sleep', icon: 'sleep', tint: colors.pregnancySoft, ink: colors.pregnancy },
+  // Basal temperature across the current cycle, by cycle day.
+  const cycleStart = p.lastPeriodStart;
+  const cycleLen = cycleStart ? Math.max(p.stats.avgCycle, diffDays(cycleStart, today) + 1) : 0;
+  const bbtPts: Pt[] = cycleStart ? Array.from({ length: cycleLen }, (_, i) => {
+    const l = logs.find((x) => x.date === addDays(cycleStart, i));
+    return { i, y: l?.bbt != null ? cToDisplay(l.bbt, unit) : null };
+  }) : [];
+  const bbtNums = bbtPts.map((x) => x.y).filter((v): v is number => v != null);
+  const ovIdx = cycleStart && p.ovulationDate ? diffDays(cycleStart, p.ovulationDate) : -1;
+  const tiles: { k: ChartKind; title: string; icon: IconName }[] = [
+    { k: 'bbt', title: 'BBT and ovulation', icon: 'thermometer' },
+    { k: 'weight', title: 'Weight', icon: 'scale-bathroom' },
+    { k: 'activity', title: 'Activity', icon: 'shoe-sneaker' },
+    { k: 'water', title: 'Water', icon: 'water-outline' },
+    { k: 'sleep', title: 'Sleep', icon: 'sleep' },
+    { k: 'cycles', title: 'Cycle history', icon: 'chart-bar' },
   ];
   return (
-    <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 150, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 }}>
-        <Avatar onPress={() => nav.openSettings()} />
-        <Text accessibilityRole="header" style={{ fontSize: 28, fontWeight: '700', marginLeft: 14, color: colors.heading }}>Insights</Text>
-      </View>
-
-      <FadeIn style={{ paddingHorizontal: 20 }}>
-        <View style={is.statRow}>
-          <Stat label="Average cycle" value={`${p.stats.avgCycle}`} unit="days" color={colors.fertile} />
-          <Stat label="Average period" value={`${p.stats.avgPeriod}`} unit="days" color={colors.period} />
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 140, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
+        <CornerBloom top={insets.top} />
+        <TabHeader title="Insights" onAvatar={() => nav.openSettings()} />
+        <View style={{ marginTop: 6, marginBottom: 6, paddingRight: 64 }}>
+          <PillTabs fill options={[['cycle', 'Cycle'], ['trends', 'Trends'], ['patterns', 'Patterns']]} value={tab} onChange={setTab} />
         </View>
-        <View style={[is.statRow, { marginTop: 0 }]}>
-          <Stat label="Regularity" value={REG[p.stats.regularity]} color={colors.today} small />
-          <Stat label="Cycles logged" value={`${derivePeriods(logs).length}`} color={colors.ovulation} />
-        </View>
-      </FadeIn>
 
-      <Text style={is.section}>Graphs & reports</Text>
-      <FadeIn delay={80}>
-        <PressScale accessibilityLabel="Cycle duration" onPress={() => nav.openChart('cycles')} style={is.wide} scaleTo={0.98}>
-          <Text style={is.tileT}>Cycle duration</Text>
-          <MiniBars values={lengths.length ? [...lengths, p.cycleDay ?? 0] : [26, 22, 23, 28, 21, 26, 28, 31, 28, 23, 26]} highlight={lengths.length ? lengths.length : 7} />
-        </PressScale>
-        <View style={is.grid}>
-          {tiles.map((t, i) => <Tile key={t.k} {...t} delay={i * 60} onPress={() => nav.openChart(t.k)} />)}
-        </View>
-      </FadeIn>
+        {tab === 'cycle' && (
+          <FadeIn key="cycle" style={{ paddingHorizontal: 16 }}>
+            <Text style={is.section}>Your cycle</Text>
+            <View style={is.statRow}>
+              <Stat label="Average cycle" value={`${p.stats.avgCycle}`} unit="days" />
+              <Stat label="Average period" value={`${p.stats.avgPeriod}`} unit="days" />
+            </View>
 
-      {(['symptoms', 'moods'] as const).map((k) => {
-        const top = count(k);
-        return top.length ? (
-          <FadeIn key={k} delay={160} style={is.card}>
-            <Text style={is.cardT}>Most logged {k}</Text>
-            {top.map(([id, c]) => (
-              <View key={id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
-                <Text style={{ flex: 1, fontSize: 16, color: colors.text }}>{labelOf(id)}</Text>
-                <View style={{ height: 10, borderRadius: 5, backgroundColor: k === 'moods' ? '#7E5418' : '#7A4A86', width: Math.max(14, (c / top[0][1]) * 120), marginRight: 10 }} />
-                <Text style={{ width: 34, color: colors.muted, textAlign: 'right' }}>{c}×</Text>
-              </View>
-            ))}
+            <PressScale accessibilityRole="button" accessibilityLabel="Recent cycle length" onPress={() => nav.openChart('cycles')} scaleTo={0.98} style={is.card}>
+              <View style={is.cardHead}><Text style={is.cardT}>Recent cycle length</Text><Icon name="chevron-right" size={18} color={colors.muted} /></View>
+              {recent.length ? (
+                <>
+                  <Text style={is.axis}>Days</Text>
+                  <Chart kind="bar" valueLabels points={recent.map((r, i) => ({ i, y: r.len }))} xLabels={recent.map((r) => MON[+r.start.slice(5, 7) - 1])}
+                    yMin={0} yMax={40} ticks={4} height={220} color={colors.chart} />
+                </>
+              ) : <Muted style={{ marginTop: 6 }}>Log at least two periods to see your cycle lengths.</Muted>}
+            </PressScale>
+
+            <PressScale accessibilityRole="button" accessibilityLabel="Basal temperature" onPress={() => nav.openChart('bbt')} scaleTo={0.98} style={is.card}>
+              <View style={is.cardHead}><Text style={is.cardT}>Basal temperature</Text><Text style={is.axis}>°{unit}</Text><Icon name="chevron-right" size={18} color={colors.muted} /></View>
+              {bbtNums.length ? (
+                <Chart kind="line" points={bbtPts} xLabels={bbtPts.map((x) => `${x.i + 1}`)} digits={1} ticks={3} height={200} color={colors.chartHi}
+                  yMin={Math.floor((Math.min(...bbtNums) - 0.2) * 2) / 2} yMax={Math.ceil((Math.max(...bbtNums) + 0.2) * 2) / 2}
+                  markers={ovIdx >= 0 && ovIdx < cycleLen ? [{ i: ovIdx, label: 'Ov', color: colors.ovulation }] : []} />
+              ) : <Muted style={{ marginTop: 6 }}>Log your basal temperature each morning to spot the rise after ovulation.</Muted>}
+              {bbtNums.length ? <Text style={[is.axis, { textAlign: 'center', marginTop: 2 }]}>Cycle day</Text> : null}
+            </PressScale>
+
+            <View style={is.statRow}>
+              <Stat label="Regularity" value={REG[p.stats.regularity]} small />
+              <Stat label="Cycles logged" value={`${periods.length}`} />
+            </View>
           </FadeIn>
-        ) : null;
-      })}
+        )}
 
-      <Text style={is.section}>Learn</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
-        {ARTICLES.filter((a) => !(hideSex && a.sensitive)).map((a) => (
-          <PressScale key={a.id} accessibilityLabel={a.title} onPress={() => nav.openArticle(a.id)} style={[is.article, { backgroundColor: a.tint }]}>
-            <Icon name={a.icon} size={64} color={a.ink} style={{ alignSelf: 'center', marginVertical: 18 }} />
-            <Text style={is.articleT}>{a.title}</Text>
-          </PressScale>
-        ))}
+        {tab === 'trends' && (
+          <FadeIn key="trends" style={is.grid}>
+            {tiles.map((t, i) => <Tile key={t.k} {...t} delay={i * 60} onPress={() => nav.openChart(t.k)} />)}
+          </FadeIn>
+        )}
+
+        {tab === 'patterns' && (
+          <FadeIn key="patterns" style={{ paddingHorizontal: 16 }}>
+            {(['symptoms', 'moods'] as const).map((k) => {
+              const top = count(k);
+              return (
+                <View key={k} style={is.card}>
+                  <Text style={[is.cardT, { marginBottom: 10 }]}>Most logged {k}</Text>
+                  {top.length ? top.map(([id, c]) => (
+                    <View key={id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7 }}>
+                      <Text style={{ flex: 1, fontSize: 16, color: colors.text }}>{labelOf(id)}</Text>
+                      <View style={{ height: 10, borderRadius: 5, backgroundColor: k === 'moods' ? colors.chart : colors.ovulation, width: Math.max(14, (c / top[0][1]) * 120), marginRight: 10 }} />
+                      <Text style={{ width: 34, color: colors.muted, textAlign: 'right' }}>{c}×</Text>
+                    </View>
+                  )) : <Muted>Nothing logged yet.</Muted>}
+                </View>
+              );
+            })}
+            <Text style={is.section}>Learn</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16 }}>
+              {ARTICLES.filter((a) => !(hideSex && a.sensitive)).map((a) => (
+                <PressScale key={a.id} accessibilityLabel={a.title} onPress={() => nav.openArticle(a.id)} style={is.article}>
+                  <View style={[is.articleDisc, { backgroundColor: scheme === 'dark' ? colors.tile : a.tint }]}>
+                    <Icon name={a.icon} size={40} color={scheme === 'dark' ? colors.primary : a.ink} />
+                  </View>
+                  <Text style={is.articleT} numberOfLines={3}>{a.title}</Text>
+                </PressScale>
+              ))}
+            </ScrollView>
+            <Muted style={{ marginTop: 16 }}>{DISCLAIMER}</Muted>
+          </FadeIn>
+        )}
       </ScrollView>
-      <Muted style={{ marginHorizontal: 20, marginTop: 16 }}>{DISCLAIMER}</Muted>
-    </ScrollView>
-  );
-}
-
-function Stat({ label, value, unit, color, small }: { label: string; value: string; unit?: string; color: string; small?: boolean }) {
-  return (
-    <View style={is.stat}>
-      <View style={[is.statDot, { backgroundColor: color }]} />
-      <Text style={is.statL}>{label}</Text>
-      <Text style={[is.statV, small && { fontSize: 18, marginTop: 6 }]}>{value}{unit ? <Text style={{ fontSize: 15, fontWeight: '500', color: colors.muted }}> {unit}</Text> : null}</Text>
     </View>
   );
 }
 
-function Tile({ title, icon, tint, ink, onPress, delay }: { title: string; icon: IconName; tint: string; ink: string; onPress: () => void; delay: number }) {
-  const bob = useLoop(2200, delay * 3);
+function Stat({ label, value, unit, small }: { label: string; value: string; unit?: string; small?: boolean }) {
   return (
-    <PressScale accessibilityLabel={title} onPress={onPress} style={[is.tile]} scaleTo={0.96}>
-      <Text style={is.tileT}>{title}</Text>
-      <View style={[is.tileArt, { backgroundColor: tint }]}>
-        <View style={{ transform: [{ translateY: 0 }] }}>
-          <AnimatedIcon icon={icon} color={ink} v={bob} />
-        </View>
-      </View>
-    </PressScale>
+    <View style={is.stat} accessible accessibilityLabel={`${label}: ${value} ${unit ?? ''}`}>
+      <Text style={is.statL}>{label}</Text>
+      <Text style={[is.statV, small && { fontSize: 20, marginTop: 10 }]} adjustsFontSizeToFit numberOfLines={1}>{value}</Text>
+      {unit ? <Text style={is.statU}>{unit}</Text> : null}
+    </View>
   );
 }
-function AnimatedIcon({ icon, color, v }: { icon: IconName; color: string; v: ReturnType<typeof useLoop> }) {
-  return <Animated.View style={{ transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [3, -3] }) }] }}><Icon name={icon} size={60} color={color} /></Animated.View>;
+
+function Tile({ title, icon, onPress, delay }: { title: string; icon: IconName; onPress: () => void; delay: number }) {
+  const bob = useLoop(2200, delay * 3);
+  return (
+    <PressScale accessibilityLabel={title} onPress={onPress} style={is.tile} scaleTo={0.96}>
+      <View style={is.tileArt}>
+        <Animated.View style={{ transform: [{ translateY: bob.interpolate({ inputRange: [0, 1], outputRange: [3, -3] }) }] }}><Icon name={icon} size={44} weight="light" color={colors.heading} /></Animated.View>
+      </View>
+      <Text style={is.tileT}>{title}</Text>
+    </PressScale>
+  );
 }
 
 /* ---------------------------- chart detail ---------------------------- */
@@ -210,7 +261,7 @@ export function ChartScreen({ kind, onClose }: { kind: ChartKind; onClose: () =>
     chart = <Chart kind="line" points={pts} yMin={lo} yMax={hi} ticks={7} digits={0} xLabels={xLabels} color={colors.period} empty={!vals.length} />;
   } else if (kind === 'water') {
     const pts = series((l) => (l.water ? l.water / 1000 : undefined));
-    chart = <Chart kind="bar" points={pts} yMin={0} yMax={3.5} ticks={7} digits={1} target={(settings.waterTarget ?? 2250) / 1000} xLabels={xLabels} color="#3D5F8A" empty={!pts.some((x) => x.y != null)} />;
+    chart = <Chart kind="bar" points={pts} yMin={0} yMax={3.5} ticks={7} digits={1} target={(settings.waterTarget ?? 2250) / 1000} xLabels={xLabels} color={colors.water} empty={!pts.some((x) => x.y != null)} />;
     headline = `Target ${((settings.waterTarget ?? 2250) / 1000).toFixed(2)} L a day`;
   } else if (kind === 'sleep') {
     const pts = series((l) => l.sleep);
@@ -242,21 +293,23 @@ export function ChartScreen({ kind, onClose }: { kind: ChartKind; onClose: () =>
   );
 }
 
-const is = StyleSheet.create({
-  section: { fontSize: 22, fontWeight: '700', color: colors.heading, marginHorizontal: 20, marginTop: 24, marginBottom: 12 },
+const is = themed(() => StyleSheet.create({
+  section: { fontSize: 22, fontWeight: '700', color: colors.heading, marginTop: 14, marginBottom: 12 },
   statRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  stat: { flex: 1, minHeight: 112, backgroundColor: '#fff', borderRadius: 20, padding: 16, ...shadow },
-  statDot: { width: 10, height: 10, borderRadius: 5, marginBottom: 8 },
-  statL: { color: colors.muted, fontSize: 14, fontWeight: '600' },
-  statV: { fontSize: 30, fontWeight: '800', color: colors.heading, marginTop: 2 },
-  wide: { backgroundColor: colors.card, marginHorizontal: 20, borderRadius: 20, padding: 18, alignItems: 'center', marginBottom: 6, ...shadow },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: 17 },
-  tile: { width: '47%', margin: '1.5%', backgroundColor: colors.card, borderRadius: 20, padding: 16, alignItems: 'center', ...shadow },
-  tileT: { fontSize: 19, color: colors.text, marginBottom: 12, textAlign: 'center' },
-  tileArt: { width: 110, height: 90, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  card: { backgroundColor: '#fff', borderRadius: 20, padding: 18, marginHorizontal: 20, marginTop: 16, ...shadow },
-  cardT: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 8 },
-  article: { width: 170, height: 200, borderRadius: 20, padding: 14, marginRight: 12, justifyContent: 'space-between' },
-  articleT: { fontSize: 16, fontWeight: '700', color: colors.text },
+  stat: { flex: 1, minHeight: 128, backgroundColor: colors.card, borderRadius: 22, padding: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, ...shadow },
+  statL: { color: colors.text, fontSize: 15 },
+  statV: { fontSize: 44, fontWeight: '700', color: colors.heading, marginTop: 2 },
+  statU: { fontSize: 16, color: colors.text, marginTop: -2 },
+  card: { backgroundColor: colors.card, borderRadius: 22, padding: 18, marginBottom: 12, borderWidth: 1, borderColor: colors.border, ...shadow },
+  cardHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  cardT: { flex: 1, fontSize: 19, fontWeight: '600', color: colors.heading },
+  axis: { fontSize: 13, color: colors.muted },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: 13, marginTop: 10 },
+  tile: { width: '47%', margin: '1.5%', backgroundColor: colors.card, borderRadius: 22, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: colors.border, ...shadow },
+  tileT: { fontSize: 16, color: colors.heading, marginTop: 12, textAlign: 'center', fontWeight: '600' },
+  tileArt: { width: 96, height: 84, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.tile },
+  article: { width: 168, minHeight: 190, borderRadius: 22, padding: 14, marginRight: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+  articleDisc: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center', marginBottom: 14, alignSelf: 'center', marginTop: 6 },
+  articleT: { fontSize: 16, fontWeight: '700', color: colors.heading, lineHeight: 21 },
   cyclePick: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, marginBottom: 12 },
-});
+}));

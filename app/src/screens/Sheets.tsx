@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FadeIn, PressScale, useLoop } from '../anim';
 import { ARTICLES, DISCLAIMER, pregnancyWeek } from '../content';
 import { Icon } from '../icons';
-import { colors, phase } from '../theme';
+import { colors, phase, scheme, themed } from '../theme';
 import { GrowthMark } from '../growth';
 import { Muted, TopBar } from '../ui';
 
@@ -13,11 +13,11 @@ export function ArticleSheet({ id, onClose }: { id: string; onClose: () => void 
   const a = ARTICLES.find((x) => x.id === id) ?? ARTICLES[0];
   const bob = useLoop(2400);
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <View style={{ backgroundColor: a.tint }}>
+    <View style={{ flex: 1, backgroundColor: colors.card }}>
+      <View style={{ backgroundColor: scheme === 'dark' ? colors.tile : a.tint }}>
         <TopBar onClose={onClose} />
         <Animated.View style={{ alignItems: 'center', paddingBottom: 30, transform: [{ translateY: bob.interpolate({ inputRange: [0, 1], outputRange: [0, -8] }) }] }}>
-          <Icon name={a.icon} size={110} color={a.ink} />
+          <Icon name={a.icon} size={110} weight="light" color={scheme === 'dark' ? colors.primary : a.ink} />
         </Animated.View>
       </View>
       <ScrollView contentContainerStyle={{ padding: 22, maxWidth: 680, width: '100%', alignSelf: 'center' }}>
@@ -36,7 +36,7 @@ export function WeekSheet({ week: initial, onClose }: { week: number; onClose: (
   const chips = useRef<ScrollView>(null);
   return (
     <View style={{ flex: 1 }}>
-      <LinearGradient colors={['#EBD3BA', phase.pregnancy.soft, '#FCF8F5']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={scheme === 'dark' ? ['#3A2A1E', colors.pregnancySoft, colors.bg] : ['#EBD3BA', phase.pregnancy.soft, colors.bg]} style={StyleSheet.absoluteFill} />
       <TopBar onClose={onClose} />
       <View style={{ alignItems: 'center', justifyContent: 'center', height: 260 }}>
         <GrowthMark key={week} week={week} size={210} />
@@ -66,12 +66,12 @@ export function WeekSheet({ week: initial, onClose }: { week: number; onClose: (
   );
 }
 
-const sh = StyleSheet.create({
+const sh = themed(() => StyleSheet.create({
   title: { fontSize: 30, fontWeight: '700', color: colors.heading, marginBottom: 14 },
   h: { fontSize: 18, fontWeight: '700', color: colors.heading, marginTop: 18, marginBottom: 6 },
   p: { fontSize: 17, lineHeight: 27, color: colors.text, marginBottom: 12 },
-  wk: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 18, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.45)', marginRight: 10 },
+  wk: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 18, borderRadius: 999, backgroundColor: scheme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.45)', marginRight: 10 },
   wkT: { fontSize: 16, color: colors.text },
-  panel: { flex: 1, backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28 },
-  grab: { width: 48, height: 5, borderRadius: 3, backgroundColor: '#D5D2DA', alignSelf: 'center', marginBottom: 14 },
-});
+  panel: { flex: 1, backgroundColor: colors.card, borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+  grab: { width: 48, height: 5, borderRadius: 3, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 14 },
+}));

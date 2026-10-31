@@ -8,7 +8,7 @@ import { DOW, MONTHS, MoodBackground, fmtDay, mondayIndex } from '../components'
 import { Icon } from '../icons';
 import { ServerForm } from '../ServerForm';
 import { useStore } from '../store';
-import { colors } from '../theme';
+import { colors, scheme, themed } from '../theme';
 import { Btn, Card, Muted, Stepper } from '../ui';
 import { JoinPartner } from './Partner';
 import { Animated, Image } from 'react-native';
@@ -18,7 +18,7 @@ function Logo() {
   const v = useLoop(3200);
   return (
     <Animated.View style={{ transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] }) }] }}>
-      <Image source={require('../../assets/logo-full.png')} style={{ width: 240, height: 60 }} resizeMode="contain"
+      <Image source={require('../../assets/logo-full.png')} style={{ width: 240, height: 60, tintColor: scheme === 'dark' ? colors.heading : undefined }} resizeMode="contain"
         accessible accessibilityRole="image" accessibilityLabel="Avelune" />
     </Animated.View>
   );
@@ -125,8 +125,8 @@ export function Onboarding() {
   );
 }
 
-const ob = StyleSheet.create({
+const ob = themed(() => StyleSheet.create({
   tag: { fontSize: 22, fontWeight: '700', color: colors.heading, textAlign: 'center', marginTop: 18 },
   sub: { fontSize: 16, color: colors.muted, textAlign: 'center', marginTop: 8, lineHeight: 23, maxWidth: 340 },
   q: { fontSize: 22, fontWeight: '700', color: colors.heading, marginBottom: 10 },
-});
+}));

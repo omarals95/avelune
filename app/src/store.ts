@@ -1,3 +1,4 @@
+import type { ThemePref } from './theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -30,8 +31,12 @@ interface State {
   /** Local display preferences (not synced). */
   name: string;
   hideSex: boolean;
+  /** Appearance: follow the phone, or force light/dark. */
+  theme: ThemePref;
+  /** Partner's display name, kept only on this device. */
+  partnerName?: string;
   weightUnit: 'kg' | 'lb';
-  setPrefs: (p: Partial<Pick<State, 'name' | 'hideSex' | 'weightUnit' | 'unit'>>) => void;
+  setPrefs: (p: Partial<Pick<State, 'name' | 'hideSex' | 'weightUnit' | 'unit' | 'theme' | 'partnerName'>>) => void;
   /** Import many day logs at once (CSV). Returns how many days changed. */
   importLogs: (logs: DayLog[], overwrite: boolean) => number;
   /** Toggle period days in bulk (calendar "Edit period dates"). */
@@ -94,7 +99,7 @@ export const useStore = create<State>()(
       return {
         records: {}, dirty: {}, onboarded: false, unit: 'C', server: null, syncing: false, syncError: null, reminders: DEFAULT_REMINDERS,
         setReminders: (r) => set((st) => ({ reminders: { ...st.reminders, ...r } })),
-        name: '', hideSex: false, weightUnit: 'kg', share: null, partner: null,
+        name: '', hideSex: false, theme: 'system', weightUnit: 'kg', share: null, partner: null,
         setPrefs: (p) => set(p),
 
         importLogs: (incoming, overwrite) => {
@@ -312,7 +317,7 @@ export const useStore = create<State>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({
         records: s.records, dirty: s.dirty, onboarded: s.onboarded, unit: s.unit, server: s.server, reminders: s.reminders,
-        name: s.name, hideSex: s.hideSex, weightUnit: s.weightUnit, share: s.share, partner: s.partner,
+        name: s.name, hideSex: s.hideSex, theme: s.theme, partnerName: s.partnerName, weightUnit: s.weightUnit, share: s.share, partner: s.partner,
       }),
       // Older installs stored a flatter reminders shape; fill in anything missing.
       merge: (persisted, current) => {
