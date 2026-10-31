@@ -72,25 +72,31 @@ export function CalendarView({ startEditing, onClose, onDay, kindOf: kindOverrid
 
   const ty = +today.slice(0, 4), tm = +today.slice(5, 7) - 1;
   const months = useMemo(() => Array.from({ length: 19 }, (_, i) => { const dt = new Date(ty, tm - 12 + i, 1); return { y: dt.getFullYear(), m: dt.getMonth() }; }), [ty, tm]);
+  const [ready, setReady] = useState(false);
   const scroll = useRef<ScrollView>(null);
   const offsets = useRef<Record<string, number>>({});
   const [target, setTarget] = useState(monthKey(ty, tm));
-  const jump = (k: string) => { const y = offsets.current[k]; if (y != null) scroll.current?.scrollTo({ y, animated: false }); };
+  const jump = (k: string) => { const y = offsets.current[k]; if (y != null) scroll.current?.scrollTo({ y, animated: false }); return y != null; };
+  // Scroll only once every month has been measured: on Android, scrolling during the first layout pass is ignored.
+  const settle = () => {
+    if (!target || Object.keys(offsets.current).length < months.length) return;
+    requestAnimationFrame(() => { if (jump(target)) { setTarget(''); setReady(true); } });
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <TopBar onClose={onClose} title={title}
         right={!readOnly ? <PressScale accessibilityLabel="Cycle settings" onPress={() => { onClose(); nav?.openSettings('cycle'); }} style={{ padding: 8 }}><Icon name="cog-outline" size={28} color={colors.text} /></PressScale> : null} />
       <View style={{ alignItems: 'center', marginTop: -50, marginBottom: 8 }} pointerEvents="box-none">
-        {!title && <Segmented options={[['month', 'Month'], ['year', 'Year']]} value={mode} onChange={(m) => { if (m === 'month') setTarget(monthKey(ty, tm)); setMode(m); }} />}
+        {!title && <Segmented options={[['month', 'Month'], ['year', 'Year']]} value={mode} onChange={(m) => { if (m === 'month') { offsets.current = {}; setReady(false); setTarget(monthKey(ty, tm)); } setMode(m); }} />}
       </View>
       <Legend />
-      <View style={cal.dowRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{DOW.map((d, i) => <Text key={i} style={cal.dow}>{d}</Text>)}</View>
+      <View style={cal.dowRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{DOW.map((d, i) => <Text key={i} style={cal.dow} maxFontSizeMultiplier={1.2}>{d}</Text>)}</View>
 
       {mode === 'month' ? (
-        <ScrollView ref={scroll} contentContainerStyle={{ paddingBottom: 120 }}>
+        <ScrollView ref={scroll} contentContainerStyle={{ paddingBottom: 120 }} onContentSizeChange={settle} style={{ opacity: ready || !target ? 1 : 0 }}>
           {months.map(({ y, m }) => (
-            <View key={monthKey(y, m)} onLayout={(e) => { offsets.current[monthKey(y, m)] = e.nativeEvent.layout.y; if (monthKey(y, m) === target) { jump(target); setTarget(''); } }}>
+            <View key={monthKey(y, m)} onLayout={(e) => { offsets.current[monthKey(y, m)] = e.nativeEvent.layout.y; settle(); }}>
               <Month y={y} m={m} today={today} kindOf={kindOf} editing={editing} draft={draft} showCycleDays={!!settings.showCycleDays}
                 cycleDayOf={(d) => cycleDayOf(d, logs)} onDay={(d) => (editing ? (d <= today && toggle(d)) : onDay?.(d))} />
             </View>
@@ -99,7 +105,7 @@ export function CalendarView({ startEditing, onClose, onDay, kindOf: kindOverrid
       ) : (
         <ScrollView contentContainerStyle={{ padding: 12, flexDirection: 'row', flexWrap: 'wrap', paddingBottom: 60 }}>
           {Array.from({ length: 12 }, (_, m) => (
-            <Pressable key={m} style={{ width: '33.3%', padding: 6 }} accessibilityLabel={`${MONTHS[m]} ${ty}`} onPress={() => { setTarget(monthKey(ty, m)); setMode('month'); }}>
+            <Pressable key={m} style={{ width: '33.3%', padding: 6 }} accessibilityLabel={`${MONTHS[m]} ${ty}`} onPress={() => { offsets.current = {}; setReady(false); setTarget(monthKey(ty, m)); setMode('month'); }}>
               <MiniMonth y={ty} m={m} today={today} kindOf={kindOf} />
             </Pressable>
           ))}
@@ -157,10 +163,10 @@ function DayCell({ d, today, kind, editing, checked, onPress, cycleDay }: {
   return (
     <Pressable style={cal.cell} onPress={press} disabled={editing && future} accessibilityRole={editing ? 'checkbox' : 'button'} accessibilityState={editing ? { checked, disabled: future } : undefined}
       accessibilityLabel={`${fmtA11y(d)}${isToday ? ', today' : ''}${kind !== 'none' ? ', ' + KIND_LABEL[kind] : ''}`}>
-      <Text style={[cal.cd, isToday && !editing && { color: colors.text, fontWeight: '700' }]}>{isToday && !editing ? 'TODAY' : cycleDay ?? ' '}</Text>
+      <Text style={[cal.cd, isToday && !editing && { color: colors.text, fontWeight: '700' }]} numberOfLines={1} maxFontSizeMultiplier={1.1}>{isToday && !editing ? 'Today' : cycleDay ?? ' '}</Text>
       <Animated.View style={[cal.day, { transform: [{ scale: pop }] }, !editing && k.box,
         !editing && isToday && { backgroundColor: colors.today, borderWidth: 0 }]}>
-        <Text style={[cal.dayT, { color: txt }, editing && future && { color: colors.faint }]}>{+d.slice(8)}</Text>
+        <Text style={[cal.dayT, { color: txt }, editing && future && { color: colors.faint }]} maxFontSizeMultiplier={1.2}>{+d.slice(8)}</Text>
       </Animated.View>
       {editing ? (
         <View style={[cal.check, checked && { backgroundColor: colors.period, borderColor: colors.period }, future && { opacity: 0 }]}>

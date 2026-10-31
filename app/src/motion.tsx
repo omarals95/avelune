@@ -66,9 +66,9 @@ export function CountUp({ value, decimals = 0, separator = true, style, delay = 
     return () => cancelAnimationFrame(raf);
   }, [value, decimals, separator, delay, reduce, finalText]);
   const flat = StyleSheet.flatten([{ fontFamily: font.black }, style]);
-  if (WEB) return <Text style={flat} accessibilityLabel={finalText}>{webText}</Text>;
+  if (WEB) return <Text style={flat} accessibilityLabel={finalText} numberOfLines={1} maxFontSizeMultiplier={1.2}>{webText}</Text>;
   return <AnimatedInput editable={false} underlineColorAndroid="transparent" accessibilityLabel={finalText} defaultValue={finalText}
-    animatedProps={animatedProps} style={[flat, { padding: 0, margin: 0 }]} />;
+    animatedProps={animatedProps} maxFontSizeMultiplier={1.2} style={[flat, { padding: 0, margin: 0 }]} />;
 }
 
 const APath = Reanimated.createAnimatedComponent(Path);

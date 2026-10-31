@@ -245,7 +245,7 @@ export function ChartScreen({ kind, onClose }: { kind: ChartKind; onClose: () =>
 const is = StyleSheet.create({
   section: { fontSize: 22, fontWeight: '700', color: colors.heading, marginHorizontal: 20, marginTop: 24, marginBottom: 12 },
   statRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  stat: { flex: 1, backgroundColor: '#fff', borderRadius: 20, padding: 16, ...shadow },
+  stat: { flex: 1, minHeight: 112, backgroundColor: '#fff', borderRadius: 20, padding: 16, ...shadow },
   statDot: { width: 10, height: 10, borderRadius: 5, marginBottom: 8 },
   statL: { color: colors.muted, fontSize: 14, fontWeight: '600' },
   statV: { fontSize: 30, fontWeight: '800', color: colors.heading, marginTop: 2 },

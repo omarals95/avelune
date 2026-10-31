@@ -16,6 +16,7 @@ with an optional **self-hosted sync server**. Independent open-source project; n
 - **Home widgets:** 12 animated widgets (cycle stats rings, steps, sleep, heart, weight, temperature with phases, water, activity, mood, symptoms, SpO₂), with add, remove and reorder.
 - **Partner (view-only):** share a live, end-to-end encrypted view of your cycle with one person via an invite code; revoke any time. No chat, community or social features.
 - **Reminders (iOS/Android):** period soon/start/end, ovulation, fertile window, pill, water, weight, sleep, temperature, daily check-in; discreet wording by default.
+- **Import / export CSV:** Settings → Your data. Import accepts one row per day (date, flow, symptoms, mood, BBT, weight, water, sleep, notes, steps) or one row per period (start, end). Delimiters `,` `;` tab; day-first or month-first dates detected (or chosen); °F and lb converted; common symptom names from other apps mapped; a preview shows what will change before anything is written, and existing entries are kept unless you choose to replace them.
 - **Privacy:** optional end-to-end encrypted sync to your own server; hide sex content; JSON export and doctor summary.
 
 > Predictions are estimates for personal awareness. Not a medical device; not for contraception.

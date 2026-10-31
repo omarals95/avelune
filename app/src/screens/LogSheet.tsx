@@ -47,12 +47,13 @@ export function LogSheet({ date: initial, onClose }: { date: DateStr; onClose: (
     update({ [c.field]: next } as Partial<DayLog>);
   };
 
-  const quick = useMemo(() => {
+  // Computed once when the sheet opens: re-sorting while you tap would move the next target under your finger.
+  const [quick] = useState(() => {
     const counts = new Map<string, number>();
     for (const l of logs) for (const s of l.symptoms) if (s !== 'fine') counts.set(s, (counts.get(s) ?? 0) + 1);
     const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
     return [...new Set([...top, ...DEFAULT_QUICK])].slice(0, 4);
-  }, [logs]);
+  });
   const symptoms = CATEGORIES.find((c) => c.id === 'symptoms')!;
   const cats = CATEGORIES.filter((c) => !(hideSex && c.sensitive) && !(settings.pregnancyLmp && (c.id === 'flow' || c.id === 'tests' || c.id === 'pill')));
   const ql = q.trim().toLowerCase();
@@ -86,7 +87,7 @@ export function LogSheet({ date: initial, onClose }: { date: DateStr; onClose: (
                 return (
                   <PressScale key={id} accessibilityLabel={o.label} accessibilityState={{ checked: on }} onPress={() => toggle(symptoms, id)} style={{ alignItems: 'center', width: '24%' }}>
                     <View style={[ls.bigIcon, { backgroundColor: on ? symptoms.ink : symptoms.tint }]}><Icon name={o.icon} size={40} color={on ? '#fff' : symptoms.ink} /></View>
-                    <Text style={ls.bigLabel} numberOfLines={1}>{o.label}</Text>
+                    <Text style={ls.bigLabel} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>{o.label}</Text>
                   </PressScale>
                 );
               })}
@@ -180,7 +181,7 @@ function Measure({ icon, label, unit, value, start, step, digits, onChange }: {
 
 const ls = StyleSheet.create({
   head: { backgroundColor: colors.bg, paddingHorizontal: 16, paddingBottom: 8 },
-  close: { width: 48, height: 48, justifyContent: 'center' },
+  close: { width: 48, height: 48, justifyContent: 'center', marginTop: 4 },
   dayNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   navBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 28, fontWeight: '700', color: colors.heading },
@@ -190,7 +191,7 @@ const ls = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 22, padding: 18, marginBottom: 14, ...shadow, shadowOpacity: 0.04 },
   cardT: { fontSize: 20, fontWeight: '700', color: colors.heading, marginBottom: 14 },
   catHead: { fontSize: 24, fontWeight: '700', color: colors.heading, marginVertical: 10 },
-  bigIcon: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  bigIcon: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   bigLabel: { fontSize: 14, color: colors.text },
   mRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
   mIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', marginRight: 12 },

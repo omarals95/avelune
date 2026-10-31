@@ -21,12 +21,14 @@ interface HealthState {
   fitbitClientId: string;
   widgets: WidgetId[];
   syncing: boolean;
-  connect: (id: ProviderId) => Promise<{ ok: boolean; reason?: string }>;
+  connect: (id: ProviderId) => Promise<{ ok: boolean; reason?: string; days?: number }>;
   disconnect: (id: ProviderId) => Promise<void>;
   sync: (full?: boolean) => Promise<void>;
   setSample: (on: boolean) => void;
   setFitbitClientId: (id: string) => void;
   setWidgets: (w: WidgetId[]) => void;
+  /** Health values from an imported file (steps, resting HR) count as manual entries. */
+  importManual: (days: HealthDay[]) => void;
 }
 
 const fitbit = makeFitbit(() => useHealth.getState().fitbitClientId.trim());
@@ -48,7 +50,9 @@ export const useHealth = create<HealthState>()(
         if (!ok) return { ok: false, reason: 'Permission was not granted.' };
         set((s) => ({ connections: { ...s.connections, [id]: { since: Date.now(), lastSync: null, error: null } } }));
         await get().sync(true);
-        return { ok: true };
+        const days = Object.values(get().days).filter((d) => Object.values(d.sources ?? {}).includes(id)).length;
+        const error = get().connections[id]?.error;
+        return error ? { ok: false, reason: `Connected, but reading data failed: ${error}` } : { ok: true, days };
       },
 
       disconnect: async (id) => {
@@ -80,6 +84,7 @@ export const useHealth = create<HealthState>()(
       setSample: (on) => set((s) => ({ sample: on, days: on ? mergeHealthDays(dropSource(s.days, 'sample'), sampleHealth(today()), 'sample') : dropSource(s.days, 'sample') })),
       setFitbitClientId: (fitbitClientId) => set({ fitbitClientId }),
       setWidgets: (widgets) => set({ widgets }),
+      importManual: (rows) => set((s) => ({ days: mergeHealthDays(s.days, rows, 'manual') })),
     }),
     {
       name: 'avelune-health-v1',

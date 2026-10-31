@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import {
   DEFAULT_REMINDERS, DEFAULT_SETTINGS, MIN_PASSPHRASE, SETTINGS_ID, buildSnapshot, createKeyInfo, dayId, decodeInvite, decryptRecord,
-  encryptRecord, newShareKey, normalizeReminders, openSnapshot, sealSnapshot, shouldApply, today as todayFn, unlockKeys,
+  encryptRecord, mergeLogs, newShareKey, normalizeReminders, openSnapshot, sealSnapshot, shouldApply, today as todayFn, unlockKeys,
   type DateStr, type DayLog, type Invite, type KeyInfo, type PartnerSnapshot, type ReminderPrefs, type Settings, type SyncRecord, type SyncResponse,
 } from '@cyclo/core';
 import { clearKeys, loadKeys, saveKeys } from './keyring';
@@ -32,6 +32,8 @@ interface State {
   hideSex: boolean;
   weightUnit: 'kg' | 'lb';
   setPrefs: (p: Partial<Pick<State, 'name' | 'hideSex' | 'weightUnit' | 'unit'>>) => void;
+  /** Import many day logs at once (CSV). Returns how many days changed. */
+  importLogs: (logs: DayLog[], overwrite: boolean) => number;
   /** Toggle period days in bulk (calendar "Edit period dates"). */
   setPeriodDays: (on: DateStr[], off: DateStr[]) => void;
   /** Owner side of partner sharing. */
@@ -94,6 +96,30 @@ export const useStore = create<State>()(
         setReminders: (r) => set((st) => ({ reminders: { ...st.reminders, ...r } })),
         name: '', hideSex: false, weightUnit: 'kg', share: null, partner: null,
         setPrefs: (p) => set(p),
+
+        importLogs: (incoming, overwrite) => {
+          const now = Date.now();
+          let changed = 0;
+          set((s) => {
+            const records = { ...s.records };
+            const dirty = { ...s.dirty };
+            for (const l of incoming) {
+              const id = dayId(l.date);
+              const cur = records[id];
+              const existing = cur && !cur.deleted ? (cur.data as DayLog) : undefined;
+              const merged = mergeLogs(existing, l, overwrite);
+              if (existing && JSON.stringify(existing) === JSON.stringify(merged)) continue;
+              const empty = isEmptyLog(merged);
+              if (empty && !existing) continue;
+              records[id] = { id, data: empty ? null : merged, updatedAt: now, deleted: empty };
+              dirty[id] = true;
+              changed++;
+            }
+            return { records, dirty };
+          });
+          if (changed && get().server) { clearTimeout(syncTimer); syncTimer = setTimeout(() => void get().sync(), 1500); }
+          return changed;
+        },
 
         setPeriodDays: (on, off) => {
           const logs = new Map(selectLogs(get().records).map((l) => [l.date, l]));

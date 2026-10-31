@@ -25,6 +25,8 @@ export const healthConnect: Provider = {
   connect: async () => {
     if (!(await init())) return false;
     const granted = await requestPermission(READ);
+    // Without this, Health Connect only returns the 30 days before permission was granted.
+    await requestPermission([{ accessType: 'read', recordType: 'ReadHealthDataHistory' }]).catch(() => undefined);
     return granted.length > 0;
   },
   fetch: async (start, end) => {

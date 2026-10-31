@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Platform, Share, View } from 'react-native';
 import { Text } from '../text';
-import { addDays, derivePeriods, lmpFromDueDate, predict, pregnancyStatus, today as todayFn, type ReminderPrefs, type TimeOfDay } from '@cyclo/core';
+import { addDays, derivePeriods, exportCSV, lmpFromDueDate, predict, pregnancyStatus, today as todayFn, type ReminderPrefs, type TimeOfDay } from '@cyclo/core';
 import { FadeIn, PressScale } from '../anim';
 import { fmtDay } from '../components';
 import { Icon } from '../icons';
@@ -9,6 +9,8 @@ import type { SettingsPage } from '../nav';
 import { ensurePermission, remindersSupported } from '../reminders';
 import { ServerForm } from '../ServerForm';
 import { Connections } from './Connections';
+import { ImportCSV } from './ImportCSV';
+import { labelOf } from '../catalog';
 import { selectLogs, selectSettings, useStore } from '../store';
 import { colors } from '../theme';
 import { Btn, Card, Field, Muted, Page, Row, Section, Stepper, TopBar } from '../ui';
@@ -36,7 +38,7 @@ export function Settings({ page: initial, onClose }: { page: SettingsPage; onClo
   const [page, setPage] = useState<SettingsPage>(initial);
   const back = () => (page === 'main' || initial !== 'main' ? onClose() : setPage('main'));
   const titles: Record<SettingsPage, string> = {
-    main: 'Settings', health: 'Health connections', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy mode', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units',
+    main: 'Settings', health: 'Health connections', import: 'Import data', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy mode', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units',
   };
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -49,7 +51,8 @@ export function Settings({ page: initial, onClose }: { page: SettingsPage; onClo
       {page === 'units' && <Units />}
       {page === 'sync' && <Sync />}
       {page === 'health' && <Connections onClose={back} embedded />}
-      {page === 'data' && <Data />}
+      {page === 'data' && <Data go={setPage} />}
+      {page === 'import' && <ImportCSV />}
     </View>
   );
 }
@@ -256,7 +259,7 @@ function Sync() {
   );
 }
 
-function Data() {
+function Data({ go }: { go: (p: SettingsPage) => void }) {
   const st = useStore();
   const [msg, setMsg] = useState('');
   const summary = () => {
@@ -273,6 +276,8 @@ function Data() {
   return (
     <Page>
       <Card>
+        <Row icon="file-upload-outline" title="Import from CSV" subtitle="Spreadsheets, other apps, Avelune exports" onPress={() => go('import')} />
+        <Row icon="file-delimited-outline" title="Export as CSV" onPress={() => void shareText('avelune-export.csv', exportCSV(selectLogs(st.records), labelOf), 'text/csv')} />
         <Row icon="code-json" title="Export all data (JSON)" onPress={() => void shareText('avelune-export.json', JSON.stringify({ version: 2, records: Object.values(st.records) }, null, 2), 'application/json')} />
         <Row icon="stethoscope" title="Summary for my doctor" onPress={() => void shareText('avelune-summary.txt', summary(), 'text/plain')} />
       </Card>

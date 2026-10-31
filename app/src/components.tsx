@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Platform, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from './text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
@@ -114,9 +114,9 @@ export function WeekStrip({ today, selected, onSelect, kindOf }: {
                 return (
                   <PressScale key={d} accessibilityRole="button" accessibilityState={{ selected: sel }}
                     accessibilityLabel={`${fmtDay(d)}${d === today ? ', today' : ''}${kind !== 'none' ? `, ${KIND_LABEL[kind]}` : ''}`} onPress={() => onSelect(d)} style={{ flex: 1, alignItems: 'center' }}>
-                    <Text style={[ws.dow, d === today && { color: colors.text, fontWeight: '700' }]}>{d === today ? 'TODAY' : DOW[i]}</Text>
+                    <Text style={[ws.dow, d === today && { color: colors.heading, fontWeight: '700' }]} numberOfLines={1} maxFontSizeMultiplier={1.1}>{d === today ? 'Today' : DOW[i]}</Text>
                     <View style={[ws.day, !sel && k.box, sel && ws.daySel]}>
-                      <Text style={[ws.dayT, { color: sel ? '#fff' : k.color }, sel && { fontWeight: '700' }]}>{+d.slice(8)}</Text>
+                      <Text style={[ws.dayT, { color: sel ? '#fff' : k.color }, sel && { fontWeight: '700' }]} maxFontSizeMultiplier={1.15}>{+d.slice(8)}</Text>
                     </View>
                     <View style={{ height: 6 }} />
                   </PressScale>
@@ -141,10 +141,10 @@ export const KIND_STYLE: Record<DayKind, { box: object; color: string }> = {
 };
 
 const ws = StyleSheet.create({
-  dow: { fontSize: 13, color: colors.muted, marginBottom: 6, letterSpacing: 0.4 },
-  day: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
+  dow: { fontSize: 12, height: 18, lineHeight: 18, color: colors.muted, marginBottom: 6, letterSpacing: 0.3 },
+  day: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   daySel: { backgroundColor: colors.today, borderWidth: 3, borderColor: '#fff', ...shadow },
-  dayT: { fontSize: 22 },
+  dayT: { fontSize: 20 },
 });
 
 /** The big breathing circle. `children` renders extra content (e.g. the pregnancy growth mark). */
@@ -180,9 +180,9 @@ export function StatusCircle({ status, celebrateKey, ring, children }: {
           <FadeIn key={status.kicker + status.big} style={{ alignItems: 'center', paddingHorizontal: 22 }} from={8}>
             <View accessible accessibilityLabel={`${status.kicker} ${status.big}. ${status.sub}`} style={{ alignItems: 'center' }}>
             {children}
-            <Text style={[cs.kicker, fertile && { color: '#fff' }]}>{status.kicker}</Text>
-            <Text style={[cs.big, fertile && { color: '#fff' }, status.big.length > 10 && { fontSize: 34 }]} adjustsFontSizeToFit numberOfLines={2}>{status.big}</Text>
-            <Text style={[cs.sub, fertile && { color: '#fff' }]}>{status.sub}</Text>
+            <Text style={[cs.kicker, fertile && { color: '#fff' }]} maxFontSizeMultiplier={1.25}>{status.kicker}</Text>
+            <Text style={[cs.big, fertile && { color: '#fff' }, status.big.length > 10 && { fontSize: 34 }]} adjustsFontSizeToFit numberOfLines={2} maxFontSizeMultiplier={1.2}>{status.big}</Text>
+            <Text style={[cs.sub, fertile && { color: '#fff' }]} maxFontSizeMultiplier={1.25}>{status.sub}</Text>
             </View>
           </FadeIn>
         )}
@@ -208,7 +208,8 @@ function ProgressRing({ size, progress }: { size: number; progress: number }) {
 }
 
 const cs = StyleSheet.create({
-  circle: { backgroundColor: 'rgba(255,255,255,0.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center', ...shadow },
+  // No elevation on Android: shadows on semi-transparent views render as a grey polygon there.
+  circle: { backgroundColor: 'rgba(255,255,255,0.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center', ...(Platform.OS === 'android' ? {} : shadow) },
   kicker: { fontSize: 19, fontWeight: '600', color: colors.text, marginBottom: 4 },
   big: { fontSize: 44, fontWeight: '700', color: colors.heading, textAlign: 'center' },
   sub: { fontSize: 15, color: colors.text, textAlign: 'center', marginTop: 8, fontWeight: '500' },
@@ -216,11 +217,11 @@ const cs = StyleSheet.create({
 
 export function QuickAction({ icon, label, onPress, filled, tint = colors.primary }: { icon: IconName; label: string; onPress: () => void; filled?: boolean; tint?: string }) {
   return (
-    <PressScale accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={{ alignItems: 'center', width: 88 }}>
+    <PressScale accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={{ alignItems: 'center', width: 96 }}>
       <View style={[qa.btn, filled && { backgroundColor: tint }]}>
         <Icon name={icon} size={34} color={filled ? '#fff' : colors.text} />
       </View>
-      <Text style={qa.label}>{label}</Text>
+      <Text style={qa.label} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>{label}</Text>
     </PressScale>
   );
 }
@@ -234,7 +235,7 @@ export function StoryCard({ title, tint, ink, icon, onPress, art }: { title: str
   return (
     <PressScale accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={[sc.wrap]}>
       <View style={[sc.card, { backgroundColor: tint }]}>
-        <Text style={sc.t} numberOfLines={3}>{title}</Text>
+        <Text style={sc.t} numberOfLines={3} maxFontSizeMultiplier={1.2}>{title}</Text>
         <Animated.View style={{ position: 'absolute', right: 12, bottom: 12, transform: [{ translateY: floaty.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }] }}>
           {art ?? (icon ? <Icon name={icon} size={60} color={ink} /> : null)}
         </Animated.View>
@@ -244,8 +245,8 @@ export function StoryCard({ title, tint, ink, icon, onPress, art }: { title: str
 }
 const sc = StyleSheet.create({
   wrap: { marginRight: 12, padding: 3, borderRadius: 24, borderWidth: 2, borderColor: colors.accent },
-  card: { width: 138, height: 178, borderRadius: 18, padding: 14, overflow: 'hidden' },
-  t: { fontSize: 17, fontWeight: '700', color: colors.text, lineHeight: 23 },
+  card: { width: 150, height: 178, borderRadius: 18, padding: 14, overflow: 'hidden' },
+  t: { fontSize: 16, fontWeight: '700', color: colors.text, lineHeight: 21 },
 });
 
 export function useNow() {

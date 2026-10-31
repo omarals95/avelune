@@ -131,7 +131,7 @@ function Main() {
             <PressScale key={k} accessibilityRole="tab" accessibilityLabel={l} accessibilityState={{ selected: tab === k }} style={st.tab} onPress={() => go(k)}>
               <View style={[st.tabInner, tab === k && st.tabActive]}>
                 <Icon name={tab === k ? active : icon} size={24} color="#fff" />
-                <Text style={[st.tabT, tab === k && { fontWeight: '700' }]} numberOfLines={1}>{l}</Text>
+                <Text style={[st.tabT, tab === k && { fontWeight: '700' }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.1}>{l}</Text>
               </View>
             </PressScale>
           ))}

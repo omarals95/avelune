@@ -20,6 +20,7 @@ export function Connections({ onClose, embedded }: { onClose: () => void; embedd
   const [busy, setBusy] = useState<ProviderId | null>(null);
   const [msg, setMsg] = useState<Partial<Record<ProviderId, string>>>({});
   const [copied, setCopied] = useState(false);
+  const [done, setDone] = useState<Partial<Record<ProviderId, string>>>({});
   useEffect(() => {
     (Object.keys(PROVIDERS) as ProviderId[]).forEach((id) => PROVIDERS[id].available().then((a) => setAvail((s) => ({ ...s, [id]: a }))).catch(() => undefined));
   }, [st.fitbitClientId]);
@@ -28,6 +29,7 @@ export function Connections({ onClose, embedded }: { onClose: () => void; embedd
     setBusy(id); setMsg((m) => ({ ...m, [id]: '' }));
     const r = await st.connect(id);
     if (!r.ok) setMsg((m) => ({ ...m, [id]: r.reason ?? 'Could not connect.' }));
+    else setDone((m) => ({ ...m, [id]: r.days ? `Connected. Imported ${r.days} day${r.days === 1 ? '' : 's'} of data.` : 'Connected, but no data was found yet. Check that your tracker app syncs to this source, then tap Sync now.' }));
     setBusy(null);
   };
   const order: ProviderId[] = Platform.OS === 'ios' ? ['appleHealth', 'fitbit', 'healthConnect'] : Platform.OS === 'android' ? ['healthConnect', 'fitbit', 'appleHealth'] : ['fitbit', 'healthConnect', 'appleHealth'];
@@ -67,6 +69,7 @@ export function Connections({ onClose, embedded }: { onClose: () => void; embedd
                 {a && !a.ok && !c ? <Muted style={{ marginTop: 8, color: colors.text }}>{a.reason}</Muted> : null}
                 {c?.error ? <Muted style={{ marginTop: 8, color: colors.danger }}>Last sync failed: {c.error}</Muted> : null}
                 {msg[id] ? <Muted style={{ marginTop: 8, color: colors.danger }}>{msg[id]}</Muted> : null}
+                {done[id] ? <Muted style={{ marginTop: 8, color: colors.fertile }}>{done[id]}</Muted> : null}
                 {c ? (
                   <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
                     <Btn style={{ flex: 1 }} kind="ghost" icon="refresh" title={st.syncing ? 'Syncing…' : 'Sync now'} disabled={st.syncing} onPress={() => void st.sync()} />
@@ -75,7 +78,7 @@ export function Connections({ onClose, embedded }: { onClose: () => void; embedd
                 ) : a?.ok ? (
                   <Btn style={{ marginTop: 10 }} title={busy === id ? 'Connecting…' : `Connect ${info.name}`} disabled={!!busy} onPress={() => void connect(id)} />
                 ) : null}
-                {id === 'healthConnect' && c ? <Btn kind="ghost" title="Manage Health Connect permissions" onPress={openHealthConnect} /> : null}
+                {id === 'healthConnect' && Platform.OS === 'android' ? <Btn kind="ghost" icon="open-in-new" title={c ? 'Manage Health Connect permissions' : 'Open Health Connect'} onPress={openHealthConnect} /> : null}
               </Card>
             </Reanimated.View>
           );

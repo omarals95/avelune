@@ -62,7 +62,7 @@ export function PartnerTab() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 220, maxWidth: 640, width: '100%', alignSelf: 'center', paddingHorizontal: 20 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 150, maxWidth: 640, width: '100%', alignSelf: 'center', paddingHorizontal: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
           <Avatar onPress={() => nav.openSettings()} />
           <Text accessibilityRole="header" style={{ fontSize: 28, fontWeight: '700', marginLeft: 14, color: colors.heading }}>Partner</Text>
@@ -94,8 +94,16 @@ export function PartnerTab() {
               <Row icon="eye-outline" title="Never your notes or sex logs" subtitle="Your partner sees predictions, plus mood and symptoms only if you allow it." />
               <Row icon="link-variant-off" title="Revoke any time" subtitle="Turning sharing off stops your partner's view immediately." />
             </Card>
-            {!server && <Muted style={{ marginTop: 4 }}>{ERR.needs_server}</Muted>}
             {msg ? <Muted style={{ color: colors.danger, marginTop: 8 }}>{msg}</Muted> : null}
+            {server ? (
+              <Btn title={busy ? 'Linking…' : 'Link your partner'} icon="link-variant" onPress={() => void link()} disabled={busy} style={{ marginTop: 8 }} />
+            ) : (
+              <Card style={{ marginTop: 8, backgroundColor: colors.primarySoft }}>
+                <Text style={{ fontSize: 17, fontWeight: '700', color: colors.heading }}>One step first</Text>
+                <Text style={{ fontSize: 15, color: colors.text, marginTop: 4, lineHeight: 21 }}>Partner sharing travels through your own encrypted Avelune server. Set up sync, then come back to link your partner.</Text>
+                <Btn icon="cloud-lock-outline" title="Set up sync" onPress={() => nav.openSettings('sync')} style={{ marginTop: 10 }} />
+              </Card>
+            )}
           </>
         ) : (
           <>
@@ -121,11 +129,6 @@ export function PartnerTab() {
           </>
         )}
       </ScrollView>
-      {!share && (
-        <View style={[pt.bottom, { paddingBottom: 16 }]}>
-          <Btn title={busy ? 'Linking…' : 'Link your partner'} onPress={() => void link()} disabled={busy || !server} />
-        </View>
-      )}
       <Sheet visible={preview} onClose={() => setPreview(false)}>
         <PreviewOwn onClose={() => setPreview(false)} />
       </Sheet>

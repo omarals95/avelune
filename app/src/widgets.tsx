@@ -60,11 +60,12 @@ export function useWidgetData() {
 type WD = ReturnType<typeof useWidgetData>;
 
 function Tile({ def, children, onPress, edit, wide }: { def: WidgetDef; children: React.ReactNode; onPress?: () => void; edit?: React.ReactNode; wide: boolean }) {
-  const style = [w.tile, { backgroundColor: def.tint ?? colors.card }, wide && { minHeight: 0 }];
+  // Half tiles share one fixed height so the grid stays even while values load and animate.
+  const style = [w.tile, { backgroundColor: def.tint ?? colors.card }, wide ? { minHeight: 0 } : { height: edit ? 248 : 192 }];
   const body = (
     <>
       <View style={w.head}>
-        <Text style={w.title} numberOfLines={1}>{def.title}</Text>
+        <Text style={w.title} numberOfLines={1} maxFontSizeMultiplier={1.2}>{def.title}</Text>
         <Icon name={def.icon} size={20} color={colors.heading} />
       </View>
       {children}
@@ -76,7 +77,7 @@ function Tile({ def, children, onPress, edit, wide }: { def: WidgetDef; children
   return <PressScale accessibilityRole="button" accessibilityLabel={`${def.title} widget`} onPress={onPress} scaleTo={0.97} style={style}>{body}</PressScale>;
 }
 
-const Empty = ({ text = 'No data yet' }: { text?: string }) => <Muted style={{ marginTop: 10, color: colors.text }}>{text}</Muted>;
+const Empty = ({ text = 'No data yet' }: { text?: string }) => <Muted style={{ marginTop: 10, color: colors.text }}>{text}. Tap to add.</Muted>;
 
 function Body({ id, d, width }: { id: WidgetId; d: WD; width: number }) {
   const inner = width - 32;
@@ -126,7 +127,7 @@ function Body({ id, d, width }: { id: WidgetId; d: WD; width: number }) {
       return (
         <View>
           <CountUp value={v ?? 0} style={w.big} />
-          <Text style={w.unit}>of {goal.toLocaleString('en-US')} steps</Text>
+          <Text style={w.unit} numberOfLines={1} maxFontSizeMultiplier={1.2}>of {goal.toLocaleString('en-US')} steps</Text>
           <View style={w.track}><View style={[w.fill, { width: `${Math.min(100, ((v ?? 0) / goal) * 100)}%`, backgroundColor: colors.fertile }]} /></View>
           <View style={{ marginTop: 10 }}><MiniBars values={s} width={inner} height={40} color={colors.fertile} faint={colors.border} /></View>
         </View>
@@ -141,7 +142,7 @@ function Body({ id, d, width }: { id: WidgetId; d: WD; width: number }) {
       return (
         <View>
           <Text style={w.big}>{fmtSleep(last.value)}</Text>
-          {day?.sleepStart != null ? <Text style={w.unit}>{clock(day.sleepStart)} – {clock(day.sleepEnd)}</Text> : <Text style={w.unit}>last night</Text>}
+          {day?.sleepStart != null ? <Text style={w.unit} numberOfLines={1} maxFontSizeMultiplier={1.2}>{clock(day.sleepStart)} – {clock(day.sleepEnd)}</Text> : <Text style={w.unit} numberOfLines={1} maxFontSizeMultiplier={1.2}>last night</Text>}
           <View style={{ marginTop: 10 }}><MiniBars values={s} width={inner} height={40} color={colors.ovulation} faint="#D8CFE6" max={600} /></View>
         </View>
       );
@@ -196,7 +197,7 @@ function Body({ id, d, width }: { id: WidgetId; d: WD; width: number }) {
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
           <View style={{ flex: 1 }}>
             <CountUp value={ml / 1000} decimals={2} separator={false} style={w.big} />
-            <Text style={w.unit}>of {(target / 1000).toFixed(2)} L</Text>
+            <Text style={w.unit} numberOfLines={1} maxFontSizeMultiplier={1.2}>of {(target / 1000).toFixed(2)} L</Text>
           </View>
           <Glass progress={ml / target} color="#3D5F8A" track="#fff" />
         </View>
@@ -210,7 +211,7 @@ function Body({ id, d, width }: { id: WidgetId; d: WD; width: number }) {
       return (
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}><CountUp value={km ?? 0} decimals={1} style={w.big} /><Text style={[w.unit, { marginLeft: 4, marginBottom: 6 }]}>km</Text></View>
-          {kcal != null ? <Text style={w.unit}>{kcal.toLocaleString('en-US')} active kcal</Text> : null}
+          {kcal != null ? <Text style={w.unit} numberOfLines={1} maxFontSizeMultiplier={1.2}>{kcal.toLocaleString('en-US')} active kcal</Text> : null}
           <View style={{ marginTop: 8 }}><MiniBars values={s} width={inner} height={36} color={colors.fertile} faint="#C6DCCB" /></View>
         </View>
       );
@@ -321,10 +322,10 @@ export function HomeWidgets({ onOpen }: { onOpen: (def: WidgetDef) => void }) {
 export type { DayLog, HealthDay };
 
 const w = StyleSheet.create({
-  tile: { borderRadius: 24, padding: 16, minHeight: 168, ...shadow },
+  tile: { borderRadius: 24, padding: 16, overflow: 'hidden', ...shadow },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   title: { fontSize: 16, fontWeight: '600', color: colors.heading, flex: 1, marginRight: 6 },
-  big: { fontSize: 32, color: colors.heading, marginTop: 4 },
+  big: { fontSize: 30, color: colors.heading, marginTop: 4 },
   unit: { fontSize: 14, color: colors.text },
   track: { height: 8, borderRadius: 4, backgroundColor: 'rgba(72,47,73,0.10)', marginTop: 8, overflow: 'hidden' },
   fill: { height: 8, borderRadius: 4 },

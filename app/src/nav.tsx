@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 import type { HealthTab } from './widgets';
 
-export type SettingsPage = 'main' | 'health' | 'cycle' | 'reminders' | 'pregnancy' | 'content' | 'sync' | 'data' | 'units';
+export type SettingsPage = 'main' | 'health' | 'import' | 'cycle' | 'reminders' | 'pregnancy' | 'content' | 'sync' | 'data' | 'units';
 export type ChartKind = 'cycles' | 'bbt' | 'weight' | 'activity' | 'water' | 'sleep';
 
 export interface Nav {
