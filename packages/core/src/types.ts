@@ -7,12 +7,21 @@ export type Flow = 0 | 1 | 2 | 3 | 4;
 export interface DayLog {
   date: DateStr;
   flow: Flow;
+  /** Option ids from the app's symptom catalogue. */
   symptoms: string[];
   moods: string[];
+  /** Other option ids, namespaced by category: "sex:protected", "discharge:creamy", "activity:yoga", "other:stress"... */
+  tags: string[];
   /** Basal body temperature in °C (converted for display). */
   bbt?: number;
-  /** Cervical mucus / ovulation test / sex etc. kept as free tags. */
-  tags: string[];
+  /** Body weight in kg. */
+  weight?: number;
+  /** Water in millilitres. */
+  water?: number;
+  /** Sleep in hours. */
+  sleep?: number;
+  /** Distance walked/run in km. */
+  distance?: number;
   notes?: string;
 }
 
@@ -20,9 +29,19 @@ export interface Settings {
   cycleLength: number;
   periodLength: number;
   lutealLength: number;
+  /** Show the whole fertile window; when false only the ovulation day is highlighted. */
+  showFertileWindow?: boolean;
+  /** Show cycle-day numbers above calendar dates. */
+  showCycleDays?: boolean;
+  /** Pregnancy mode: first day of last menstrual period. */
+  pregnancyLmp?: DateStr | null;
+  /** Daily water target in ml. */
+  waterTarget?: number;
 }
 
-export const DEFAULT_SETTINGS: Settings = { cycleLength: 28, periodLength: 5, lutealLength: 14 };
+export const DEFAULT_SETTINGS: Settings = {
+  cycleLength: 28, periodLength: 5, lutealLength: 14, showFertileWindow: true, showCycleDays: false, pregnancyLmp: null, waterTarget: 2250,
+};
 
 /** A syncable record. `id` is "day:YYYY-MM-DD" or "settings". */
 export interface SyncRecord {

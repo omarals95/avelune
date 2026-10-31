@@ -125,3 +125,37 @@ describe('sync (ciphertext only)', () => {
     expect(db.prepare('SELECT COUNT(*) c FROM records').get()).toEqual({ c: 0 });
   });
 });
+
+import { buildSnapshot, newShareKey, openSnapshot, sealSnapshot, DEFAULT_SETTINGS } from '@cyclo/core';
+describe('partner shares', () => {
+  const snap = () => buildSnapshot([{ date: '2026-10-01', flow: 3, symptoms: [], moods: [], tags: [] }], DEFAULT_SETTINGS, '2026-10-10');
+  it('owner publishes, partner reads without an account, only the owner can overwrite or revoke', async () => {
+    const owner = await account('a@b.co');
+    const other = await account('c@d.co', 'another long passphrase');
+    const k = newShareKey();
+    const blob = sealSnapshot(k, snap());
+    expect((await app.inject({ method: 'PUT', url: `/api/shares/${k.id}`, headers: auth(owner.token), payload: { blob } })).statusCode).toBe(200);
+    const got = await app.inject({ method: 'GET', url: `/api/shares/${k.id}` });
+    expect(got.statusCode).toBe(200);
+    expect(openSnapshot(k, got.json().blob).cycleDay).toBe(10);
+    expect((await app.inject({ method: 'PUT', url: `/api/shares/${k.id}`, headers: auth(other.token), payload: { blob } })).statusCode).toBe(403);
+    await app.inject({ method: 'DELETE', url: `/api/shares/${k.id}`, headers: auth(other.token) });
+    expect((await app.inject({ method: 'GET', url: `/api/shares/${k.id}` })).statusCode).toBe(200); // not revoked by a stranger
+    await app.inject({ method: 'DELETE', url: `/api/shares/${k.id}`, headers: auth(owner.token) });
+    expect((await app.inject({ method: 'GET', url: `/api/shares/${k.id}` })).statusCode).toBe(404);
+  });
+  it('rejects bad ids / plaintext and requires auth to write', async () => {
+    const { token } = await account();
+    const k = newShareKey();
+    expect((await app.inject({ method: 'PUT', url: `/api/shares/${k.id}`, payload: { blob: 'v1.a.b' } })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'PUT', url: `/api/shares/${k.id}`, headers: auth(token), payload: { blob: '{"cycleDay":3}' } })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'GET', url: '/api/shares/short' })).statusCode).toBe(404);
+  });
+  it('deleting the account removes its shares', async () => {
+    const { token } = await account();
+    const k = newShareKey();
+    await app.inject({ method: 'PUT', url: `/api/shares/${k.id}`, headers: auth(token), payload: { blob: sealSnapshot(k, snap()) } });
+    await app.inject({ method: 'DELETE', url: '/api/account', headers: auth(token) });
+    expect((await app.inject({ method: 'GET', url: `/api/shares/${k.id}` })).statusCode).toBe(404);
+  });
+});

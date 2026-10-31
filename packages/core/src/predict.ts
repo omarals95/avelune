@@ -121,6 +121,17 @@ export type DayKind = 'period' | 'predicted-period' | 'fertile' | 'ovulation' | 
 
 /** Classify a calendar day for coloring (logged data wins over predictions). */
 export function classifyDay(date: DateStr, logs: Map<DateStr, DayLog>, p: Prediction, settings: Settings): DayKind {
+  const k = classifyRaw(date, logs, p, settings);
+  return k === 'fertile' && settings.showFertileWindow === false ? 'none' : k;
+}
+
+/** 1-based cycle day for any date at or after the first logged period (null before it). */
+export function cycleDayOf(date: DateStr, logs: DayLog[]): number | null {
+  const starts = derivePeriods(logs).map((p) => p.start).filter((s) => s <= date);
+  return starts.length ? diffDays(starts[starts.length - 1], date) + 1 : null;
+}
+
+function classifyRaw(date: DateStr, logs: Map<DateStr, DayLog>, p: Prediction, settings: Settings): DayKind {
   const log = logs.get(date);
   if (log && log.flow >= PERIOD_FLOW) return 'period';
   if (!p.nextPeriodStart || !p.lastPeriodStart) return 'none';

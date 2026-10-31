@@ -2,8 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import {
-  DEFAULT_REMINDERS, DEFAULT_SETTINGS, MIN_PASSPHRASE, SETTINGS_ID, createKeyInfo, dayId, decryptRecord, encryptRecord, shouldApply, unlockKeys,
-  type DateStr, type DayLog, type KeyInfo, type ReminderPrefs, type Settings, type SyncRecord, type SyncResponse,
+  DEFAULT_REMINDERS, DEFAULT_SETTINGS, MIN_PASSPHRASE, SETTINGS_ID, buildSnapshot, createKeyInfo, dayId, decodeInvite, decryptRecord,
+  encryptRecord, newShareKey, normalizeReminders, openSnapshot, sealSnapshot, shouldApply, today as todayFn, unlockKeys,
+  type DateStr, type DayLog, type Invite, type KeyInfo, type PartnerSnapshot, type ReminderPrefs, type Settings, type SyncRecord, type SyncResponse,
 } from '@cyclo/core';
 import { clearKeys, loadKeys, saveKeys } from './keyring';
 
@@ -26,6 +27,24 @@ interface State {
   syncError: string | null;
   reminders: ReminderPrefs;
   setReminders: (r: Partial<ReminderPrefs>) => void;
+  /** Local display preferences (not synced). */
+  name: string;
+  hideSex: boolean;
+  weightUnit: 'kg' | 'lb';
+  setPrefs: (p: Partial<Pick<State, 'name' | 'hideSex' | 'weightUnit' | 'unit'>>) => void;
+  /** Toggle period days in bulk (calendar "Edit period dates"). */
+  setPeriodDays: (on: DateStr[], off: DateStr[]) => void;
+  /** Owner side of partner sharing. */
+  share: { id: string; key: string; includeLog: boolean; publishedAt: number | null; error: string | null } | null;
+  startShare: () => Promise<void>;
+  stopShare: () => Promise<void>;
+  publishShare: () => Promise<void>;
+  setShareIncludeLog: (v: boolean) => void;
+  /** Partner side: this device only views someone else's shared cycle. */
+  partner: { invite: Invite; snapshot: PartnerSnapshot | null; fetchedAt: number | null; error: string | null } | null;
+  joinAsPartner: (code: string) => Promise<void>;
+  refreshPartner: () => Promise<void>;
+  leavePartner: () => void;
   saveDay: (log: DayLog) => void;
   saveSettings: (s: Settings) => void;
   completeOnboarding: (lastPeriod: DateStr, s: Settings) => void;
@@ -39,7 +58,10 @@ interface State {
 }
 
 export const isEmptyLog = (l: DayLog) =>
-  l.flow === 0 && !l.symptoms.length && !l.moods.length && !l.tags.length && !l.notes?.trim() && l.bbt == null;
+  l.flow === 0 && !l.symptoms.length && !l.moods.length && !l.tags.length && !l.notes?.trim() &&
+  l.bbt == null && l.weight == null && !l.water && l.sleep == null && l.distance == null;
+
+export const emptyLog = (date: DateStr): DayLog => ({ date, flow: 0, symptoms: [], moods: [], tags: [] });
 
 export const normalizeUrl = (u: string) => u.trim().replace(/\/+$/, '');
 
@@ -70,6 +92,76 @@ export const useStore = create<State>()(
       return {
         records: {}, dirty: {}, onboarded: false, unit: 'C', server: null, syncing: false, syncError: null, reminders: DEFAULT_REMINDERS,
         setReminders: (r) => set((st) => ({ reminders: { ...st.reminders, ...r } })),
+        name: '', hideSex: false, weightUnit: 'kg', share: null, partner: null,
+        setPrefs: (p) => set(p),
+
+        setPeriodDays: (on, off) => {
+          const logs = new Map(selectLogs(get().records).map((l) => [l.date, l]));
+          for (const d of on) {
+            const l = logs.get(d) ?? emptyLog(d);
+            if (l.flow < 2) get().saveDay({ ...l, flow: 3 });
+          }
+          for (const d of off) {
+            const l = logs.get(d);
+            if (l && l.flow >= 1) get().saveDay({ ...l, flow: 0 });
+          }
+        },
+
+        startShare: async () => {
+          if (!get().server) throw new Error('needs_server');
+          set({ share: { ...newShareKey(), includeLog: false, publishedAt: null, error: null } });
+          await get().publishShare();
+          if (get().share?.error) { const e = get().share!.error!; set({ share: null }); throw new Error(e); }
+        },
+
+        stopShare: async () => {
+          const { share, server } = get();
+          if (share && server) await api(server.url, `/api/shares/${share.id}`, { method: 'DELETE', token: server.token }).catch(() => undefined);
+          set({ share: null });
+        },
+
+        publishShare: async () => {
+          const { share, server, records, name } = get();
+          if (!share || !server) return;
+          const snap = buildSnapshot(selectLogs(records), selectSettings(records), todayFn(), { name, includeLog: share.includeLog });
+          try {
+            await api(server.url, `/api/shares/${share.id}`, { method: 'PUT', token: server.token, body: { blob: sealSnapshot(share, snap) } });
+            set((s) => ({ share: s.share && { ...s.share, publishedAt: Date.now(), error: null } }));
+          } catch (e) {
+            set((s) => ({ share: s.share && { ...s.share, error: (e as Error).message } }));
+          }
+        },
+
+        setShareIncludeLog: (v) => {
+          set((s) => ({ share: s.share && { ...s.share, includeLog: v } }));
+          void get().publishShare();
+        },
+
+        joinAsPartner: async (code) => {
+          const invite = decodeInvite(code);
+          set({ partner: { invite, snapshot: null, fetchedAt: null, error: null } });
+          await get().refreshPartner();
+          const p = get().partner;
+          if (p?.error) { set({ partner: null }); throw new Error(p.error); }
+        },
+
+        refreshPartner: async () => {
+          const p = get().partner;
+          if (!p) return;
+          try {
+            const res = await fetch(`${p.invite.url}/api/shares/${p.invite.id}`);
+            if (res.status === 404) throw new Error('share_revoked');
+            if (!res.ok) throw new Error(`http_${res.status}`);
+            const { blob } = (await res.json()) as { blob: string };
+            const snapshot = openSnapshot(p.invite, blob);
+            set((s) => ({ partner: s.partner && { ...s.partner, snapshot, fetchedAt: Date.now(), error: null } }));
+          } catch (e) {
+            const msg = (e as Error).message;
+            set((s) => ({ partner: s.partner && { ...s.partner, error: /fetch|network/i.test(msg) ? 'offline' : msg } }));
+          }
+        },
+
+        leavePartner: () => set({ partner: null }),
 
         saveDay: (log) => {
           const deleted = isEmptyLog(log);
@@ -184,6 +276,7 @@ export const useStore = create<State>()(
           const srv = get().server;
           if (srv && deleteRemote) await api(srv.url, '/api/account', { method: 'DELETE', token: srv.token });
           if (deleteRemote) await clearKeys();
+          if (deleteRemote) set({ share: null });
           set({ records: {}, dirty: {}, onboarded: false, server: deleteRemote ? null : srv, syncError: null });
         },
       };
@@ -191,7 +284,15 @@ export const useStore = create<State>()(
     {
       name: 'cyclo-v1',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (s) => ({ records: s.records, dirty: s.dirty, onboarded: s.onboarded, unit: s.unit, server: s.server, reminders: s.reminders }),
+      partialize: (s) => ({
+        records: s.records, dirty: s.dirty, onboarded: s.onboarded, unit: s.unit, server: s.server, reminders: s.reminders,
+        name: s.name, hideSex: s.hideSex, weightUnit: s.weightUnit, share: s.share, partner: s.partner,
+      }),
+      // Older installs stored a flatter reminders shape; fill in anything missing.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<State>;
+        return { ...current, ...p, reminders: normalizeReminders(p.reminders) };
+      },
     },
   ),
 );
@@ -203,3 +304,8 @@ export function selectSettings(records: Record<string, SyncRecord>): Settings {
   const r = records[SETTINGS_ID];
   return r && !r.deleted && r.data ? { ...DEFAULT_SETTINGS, ...(r.data as Settings) } : DEFAULT_SETTINGS;
 }
+
+export const kgToDisplay = (kg: number, u: 'kg' | 'lb') => (u === 'kg' ? kg : kg * 2.20462);
+export const displayToKg = (v: number, u: 'kg' | 'lb') => (u === 'kg' ? v : v / 2.20462);
+export const cToDisplay = (c: number, u: 'C' | 'F') => (u === 'C' ? c : (c * 9) / 5 + 32);
+export const displayToC = (v: number, u: 'C' | 'F') => (u === 'C' ? v : ((v - 32) * 5) / 9);

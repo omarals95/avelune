@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { planReminders, type Prediction, type ReminderPrefs, type Settings } from '@cyclo/core';
+import { dailyReminders, planReminders, type Prediction, type ReminderPrefs, type Settings } from '@cyclo/core';
 
 export const remindersSupported = true;
 
@@ -26,19 +26,19 @@ export async function ensurePermission(): Promise<boolean> {
  */
 export async function scheduleReminders(p: Prediction, settings: Settings, prefs: ReminderPrefs): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
-  const wantsAny = prefs.periodSoon || prefs.fertile || prefs.daily;
-  if (!wantsAny || !(await Notifications.getPermissionsAsync()).granted) return;
-
-  for (const r of planReminders(p, settings, prefs, new Date())) {
+  const dated = planReminders(p, settings, prefs, new Date());
+  const daily = dailyReminders(prefs);
+  if ((!dated.length && !daily.length) || !(await Notifications.getPermissionsAsync()).granted) return;
+  for (const r of dated) {
     await Notifications.scheduleNotificationAsync({
       content: { title: r.title, body: r.body },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: r.at, channelId: CHANNEL },
     });
   }
-  if (prefs.daily) {
+  for (const r of daily) {
     await Notifications.scheduleNotificationAsync({
-      content: { title: 'Cyclo', body: prefs.discreet ? 'You have a reminder.' : "Don't forget to log how you feel today." },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: prefs.dailyHour, minute: prefs.dailyMinute, channelId: CHANNEL },
+      content: { title: r.title, body: r.body },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: r.hour, minute: r.minute, channelId: CHANNEL },
     });
   }
 }

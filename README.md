@@ -4,12 +4,14 @@ A private, local-first period, ovulation and fertile-window tracker for **iPhone
 with an optional **self-hosted sync server**. Independent open-source project; not affiliated with any other tracking app.
 
 - **Works fully offline.** All data is stored on the device. No account is needed.
-- **Optional end-to-end encrypted sync.** Point the app at your own server to sync phone ⇄ web. Everything is encrypted on-device before upload; the server stores only ciphertext. Last-write-wins per day with encrypted tombstones.
-- **Reminders (iOS/Android).** Period coming up, fertile window starts, daily check-in. Scheduled locally on the device from your own data; no push service. "Discreet wording" (default) keeps lock-screen text generic.
-- **Tracking:** flow, 12 symptoms, 8 moods, basal body temperature (°C/°F), tags (ovulation test, sex, medication…), notes.
-- **Predictions:** next period (with ± range when cycles are irregular), ovulation, 7-day fertile window, cycle phase.
-- **Insights:** average cycle/period, regularity, cycle-length history, most-logged symptoms and moods.
-- **Your data:** JSON export, a plain-text summary to share with a doctor, delete-on-device and delete-account.
+- **Today:** swipeable week strip, a breathing status circle ("Period in 5 days", "Ovulation in 3 days", "Late for 2 days") on a phase-tinted animated background, quick actions, daily tip cards.
+- **Calendar:** Month / Year views, period, predicted, fertile and ovulation styling, optional cycle-day numbers, "Edit period dates" mode.
+- **Daily log:** search, quick picks, flow, sex & sex drive, mood, symptoms, discharge, tests, pill, other, activity, water glasses, BBT, weight, sleep, distance, notes.
+- **Graphs & reports:** cycle-length history, BBT with automatic ovulation (temperature-shift) detection, weight, activity, water vs target, sleep, most-logged symptoms and moods.
+- **Pregnancy mode:** week and day, due date, progress ring, week-by-week size comparison and notes.
+- **Partner (view-only):** share a live, end-to-end encrypted view of your cycle with one person via an invite code; revoke any time. No chat, community or social features.
+- **Reminders (iOS/Android):** period soon/start/end, ovulation, fertile window, pill, water, weight, sleep, temperature, daily check-in; discreet wording by default.
+- **Privacy:** optional end-to-end encrypted sync to your own server; hide sex content; JSON export and doctor summary.
 
 > Predictions are estimates for personal awareness. Not a medical device; not for contraception.
 
@@ -64,6 +66,8 @@ passphrase ──scrypt(N=2^14,r=8,p=1, public salt)──▶ master ──HKDF�
 - The derived key is kept in the iOS Keychain / Android Keystore (`expo-secure-store`); on web it falls back to `localStorage`.
 - Crypto uses audited pure-JS `@noble/ciphers` and `@noble/hashes`, so it behaves identically on web, iOS and Android.
 
+**Partner sharing:** the owner encrypts a small snapshot (cycle day, phase, predictions, a 70-day calendar strip, optionally today's mood/symptoms) with a random key. The invite code carries the server URL, a random share id and that key. The server stores only the ciphertext; the partner needs no account. Notes, sex logs and measurements are never shared.
+
 **What the server can still see:** your email, when you sync, how many records you have, and when each was last edited (needed for last-write-wins). It cannot see content or which days you logged.
 **Not protected:** a compromised device or browser; the web build's key in `localStorage` is readable by any script on that origin, so only use the web app on devices you trust.
 **Recovery:** there is none by design. Lose the passphrase and synced data is unreadable (local data on your devices is unaffected; export JSON regularly).
@@ -72,7 +76,8 @@ passphrase ──scrypt(N=2^14,r=8,p=1, public salt)──▶ master ──HKDF�
 
 - Account passwords are hashed with scrypt; session tokens are stored hashed; auth and sync routes are rate-limited.
 - Use HTTPS in front of the server for anything beyond your LAN.
-- Not yet implemented: pregnancy mode, password reset, multi-factor auth, passphrase change/key rotation.
+- Not yet implemented: password reset, multi-factor auth, passphrase change/key rotation.
+- All in-app articles, tips and pregnancy notes are original, general information and not medical advice.
 
 ## Build the Android APK
 

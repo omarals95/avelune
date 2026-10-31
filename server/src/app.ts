@@ -51,6 +51,12 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     ON CONFLICT (user_id, id) DO UPDATE SET blob = excluded.blob, updated_at = excluded.updated_at,
       seq = (SELECT COALESCE(MAX(seq), 0) + 1 FROM records)`);
   const changedSince = db.prepare('SELECT seq, id, blob, updated_at FROM records WHERE user_id = ? AND seq > ? ORDER BY seq');
+  const SHARE_ID = /^[A-Za-z0-9_-]{22}$/;
+  const getShare = db.prepare('SELECT user_id, blob, updated_at FROM shares WHERE id = ?');
+  const putShare = db.prepare(`INSERT INTO shares (id, user_id, blob, updated_at) VALUES (?, ?, ?, ?)
+    ON CONFLICT (id) DO UPDATE SET blob = excluded.blob, updated_at = excluded.updated_at`);
+  const delShare = db.prepare('DELETE FROM shares WHERE id = ? AND user_id = ?');
+  const countShares = db.prepare('SELECT COUNT(*) AS c FROM shares WHERE user_id = ?');
   const getInfo = db.prepare('SELECT e2ee_info FROM users WHERE id = ?');
   const setInfo = db.prepare('UPDATE users SET e2ee_info = ? WHERE id = ? AND e2ee_info IS NULL');
   const delUser = db.prepare('DELETE FROM users WHERE id = ?');
@@ -89,6 +95,18 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return { token };
   });
 
+  /**
+   * Partner view: public read by unguessable 128-bit id. The blob is encrypted with a key that only
+   * the owner and the invited partner hold, so the server cannot read it.
+   */
+  app.get('/api/shares/:id', rateOpts.config ? { config: { rateLimit: { max: 120, timeWindow: '1 minute' } } } : {}, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const row = SHARE_ID.test(id) ? (getShare.get(id) as { blob: string; updated_at: number } | undefined) : undefined;
+    if (!row) return reply.code(404).send({ error: 'not_found' });
+    reply.header('cache-control', 'no-store');
+    return { blob: row.blob, updatedAt: row.updated_at };
+  });
+
   app.register(async (authed) => {
     authed.addHook('preHandler', async (req, reply) => {
       const h = req.headers.authorization ?? '';
@@ -120,6 +138,22 @@ export function buildApp(opts: AppOptions): FastifyInstance {
       if (!validKeyInfo(info)) return reply.code(400).send({ error: 'invalid_key_info' });
       // Set once: replacing it would silently orphan every record already encrypted under the old key.
       if (setInfo.run(JSON.stringify(info), req.userId).changes === 0) return reply.code(409).send({ error: 'already_set' });
+      return { ok: true };
+    });
+
+    authed.put('/api/shares/:id', async (req, reply) => {
+      const { id } = req.params as { id: string };
+      const blob = ((req.body ?? {}) as { blob?: unknown }).blob;
+      if (!SHARE_ID.test(id) || typeof blob !== 'string' || blob.length > MAX_BLOB || !BLOB_RE.test(blob)) return reply.code(400).send({ error: 'invalid_share' });
+      const ex = getShare.get(id) as { user_id: number } | undefined;
+      if (ex && ex.user_id !== req.userId) return reply.code(403).send({ error: 'forbidden' });
+      if (!ex && (countShares.get(req.userId) as { c: number }).c >= 5) return reply.code(429).send({ error: 'too_many_shares' });
+      putShare.run(id, req.userId, blob, Date.now());
+      return { ok: true };
+    });
+
+    authed.delete('/api/shares/:id', async (req) => {
+      delShare.run((req.params as { id: string }).id, req.userId);
       return { ok: true };
     });
 

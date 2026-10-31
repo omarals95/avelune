@@ -30,6 +30,12 @@ export function openDb(path: string): DB {
       updated_at INTEGER NOT NULL,
       UNIQUE (user_id, id)
     );
+    CREATE TABLE IF NOT EXISTS shares (
+      id TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      blob TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
     CREATE INDEX IF NOT EXISTS records_user_seq ON records (user_id, seq);
   `);
   return db;
