@@ -73,3 +73,11 @@ passphrase ──scrypt(N=2^14,r=8,p=1, public salt)──▶ master ──HKDF�
 - Account passwords are hashed with scrypt; session tokens are stored hashed; auth and sync routes are rate-limited.
 - Use HTTPS in front of the server for anything beyond your LAN.
 - Not yet implemented: pregnancy mode, password reset, multi-factor auth, passphrase change/key rotation.
+
+## Build the Android APK
+
+GitHub → **Actions → Android APK → Run workflow**. When it finishes, download `cyclo-android-apk` from the run page,
+unzip it and install `app-release.apk` on your phone (allow "install unknown apps").
+The generated project signs release builds with Expo's debug keystore, which is fine for sideloading but not for Play Store
+upload; for that, configure your own keystore. Locally (Android SDK + JDK 17 required):
+`cd app && npx expo prebuild --platform android && cd android && ./gradlew assembleRelease`.

@@ -1,0 +1,36 @@
+name: Android APK
+
+on:
+  workflow_dispatch: {}
+  push:
+    tags: ['v*']
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm ci
+      - run: npm test
+      - name: Generate native Android project
+        working-directory: app
+        run: npx expo prebuild --platform android --no-install
+        env:
+          CI: '1'
+      - name: Build release APK
+        working-directory: app/android
+        run: ./gradlew assembleRelease --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cyclo-android-apk
+          path: app/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
