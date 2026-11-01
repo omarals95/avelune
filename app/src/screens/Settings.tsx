@@ -309,7 +309,7 @@ function Data({ go }: { go: (p: SettingsPage) => void }) {
   return (
     <Page>
       <Card>
-        <Row icon="file-upload-outline" title="Import from CSV" subtitle="Spreadsheets, other apps, Avelune exports" onPress={() => go('import')} />
+        <Row icon="file-upload-outline" title="Import from file" subtitle="Excel (.xlsx) or CSV · example template included" onPress={() => go('import')} />
         <Row icon="file-delimited-outline" title="Export as CSV" onPress={() => void shareText('avelune-export.csv', exportCSV(selectLogs(st.records), labelOf), 'text/csv')} />
         <Row icon="code-json" title="Export all data (JSON)" onPress={() => void shareText('avelune-export.json', JSON.stringify({ version: 2, records: Object.values(st.records) }, null, 2), 'application/json')} />
         <Row icon="stethoscope" title="Summary for my doctor" onPress={() => void shareText('avelune-summary.txt', summary(), 'text/plain')} />

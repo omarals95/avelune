@@ -1,0 +1,116 @@
+import { unzipSync, strFromU8 } from 'fflate';
+
+/**
+ * Minimal .xlsx reader: enough to import a filled-in Avelune template or any simple spreadsheet.
+ * Reads every worksheet into rows of strings. Date-formatted cells become YYYY-MM-DD.
+ */
+export interface Sheet { name: string; rows: string[][] }
+
+const ENT: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+const decode = (s: string) =>
+  s.replace(/&(#x[0-9a-f]+|#\d+|\w+);/gi, (m, e: string) =>
+    e[0] === '#' ? String.fromCodePoint(e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)) : ENT[e] ?? m);
+
+const attr = (tag: string, name: string) => {
+  const m = new RegExp(`\\s${name}="([^"]*)"`).exec(tag);
+  return m ? decode(m[1]) : undefined;
+};
+
+/** Concatenate all <t> runs (handles rich text). */
+const texts = (xml: string) => {
+  let out = '';
+  for (const m of xml.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g)) out += decode(m[1]);
+  return out;
+};
+
+const colIndex = (ref: string) => {
+  const letters = /^[A-Z]+/.exec(ref)?.[0] ?? 'A';
+  let n = 0;
+  for (const ch of letters) n = n * 26 + (ch.charCodeAt(0) - 64);
+  return n - 1;
+};
+
+const BUILTIN_DATE = new Set([14, 15, 16, 17, 18, 19, 20, 21, 22, 45, 46, 47]);
+const isDateFormat = (code: string) => {
+  const c = code.replace(/"[^"]*"|\[[^\]]*\]|\\./g, '');
+  return /[dmy]/i.test(c) && !/^[#0.,%\s]*$/.test(c);
+};
+
+export function serialToISO(n: number): string {
+  const d = new Date(Date.UTC(1899, 11, 30) + Math.round(n * 86400000));
+  return d.toISOString().slice(0, 10);
+}
+
+export function readXlsx(bytes: Uint8Array): Sheet[] {
+  const files = unzipSync(bytes);
+  const read = (p: string) => (files[p] ? strFromU8(files[p]) : '');
+  const shared: string[] = [];
+  for (const m of read('xl/sharedStrings.xml').matchAll(/<si>([\s\S]*?)<\/si>/g)) shared.push(texts(m[1]));
+
+  // Which style indexes are dates.
+  const styles = read('xl/styles.xml');
+  const custom = new Map<number, string>();
+  for (const m of styles.matchAll(/<numFmt\s[^>]*>/g)) custom.set(Number(attr(m[0], 'numFmtId')), attr(m[0], 'formatCode') ?? '');
+  const xfs = /<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/.exec(styles)?.[1] ?? '';
+  const dateStyle: boolean[] = [];
+  for (const m of xfs.matchAll(/<xf\s[^>]*?\/?>/g)) {
+    const id = Number(attr(m[0], 'numFmtId') ?? 0);
+    dateStyle.push(BUILTIN_DATE.has(id) || (custom.has(id) && isDateFormat(custom.get(id)!)));
+  }
+
+  // Sheet names in workbook order → file paths.
+  const rels = new Map<string, string>();
+  for (const m of read('xl/_rels/workbook.xml.rels').matchAll(/<Relationship\s[^>]*>/g)) {
+    const id = attr(m[0], 'Id'), target = attr(m[0], 'Target');
+    if (id && target) rels.set(id, target.startsWith('/') ? target.slice(1) : `xl/${target.replace(/^\.\//, '')}`);
+  }
+  const sheets: Sheet[] = [];
+  for (const m of read('xl/workbook.xml').matchAll(/<sheet\s[^>]*>/g)) {
+    const name = attr(m[0], 'name') ?? `Sheet${sheets.length + 1}`;
+    const rid = attr(m[0], 'r:id');
+    const path = (rid && rels.get(rid)) || `xl/worksheets/sheet${sheets.length + 1}.xml`;
+    sheets.push({ name, rows: readSheet(read(path), shared, dateStyle) });
+  }
+  return sheets;
+}
+
+function readSheet(xml: string, shared: string[], dateStyle: boolean[]): string[][] {
+  const rows: string[][] = [];
+  for (const rm of xml.matchAll(/<row\b([^>]*)>([\s\S]*?)<\/row>|<row\b([^>]*)\/>/g)) {
+    const rAttr = rm[1] ?? rm[3] ?? '';
+    const rowNum = Number(attr(`<row${rAttr}>`, 'r') ?? rows.length + 1) - 1;
+    const row: string[] = [];
+    for (const cm of (rm[2] ?? '').matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+      const tag = `<c${cm[1]}>`;
+      const body = cm[2] ?? '';
+      const ref = attr(tag, 'r');
+      const idx = ref ? colIndex(ref) : row.length;
+      const t = attr(tag, 't');
+      const s = Number(attr(tag, 's') ?? 0);
+      const v = /<v>([\s\S]*?)<\/v>/.exec(body)?.[1];
+      let val = '';
+      if (t === 's') val = shared[Number(v)] ?? '';
+      else if (t === 'inlineStr') val = texts(body);
+      else if (t === 'str' || t === 'e') val = v != null ? decode(v) : '';
+      else if (t === 'b') val = v === '1' ? 'TRUE' : 'FALSE';
+      else if (v != null) {
+        const n = Number(v);
+        val = dateStyle[s] && Number.isFinite(n) ? serialToISO(n) : String(+n.toPrecision(12));
+      }
+      while (row.length < idx) row.push('');
+      row[idx] = val;
+    }
+    while (rows.length < rowNum) rows.push([]);
+    rows[rowNum] = row;
+  }
+  return rows;
+}
+
+const SKIP = /example|sample|how to|instructions|help|readme|guide/i;
+
+/** The sheet to import: the first non-instruction sheet that has data below its header. */
+export function pickSheet(sheets: Sheet[]): Sheet | null {
+  const filled = (s: Sheet) => s.rows.filter((r) => r.some((c) => c.trim() !== '')).length >= 2;
+  // Never fall back to the template's example sheet: an untouched template imports nothing.
+  return sheets.find((s) => !SKIP.test(s.name) && filled(s)) ?? sheets.find((s) => !SKIP.test(s.name)) ?? sheets[0] ?? null;
+}

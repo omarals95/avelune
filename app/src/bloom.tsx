@@ -108,11 +108,9 @@ export function BloomCircle({ bloom, progress, kicker, big, sub, glyph, celebrat
     return () => clearTimeout(t);
   }, [celebrateKey]);
   const tint = bloomTint(bloom);
-  const inner = D * 0.44;
-  // Size the headline so its longest word always fits the open centre (no mid-word breaks).
-  const longest = Math.max(...big.split(' ').map((w) => w.length));
-  const bigSize = Math.max(20, Math.min(38, (inner - 30) / (longest * 0.58)));
+  const inner = D * 0.46;
   const dark = scheme === 'dark';
+  const fit = fitCentre(inner, kicker, big, sub, !!glyph && dark);
   return (
     <View style={{ width: D, height: D, alignSelf: 'center', alignItems: 'center', justifyContent: 'center' }}>
       <View style={[StyleSheet.absoluteFill, { borderRadius: D / 2, backgroundColor: tint, opacity: dark ? 0.08 : 0.05, transform: [{ scale: 0.9 }] }]} />
@@ -130,10 +128,10 @@ export function BloomCircle({ bloom, progress, kicker, big, sub, glyph, celebrat
         ) : (
           <>
             {children}
-            {kicker ? <Text style={b.kicker} numberOfLines={2} adjustsFontSizeToFit maxFontSizeMultiplier={1.15}>{kicker}</Text> : null}
-            <Text style={[b.big, { fontSize: bigSize, lineHeight: Math.round(bigSize * 1.18) }]} numberOfLines={2} adjustsFontSizeToFit maxFontSizeMultiplier={1.1}>{big}</Text>
-            {sub ? <Text style={b.sub} numberOfLines={2} maxFontSizeMultiplier={1.15}>{sub}</Text> : null}
-            {glyph && dark ? <View style={{ marginTop: 6 }}><Icon name={glyph} size={20} color={tint} /></View> : null}
+            {kicker ? <Text style={[b.kicker, { fontSize: fit.kicker, lineHeight: Math.round(fit.kicker * 1.25) }]} numberOfLines={1} allowFontScaling={false}>{kicker}</Text> : null}
+            <Text style={[b.big, { fontSize: fit.big, lineHeight: Math.round(fit.big * 1.15), width: fit.width }]} numberOfLines={fit.lines.length} allowFontScaling={false}>{fit.lines.join('\n')}</Text>
+            {sub ? <Text style={[b.sub, { fontSize: fit.sub, lineHeight: Math.round(fit.sub * 1.3), width: fit.width }]} numberOfLines={2} allowFontScaling={false}>{sub}</Text> : null}
+            {fit.glyph && glyph ? <View style={{ marginTop: 4 }}><Icon name={glyph} size={18} color={tint} /></View> : null}
           </>
         )}
       </View>
@@ -141,9 +139,49 @@ export function BloomCircle({ bloom, progress, kicker, big, sub, glyph, celebrat
   );
 }
 
+/** Average glyph width as a fraction of font size (rounded sans/serif, slightly generous). */
+const EM = 0.62;
+
+/** Break text into at most two balanced lines (never mid-word). */
+function twoLines(t: string): string[] {
+  const w = t.split(' ');
+  if (w.length < 2) return [t];
+  let best: string[] = [t];
+  let bestLen = Infinity;
+  for (let i = 1; i < w.length; i++) {
+    const a = w.slice(0, i).join(' '), z = w.slice(i).join(' ');
+    const m = Math.max(a.length, z.length);
+    if (m < bestLen) { bestLen = m; best = [a, z]; }
+  }
+  return best;
+}
+
+/**
+ * Size the centre copy so every line fits the circle: width from the longest line,
+ * height from the stack of kicker, headline, sub-line and glyph.
+ */
+export function fitCentre(inner: number, kicker: string, big: string, sub: string | undefined, glyph: boolean) {
+  const width = inner * 0.76;
+  const height = inner * 0.74;
+  const one = Math.min(34, width / (big.length * EM));
+  const split = twoLines(big);
+  const two = Math.min(34, width / (Math.max(...split.map((l) => l.length)) * EM));
+  // Prefer one line unless that would make the headline much smaller than two lines would.
+  const lines = split.length > 1 && two > one * 1.25 ? split : [big];
+  let size = lines.length > 1 ? two : one;
+  const kick = kicker ? Math.min(17, width / (kicker.length * EM)) : 0;
+  const subSize = 13;
+  const subLines = sub ? (sub.length * subSize * 0.55 > width ? 2 : 1) : 0;
+  const fixed = (kicker ? kick * 1.25 : 0) + subLines * subSize * 1.3 + (sub ? 2 : 0);
+  let showGlyph = glyph;
+  if (fixed + lines.length * size * 1.15 + (showGlyph ? 22 : 0) > height) showGlyph = false;
+  size = Math.max(16, Math.min(size, (height - fixed - (showGlyph ? 22 : 0)) / (lines.length * 1.15)));
+  return { width, lines, big: Math.floor(size), kicker: Math.floor(kick), sub: subSize, glyph: showGlyph };
+}
+
 const b = themed(() => StyleSheet.create({
   center: {
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14,
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
     backgroundColor: scheme === 'dark' ? 'rgba(27,19,28,0.92)' : 'rgba(252,247,244,0.96)', borderWidth: 1,
     ...(scheme === 'dark' ? {} : { shadowColor: '#7B3454', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 4 } }),
   },

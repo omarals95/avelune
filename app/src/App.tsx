@@ -22,6 +22,7 @@ import { scheduleReminders } from './reminders';
 import { selectLogs, selectSettings, useStore } from './store';
 import { applyScheme, colors, scheme, themed } from './theme';
 import { Sheet } from './ui';
+import { SheetOutlet } from './sheet';
 import { CalendarView } from './screens/Calendar';
 import { ChartScreen, Insights } from './screens/Insights';
 import { LogSheet } from './screens/LogSheet';
@@ -57,7 +58,6 @@ function Root() {
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(colors.bg).catch(() => undefined);
     if (Platform.OS === 'android') {
-      void NavigationBar.setBackgroundColorAsync(colors.bg).catch(() => undefined);
       void NavigationBar.setButtonStyleAsync(eff === 'dark' ? 'light' : 'dark').catch(() => undefined);
     }
   }, [eff]);
@@ -70,8 +70,20 @@ function Root() {
     <View key={eff} style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style={eff === 'dark' ? 'light' : 'dark'} />
       {partner && !onboarded ? <PartnerRoot /> : !onboarded ? <Onboarding /> : <Main />}
+      <SystemBarBackdrop />
+      <SheetOutlet />
     </View>
   );
+}
+
+/**
+ * Android 15 draws apps edge-to-edge, so the gesture/navigation bar sits over the content.
+ * Paint a solid strip in the page colour behind it so it never looks see-through.
+ */
+function SystemBarBackdrop() {
+  const insets = useSafeAreaInsets();
+  if (!insets.bottom) return null;
+  return <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: insets.bottom, backgroundColor: colors.bg }} />;
 }
 
 function Main() {

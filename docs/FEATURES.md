@@ -203,15 +203,19 @@ A coloured header with a gently floating illustration, the article text fading i
   - **Sync now** and **Disconnect** (keeps the data on the device).
   - **Unlock** with your passphrase on a new device.
 - **Your data**:
-  - **Import from CSV** (§6).
+  - **Import from file**: Excel or CSV, with a downloadable template (§6).
   - **Export as CSV**.
   - **Export all data (JSON)**.
   - **Summary for my doctor**: a text summary with average cycle and period and the last 12 periods.
   - **Delete data on this device**.
   - **Delete my account and server data**, shown when connected. This also removes partner shares.
 
-### 3.12 Import from CSV (Settings → Your data)
-- Choose a `.csv` file (up to 5 MB) from your phone, cloud storage or computer.
+### 3.12 Import from file (Settings → Your data)
+- **Download example.xlsx**: a ready-made spreadsheet to fill in.
+  - A *Your data* sheet with a date column, a flow drop-down and tips on every column.
+  - A filled-in *Example* sheet, which is never imported.
+  - A *How to fill* sheet listing every symptom, mood and tag Avelune understands.
+- Choose an Excel `.xlsx` or `.csv` file (up to 5 MB) from your phone, cloud storage or computer. With `.xlsx`, the first sheet that has data is imported (skipping the example).
 - **Preview before importing**:
   - number of rows and days;
   - date range;

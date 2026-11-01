@@ -48,6 +48,7 @@ import { Eye } from 'phosphor-react-native/src/icons/Eye';
 import { EyeSlash } from 'phosphor-react-native/src/icons/EyeSlash';
 import { FileArrowUp } from 'phosphor-react-native/src/icons/FileArrowUp';
 import { FileCsv } from 'phosphor-react-native/src/icons/FileCsv';
+import { FileXls } from 'phosphor-react-native/src/icons/FileXls';
 import { Fire } from 'phosphor-react-native/src/icons/Fire';
 import { FirstAidKit } from 'phosphor-react-native/src/icons/FirstAidKit';
 import { Flower } from 'phosphor-react-native/src/icons/Flower';
@@ -177,7 +178,7 @@ const MAP = {
   toilet: Toilet, 'arrow-expand-all': ArrowsOut, 'weather-windy': Wind, 'egg-outline': Egg, 'test-tube': TestTube,
   'test-tube-empty': [TestTube, 'light'], pill: Pill, 'map-marker-outline': MapPin, bandage: Bandaids, 'glass-wine': Wine,
   'medical-bag': FirstAidKit, 'sofa-outline': Couch, yoga: PersonSimpleTaiChi, dumbbell: Barbell, 'music-note-outline': MusicNote,
-  swim: SwimmingPool, basketball: Basketball, bike: Bicycle, 'heart-off': HeartBreak, baby: Baby, symptoms: ClipboardText, waveform: Waveform,
+  swim: SwimmingPool, basketball: Basketball, bike: Bicycle, 'heart-off': HeartBreak, baby: Baby, symptoms: ClipboardText, 'file-xls': FileXls, download: DownloadSimple, waveform: Waveform,
 } satisfies Record<string, Entry>;
 
 export type IconName = keyof typeof MAP;

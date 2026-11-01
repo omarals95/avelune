@@ -140,10 +140,26 @@ export interface ImportResult {
  *  - one row per period (start [+ end]); each day in the range becomes a period day.
  */
 export function importCSV(text: string, opts: ImportOptions): ImportResult {
-  const rows = parseCSV(text);
+  return importRows(parseCSV(text), opts);
+}
+
+/** Excel stores dates as days since 1899-12-30; accept those in date columns (e.g. a CSV saved from Excel without formats). */
+function serialToDate(raw: string): string {
+  const t = raw.trim();
+  if (!/^\d{5}(\.\d+)?$/.test(t)) return raw;
+  const n = Math.floor(Number(t));
+  if (n < 20000 || n > 80000) return raw;
+  const d = new Date(Date.UTC(1899, 11, 30) + n * 86400000);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Import already-split rows (first row = header), from CSV or a spreadsheet. */
+export function importRows(input: string[][], opts: ImportOptions): ImportResult {
+  const rows = input.filter((r) => r.some((c) => c.trim() !== ''));
   const header = rows[0] ?? [];
   const cols = detectColumns(header);
-  const body = rows.slice(1);
+  const dateCols = [cols.date, cols.start, cols.end].filter((c): c is number => c != null);
+  const body = rows.slice(1).map((r) => (dateCols.length ? r.map((c, i) => (dateCols.includes(i) ? serialToDate(c) : c)) : r));
   const dateCol = cols.date ?? cols.start;
   const guessed = guessDateOrder(body.map((r) => (dateCol != null ? r[dateCol] ?? '' : '')).concat(cols.end != null ? body.map((r) => r[cols.end!] ?? '') : []));
   const order: 'dmy' | 'mdy' = opts.dateOrder && opts.dateOrder !== 'auto' ? opts.dateOrder : guessed === 'mdy' ? 'mdy' : 'dmy';

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
+import { Animated, Easing, Platform, Pressable, ScrollView, StyleSheet, Switch, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { Text, TextInput } from './text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ND, PressScale } from './anim';
@@ -127,20 +127,7 @@ export function PillTabs<T extends string>({ options, value, onChange, fill }: {
   );
 }
 
-/** Full-screen sheet that slides up (native modal animation on mobile, fade on web). */
-export function Sheet({ visible, onClose, children, bg: bgIn }: { visible: boolean; onClose: () => void; children: React.ReactNode; bg?: string }) {
-  const bg = bgIn ?? colors.bg;
-  return (
-    <Modal visible={visible} onRequestClose={onClose} animationType={Platform.OS === 'web' ? 'fade' : 'slide'} presentationStyle="fullScreen" transparent={false} statusBarTranslucent>
-      <SheetBody bg={bg}>{children}</SheetBody>
-    </Modal>
-  );
-}
-function SheetBody({ children, bg }: { children: React.ReactNode; bg: string }) {
-  const insets = useSafeAreaInsets();
-  // The modal draws under the (transparent) status bar, so the top inset is applied exactly once.
-  return <View style={{ flex: 1, backgroundColor: bg, paddingTop: insets.top, paddingBottom: insets.bottom }}>{children}</View>;
-}
+export { Sheet } from './sheet';
 
 export function TopBar({ title, onBack, onClose, right, subtitle }: { title?: string; subtitle?: string; onBack?: () => void; onClose?: () => void; right?: React.ReactNode }) {
   return (

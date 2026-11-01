@@ -8,3 +8,4 @@ export * from './pregnancy';
 export * from './share';
 export * from './health';
 export * from './csv';
+export * from './xlsx';

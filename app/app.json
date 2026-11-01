@@ -78,7 +78,8 @@
         {
           "healthSharePermission": "Avelune reads steps, sleep, heart rate, weight, temperature and water to show them next to your cycle. Health data stays on your device."
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "icon": "./assets/icon.png",
     "backgroundColor": "#FCF8F5",
