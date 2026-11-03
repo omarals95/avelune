@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Platform, Share, View } from 'react-native';
 import { Text } from '../text';
-import { addDays, derivePeriods, exportCSV, lmpFromDueDate, predict, pregnancyStatus, today as todayFn, type ReminderPrefs, type TimeOfDay } from '@cyclo/core';
+import { addDays, derivePeriods, exportCSV, lmpFromDueDate, predict, pregnancyStatus, today as todayFn, type Condition, type Contraception, type CycleProfile, type ReminderPrefs, type TimeOfDay } from '@cyclo/core';
 import { FadeIn, PressScale } from '../anim';
 import { fmtDay } from '../components';
 import { Icon, type IconName } from '../icons';
@@ -13,7 +13,8 @@ import { ImportCSV } from './ImportCSV';
 import { labelOf } from '../catalog';
 import { selectLogs, selectSettings, useStore } from '../store';
 import { colors, type ThemePref } from '../theme';
-import { Btn, Card, Field, Muted, Page, Row, Section, Stepper, TopBar } from '../ui';
+import { Btn, Card, Chip, Field, Muted, Page, Row, Section, Stepper, TopBar } from '../ui';
+import { BackupSettings } from './Backup';
 
 async function shareText(filename: string, text: string, mime: string) {
   if (Platform.OS === 'web') {
@@ -38,13 +39,15 @@ export function Settings({ page: initial, onClose }: { page: SettingsPage; onClo
   const [page, setPage] = useState<SettingsPage>(initial);
   const back = () => (page === 'main' || initial !== 'main' ? onClose() : setPage('main'));
   const titles: Record<SettingsPage, string> = {
-    main: 'Settings', appearance: 'Appearance', health: 'Health connections', import: 'Import data', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy mode', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units',
+    main: 'Settings', appearance: 'Appearance', profile: 'Health profile', backup: 'Backups', health: 'Health connections', import: 'Import data', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy & after', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units',
   };
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <TopBar title={titles[page]} onBack={back} />
       {page === 'main' && <Main go={setPage} />}
       {page === 'appearance' && <Appearance />}
+      {page === 'profile' && <Profile />}
+      {page === 'backup' && <BackupSettings />}
       {page === 'cycle' && <CycleSettings />}
       {page === 'reminders' && <Reminders />}
       {page === 'pregnancy' && <Pregnancy />}
@@ -68,14 +71,16 @@ function Main({ go }: { go: (p: SettingsPage) => void }) {
       </Card>
       <Card>
         <Row icon="palette" title="Appearance" subtitle={({ system: 'Match phone', light: 'Light', dark: 'Dark' } as const)[st.theme ?? 'system']} onPress={() => go('appearance')} />
-        <Row icon="refresh" title="Cycle and ovulation" onPress={() => go('cycle')} />
+        <Row icon="stethoscope" title="Health profile" subtitle={profileSummary(settings)} onPress={() => go('profile')} />
+        <Row icon="refresh" title="Cycle and ovulation" subtitle={settings.stage?.kind === 'paused' ? 'Tracking paused' : settings.forecastMode === 'off' ? 'Forecast off' : undefined} onPress={() => go('cycle')} />
         <Row icon="bell-outline" title="Reminders" onPress={() => go('reminders')} />
-        <Row icon="human-pregnant" title="Pregnancy mode" subtitle={settings.pregnancyLmp ? 'On' : 'Off'} onPress={() => go('pregnancy')} />
+        <Row icon="human-pregnant" title="Pregnancy & after" subtitle={settings.pregnancyLmp ? 'Pregnant' : settings.stage?.kind === 'postpartum' ? 'After birth' : settings.stage?.kind === 'loss' ? 'After a loss' : 'Off'} onPress={() => go('pregnancy')} />
         <Row icon="eye-off-outline" title="Hide content" onPress={() => go('content')} />
         <Row icon="ruler" title="Units" subtitle={`°${st.unit} · ${st.weightUnit}`} onPress={() => go('units')} />
       </Card>
       <Card>
         <Row icon="heart-pulse" title="Health connections" subtitle="Apple Health, Health Connect, Fitbit" onPress={() => go('health')} />
+        <Row icon="shield-lock-outline" title="Backups" subtitle={st.backup.enabled && st.backup.lastAt ? `On · last ${new Date(st.backup.lastAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : st.backup.lastAt ? 'Manual' : 'Off'} onPress={() => go('backup')} />
         <Row icon="cloud-lock-outline" title="Sync & encryption" subtitle={st.server ? `Connected · ${st.server.email}` : 'Off: data stays on this device'} onPress={() => go('sync')} />
         <Row icon="database-export-outline" title="Your data" subtitle="Export, doctor summary, delete" onPress={() => go('data')} />
       </Card>
@@ -122,9 +127,15 @@ function CycleSettings() {
   return (
     <Page>
       <Card>
-        <Stepper label="Cycle length" value={settings.cycleLength} min={21} max={45} suffix=" days" onChange={(cycleLength) => set({ cycleLength })} />
-        <Stepper label="Period length" value={settings.periodLength} min={2} max={10} suffix=" days" onChange={(periodLength) => set({ periodLength })} />
-        <Muted style={{ marginTop: 8 }}>Predictions use these settings at first. Once you have logged a few periods, they are based on your logged data instead.</Muted>
+        <Row title="Show period forecast" value={settings.forecastMode !== 'off'} onValueChange={(v) => set({ forecastMode: v ? 'auto' : 'off' })} />
+        <Muted>Turn off to see only the days since your last period: no predicted dates, ranges or late notices.</Muted>
+        <Row title="Pause tracking" value={settings.stage?.kind === 'paused'} onValueChange={(v) => set({ stage: v ? { kind: 'paused', since: todayFn() } : { kind: 'cycling' } })} />
+        <Muted>For a break from tracking. Predictions and cycle reminders stop; anything you log is still saved.</Muted>
+      </Card>
+      <Card>
+        <Stepper label="Cycle length" value={settings.cycleLength} min={15} max={90} suffix=" days" onChange={(cycleLength) => set({ cycleLength })} />
+        <Stepper label="Period length" value={settings.periodLength} min={1} max={14} suffix=" days" onChange={(periodLength) => set({ periodLength })} />
+        <Muted style={{ marginTop: 8 }}>Predictions use these settings at first. Once you have logged a few periods, they use your own cycles instead, leaving out any that look unusual. You can choose which cycles count under Insights › Recent cycle length.</Muted>
       </Card>
       <Card>
         <Row title="Chance of getting pregnant" value={settings.showFertileWindow !== false} onValueChange={(showFertileWindow) => set({ showFertileWindow })} />
@@ -214,6 +225,98 @@ function Reminders() {
   );
 }
 
+function DateRow({ label, value, onChange }: { label: string; value: string; onChange: (d: string) => void }) {
+  const today = todayFn();
+  const shift = (n: number) => { const v = addDays(value, n); if (v <= today) onChange(v); };
+  const months = (m: number) => { const d = new Date(+value.slice(0, 4), +value.slice(5, 7) - 1 + m, +value.slice(8)); const v = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; onChange(v > today ? today : v); };
+  return (
+    <View style={{ paddingVertical: 8 }}>
+      <Text style={{ fontSize: 15, color: colors.text, marginBottom: 6 }}>{label}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Btn kind="ghost" title="−1 mo" onPress={() => months(-1)} style={{ minHeight: 44, paddingHorizontal: 10, marginVertical: 0 }} />
+        <Stepper label="" value={0} min={-100000} max={100000} format={() => `${fmtDay(value)} ${value.slice(0, 4)}`} onChange={(n) => shift(n)} />
+        <Btn kind="ghost" title="+1 mo" onPress={() => months(1)} style={{ minHeight: 44, paddingHorizontal: 10, marginVertical: 0 }} />
+      </View>
+    </View>
+  );
+}
+
+const CONDITIONS: [Condition, string, string][] = [
+  ['pcos', 'PCOS', 'Long or irregular cycles are expected; forecasts become wider ranges.'],
+  ['endometriosis', 'Endometriosis', 'Timing stays the same; track pain by cycle day for your doctor.'],
+  ['thyroid', 'Thyroid condition', 'Can shift cycle length.'],
+  ['perimenopause', 'Perimenopause', 'Cycles often lengthen, shorten or skip.'],
+  ['no-uterus', 'No uterus or endometrial ablation', 'No period forecast; you can still log symptoms.'],
+];
+const METHODS: [Contraception, string][] = [
+  ['none', 'None'], ['combined-pill', 'Combined pill'], ['mini-pill', 'Mini pill'], ['hormonal-iud', 'Hormonal IUD'], ['copper-iud', 'Copper IUD'],
+  ['implant', 'Implant'], ['ring', 'Ring'], ['patch', 'Patch'], ['injection', 'Injection'], ['barrier', 'Condoms or barrier'], ['fam', 'Fertility awareness'],
+];
+const HORMONAL: Contraception[] = ['combined-pill', 'mini-pill', 'hormonal-iud', 'implant', 'ring', 'patch', 'injection'];
+
+export function profileSummary(s: ReturnType<typeof selectSettings>) {
+  const parts = [...(s.profile?.conditions ?? []).map((c) => CONDITIONS.find((x) => x[0] === c)?.[1].split(' ')[0] ?? c)];
+  const m = s.profile?.contraception;
+  if (m && m !== 'none') parts.push(METHODS.find((x) => x[0] === m)?.[1] ?? m);
+  return parts.length ? parts.join(' · ') : 'Conditions and contraception';
+}
+
+/** Settings → Health profile: context that changes how predictions are made. */
+function Profile() {
+  const st = useStore();
+  const settings = selectSettings(st.records);
+  const pr = settings.profile ?? {};
+  const today = todayFn();
+  const set = (patch: Partial<CycleProfile>) => st.updateSettings({ profile: { ...pr, ...patch } });
+  const conds = pr.conditions ?? [];
+  const method = pr.contraception ?? 'none';
+  const p = predict(selectLogs(st.records), settings, today);
+  const toggleCond = (c: Condition) => set({ conditions: conds.includes(c) ? conds.filter((x) => x !== c) : [...conds, c] });
+  const pickMethod = (m: Contraception) => {
+    // Switching away from a hormonal method: remember when, so earlier withdrawal bleeds don't count as cycles.
+    // (Only when it was in use for at least a day, so a mis-tap doesn't hide your history.)
+    const stopping = HORMONAL.includes(method) && !HORMONAL.includes(m) && !!pr.contraceptionSince && pr.contraceptionSince < today;
+    set({ contraception: m, contraceptionSince: m === 'none' ? null : today, ...(stopping ? { stoppedHormonalOn: today } : {}) });
+  };
+  return (
+    <Page>
+      <Muted style={{ marginBottom: 12 }}>This stays on your device (and your own encrypted sync). It changes which cycles count, how wide the forecast range is and what Avelune says when a period is late.</Muted>
+      <Card>
+        <Text style={{ fontSize: 17, fontWeight: '700', color: colors.heading, marginBottom: 8 }}>Conditions</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          {CONDITIONS.map(([c, label]) => <Chip key={c} label={label} on={conds.includes(c)} onPress={() => toggleCond(c)} />)}
+        </View>
+        {conds.map((c) => <Muted key={c} style={{ marginTop: 4 }}>{CONDITIONS.find((x) => x[0] === c)?.[1]}: {CONDITIONS.find((x) => x[0] === c)?.[2]}</Muted>)}
+        {conds.includes('perimenopause') ? <Row title="Taking HRT" value={!!pr.hrt} onValueChange={(hrt) => set({ hrt })} /> : null}
+        <Row title="In fertility treatment (IVF, IUI)" value={!!pr.fertilityTreatment} onValueChange={(fertilityTreatment) => set({ fertilityTreatment })} />
+      </Card>
+      <Card>
+        <Text style={{ fontSize: 17, fontWeight: '700', color: colors.heading, marginBottom: 8 }}>Contraception</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          {METHODS.map(([m, label]) => <Chip key={m} label={label} on={method === m} onPress={() => pickMethod(m)} />)}
+        </View>
+        {method !== 'none' && method !== 'barrier' && method !== 'fam' && pr.contraceptionSince ? (
+          <DateRow label="Started or inserted on" value={pr.contraceptionSince} onChange={(contraceptionSince) => set({ contraceptionSince })} />
+        ) : null}
+        <Row title="I recently stopped hormonal birth control" value={!!pr.stoppedHormonalOn} onValueChange={(v) => set({ stoppedHormonalOn: v ? today : null })} />
+        {pr.stoppedHormonalOn ? <DateRow label="Stopped on" value={pr.stoppedHormonalOn} onChange={(stoppedHormonalOn) => set({ stoppedHormonalOn })} /> : null}
+        <Muted>Bleeds before this date are withdrawal bleeds and are not counted as cycles.</Muted>
+      </Card>
+      <Card>
+        <Text style={{ fontSize: 17, fontWeight: '700', color: colors.heading }}>Effect on your forecast</Text>
+        {p.noForecast ? <Muted style={{ marginTop: 6 }}>{p.notes[0]}</Muted> : (
+          <>
+            <Text style={{ fontSize: 15, color: colors.text, marginTop: 6 }}>
+              {p.nextPeriodRange ? `Next period ${fmtDay(p.nextPeriodRange[0])} – ${fmtDay(p.nextPeriodRange[1])} · ${p.confidence} confidence` : 'Log a period to see a forecast.'}
+            </Text>
+            {p.notes.slice(1).map((n, i) => <Muted key={i} style={{ marginTop: 4 }}>• {n}</Muted>)}
+          </>
+        )}
+      </Card>
+    </Page>
+  );
+}
+
 function Pregnancy() {
   const st = useStore();
   const settings = selectSettings(st.records);
@@ -221,14 +324,62 @@ function Pregnancy() {
   const today = todayFn();
   const lastStart = derivePeriods(logs).pop()?.start ?? addDays(today, -28);
   const [lmp, setLmp] = useState(settings.pregnancyLmp ?? lastStart);
-  const set = (pregnancyLmp: string | null) => st.saveSettings({ ...settings, pregnancyLmp });
+  const [ending, setEnding] = useState<null | 'birth' | 'loss'>(null);
+  const [endDate, setEndDate] = useState(today);
+  const [feeding, setFeeding] = useState(false);
+  const set = (pregnancyLmp: string | null) => st.saveSettings({ ...settings, pregnancyLmp, stage: pregnancyLmp ? { kind: 'cycling' } : settings.stage });
   const ps = pregnancyStatus(lmp, today);
+  const stage = settings.stage;
   return (
     <Page>
-      <Card>
-        <Row title="I'm pregnant" value={!!settings.pregnancyLmp} onValueChange={(v) => set(v ? lmp : null)} />
-        <Muted>Pregnancy mode switches Today to week-by-week updates, pauses period predictions and cycle reminders, and adds weight tracking to the main screen.</Muted>
-      </Card>
+      {settings.pregnancyLmp ? (
+        <Card>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.heading }}>You're pregnant · week {ps.week}</Text>
+          <Muted style={{ marginTop: 4 }}>When your pregnancy ends, tell Avelune so it can switch to the right kind of tracking.</Muted>
+          {!ending ? (
+            <>
+              <Btn icon="baby" title="My baby was born" onPress={() => { setEnding('birth'); setEndDate(today); }} style={{ marginTop: 12 }} />
+              <Btn kind="ghost" title="My pregnancy ended (loss)" onPress={() => { setEnding('loss'); setEndDate(today); }} />
+              <Btn kind="ghost" title="Turn off pregnancy mode" onPress={() => st.endPregnancy('ended', today)} />
+            </>
+          ) : (
+            <View style={{ marginTop: 10 }}>
+              {ending === 'loss' ? (
+                <Text style={{ fontSize: 15, color: colors.text, lineHeight: 22, marginBottom: 6 }}>
+                  We’re so sorry. Avelune will hide pregnancy content, stop any “late” notices and wait for your next period before predicting again. Take your time.
+                </Text>
+              ) : null}
+              <DateRow label={ending === 'birth' ? 'Date of birth' : 'Date'} value={endDate} onChange={setEndDate} />
+              {ending === 'birth' ? <Row title="Breastfeeding" value={feeding} onValueChange={setFeeding} /> : null}
+              <Btn title="Confirm" onPress={() => { st.endPregnancy(ending, endDate, feeding); setEnding(null); }} />
+              <Btn kind="ghost" title="Cancel" onPress={() => setEnding(null)} />
+            </View>
+          )}
+        </Card>
+      ) : (
+        <Card>
+          <Row title="I'm pregnant" value={false} onValueChange={(v) => v && set(lmp)} />
+          <Muted>Pregnancy mode switches Today to week-by-week updates and pauses period predictions and cycle reminders.</Muted>
+        </Card>
+      )}
+
+      {!settings.pregnancyLmp && stage?.kind === 'postpartum' ? (
+        <Card>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.heading }}>After birth · since {fmtDay(stage.since)}</Text>
+          <Muted style={{ marginTop: 4 }}>{stage.returnedOn ? `Your period came back on ${fmtDay(stage.returnedOn)}. Early cycles are often irregular, so forecasts are wide ranges for now.` : 'Bleeding in the first weeks is not a period, so it is not counted. Predictions start again with your first period.'}</Muted>
+          <Row title="Breastfeeding" value={!!stage.breastfeeding} onValueChange={(breastfeeding) => st.updateSettings({ stage: { ...stage, breastfeeding } })} />
+          {!stage.returnedOn ? <Btn title="My period is back" onPress={() => st.updateSettings({ stage: { ...stage, returnedOn: today } })} style={{ marginTop: 8 }} /> : null}
+          <Btn kind="ghost" title="Back to regular tracking" onPress={() => st.updateSettings({ stage: { kind: 'cycling' } })} />
+        </Card>
+      ) : null}
+      {!settings.pregnancyLmp && stage?.kind === 'loss' ? (
+        <Card>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.heading }}>After your loss</Text>
+          <Muted style={{ marginTop: 4 }}>Predictions resume after your next period, and there are no “late” notices until then. The cycle that included the pregnancy is not counted in your averages.</Muted>
+          <Btn kind="ghost" title="Back to regular tracking" onPress={() => st.updateSettings({ stage: { kind: 'cycling' } })} />
+        </Card>
+      ) : null}
+
       <Card>
         <Text style={{ fontWeight: '700', fontSize: 17, marginBottom: 6, color: colors.text }}>First day of your last period</Text>
         <Stepper label={fmtDay(lmp)} value={0} min={-300} max={300} format={() => ''} onChange={(n) => { const v = addDays(lmp, n); if (v <= today) { setLmp(v); if (settings.pregnancyLmp) set(v); } }} />

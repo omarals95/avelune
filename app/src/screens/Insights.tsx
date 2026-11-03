@@ -221,9 +221,11 @@ export function ChartScreen({ kind, onClose }: { kind: ChartKind; onClose: () =>
         <TopBar title={TITLES.cycles} onBack={onClose} />
         <ScrollView contentContainerStyle={{ padding: 20, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
           {cycles.length === 0 && <Muted>No cycles logged yet.</Muted>}
+          {cycles.length > 1 ? <Muted style={{ marginBottom: 16 }}>Cycles that look unusual, overlap a pregnancy or came before you stopped hormonal birth control are left out of your averages. Tap to change any of them.</Muted> : null}
           {[...cycles].reverse().map((c, i) => (
             <FadeIn key={c.start} delay={i * 60}>
               <CycleBar current={c.current} label={`${fmtShort(c.start)} – ${fmtShort(c.end)}`} length={diffDays(c.start, c.end) + 1} periodDays={c.periodDays} max={max} />
+              {!c.current ? <CountToggle start={c.start} /> : null}
             </FadeIn>
           ))}
           <Btn kind="ghost" title="Add previous periods" onPress={() => { onClose(); nav.openCalendar(true); }} />
@@ -290,6 +292,34 @@ export function ChartScreen({ kind, onClose }: { kind: ChartKind; onClose: () =>
         {kind === 'bbt' && <Muted style={{ margin: 20 }}>A sustained rise of roughly 0.2–0.5 °C usually follows ovulation. Shaded pink columns are period days.</Muted>}
       </ScrollView>
     </View>
+  );
+}
+
+const WHY: Record<string, string> = { unusual: 'looked unusual', pregnancy: 'overlaps a pregnancy', contraception: 'before stopping hormonal birth control', postpartum: 'postpartum bleeding', manual: 'you left it out' };
+
+/** "Counted in averages" / "Not counted" with a one-tap override, per completed cycle. */
+function CountToggle({ start }: { start: string }) {
+  const records = useStore((s) => s.records);
+  const updateSettings = useStore((s) => s.updateSettings);
+  const settings = selectSettings(records);
+  const info = predict(selectLogs(records), settings, todayFn()).stats.cycles.find((c) => c.start === start);
+  if (!info) return null;
+  const toggle = () => {
+    const o = { ...(settings.cycleOverrides ?? {}) };
+    const auto = !!info.reason && info.reason !== 'manual';
+    if (info.excluded) { if (auto) o[start] = 'include'; else delete o[start]; }
+    else if (auto) delete o[start]; else o[start] = 'exclude';
+    updateSettings({ cycleOverrides: o });
+  };
+  return (
+    <PressScale accessibilityRole="switch" accessibilityState={{ checked: !info.excluded }} accessibilityLabel={`Count the cycle from ${fmtShort(start)} in averages`} onPress={toggle}
+      style={{ flexDirection: 'row', alignItems: 'center', marginTop: -14, marginBottom: 18, minHeight: 40 }}>
+      <Icon name={info.excluded ? 'eye-off-outline' : 'check-circle'} size={18} color={info.excluded ? colors.muted : colors.fertile} />
+      <Text style={{ flex: 1, marginLeft: 8, fontSize: 14, color: colors.text }}>
+        {info.excluded ? `Not counted · ${WHY[info.reason ?? 'manual']}` : info.reason ? `Counted (you included it; it ${WHY[info.reason]})` : 'Counted in averages'}
+      </Text>
+      <Text style={{ fontSize: 14, color: colors.primary, fontWeight: '700' }}>{info.excluded ? 'Count it' : 'Leave out'}</Text>
+    </PressScale>
   );
 }
 

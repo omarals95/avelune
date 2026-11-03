@@ -29,18 +29,18 @@ export function parseCSV(text: string): string[][] {
 }
 
 export type DateOrder = 'auto' | 'dmy' | 'mdy';
-type Field = 'date' | 'start' | 'end' | 'flow' | 'symptoms' | 'moods' | 'tags' | 'bbt' | 'weight' | 'water' | 'sleep' | 'distance' | 'notes' | 'steps' | 'restingHr';
+type Field = 'date' | 'start' | 'end' | 'flow' | 'symptoms' | 'moods' | 'tags' | 'bbt' | 'weight' | 'water' | 'sleep' | 'distance' | 'notes' | 'steps' | 'restingHr' | 'lh' | 'pregTest' | 'sex' | 'mucus';
 
 /** Header synonyms (lower-cased, spaces/underscores ignored). */
 const SYNONYMS: Record<Field, string[]> = {
-  date: ['date', 'day', 'logdate', 'entrydate', 'datetime', 'timestamp'],
+  date: ['date', 'day', 'logdate', 'entrydate', 'datetime', 'timestamp', 'dates', 'localdate'],
   start: ['start', 'startdate', 'periodstart', 'periodstartdate', 'firstday', 'from'],
   end: ['end', 'enddate', 'periodend', 'periodenddate', 'lastday', 'to'],
-  flow: ['flow', 'period', 'bleeding', 'menstruation', 'menstrualflow', 'periodflow', 'flowintensity'],
+  flow: ['flow', 'period', 'bleeding', 'menstruation', 'menstrualflow', 'periodflow', 'flowintensity', 'menstruationflow', 'periodintensity', 'bleedingintensity'],
   symptoms: ['symptoms', 'symptom', 'pain', 'physical'],
   moods: ['mood', 'moods', 'emotions', 'feelings'],
   tags: ['tags', 'other', 'activities', 'activity'],
-  bbt: ['bbt', 'temperature', 'basaltemperature', 'basalbodytemperature', 'temp', 'temperaturec', 'bbtc'],
+  bbt: ['bbt', 'temperature', 'basaltemperature', 'basalbodytemperature', 'temp', 'temperaturec', 'bbtc', 'temperaturef', 'basaltemp', 'temperaturevalue'],
   weight: ['weight', 'weightkg', 'bodyweight'],
   water: ['water', 'waterml', 'hydration'],
   sleep: ['sleep', 'sleephours', 'sleepduration', 'hoursslept'],
@@ -48,7 +48,34 @@ const SYNONYMS: Record<Field, string[]> = {
   notes: ['notes', 'note', 'comment', 'comments', 'journal'],
   steps: ['steps', 'stepcount'],
   restingHr: ['restinghr', 'restingheartrate', 'rhr'],
+  lh: ['lh', 'lhtest', 'ovulationtest', 'opk', 'lhtestresult', 'ovulationtestresult'],
+  pregTest: ['pregnancytest', 'hcg', 'hcgtest', 'pregnancytestresult'],
+  sex: ['sex', 'intercourse', 'sexualactivity', 'sexualintercourse'],
+  mucus: ['mucus', 'cervicalmucus', 'discharge', 'cm', 'cervicalfluid'],
 };
+
+const yes = (v: string) => /^(yes|y|true|1|x|positive|pos|\+|peak|high)$/i.test(v.trim());
+const no = (v: string) => /^(no|n|false|0|negative|neg|-|none|low)$/i.test(v.trim());
+/** Interpret test, sex and mucus columns as Avelune tags. */
+export function extraTags(field: 'lh' | 'pregTest' | 'sex' | 'mucus', raw: string, resolve: ImportOptions['resolve']): string | null {
+  const v = raw.trim();
+  if (!v) return null;
+  if (field === 'lh') return yes(v) ? 'tests:ovu-pos' : no(v) ? 'tests:ovu-neg' : null;
+  if (field === 'pregTest') return yes(v) ? 'tests:preg-pos' : no(v) ? 'tests:preg-neg' : null;
+  if (field === 'sex') {
+    if (/unprotect/i.test(v)) return 'sex:unprotected';
+    if (/protect|condom/i.test(v)) return 'sex:protected';
+    if (/^(no|none|false|0)$/i.test(v)) return 'sex:none';
+    return yes(v) || /sex|partner/i.test(v) ? 'sex:had' : null;
+  }
+  const m = v.toLowerCase().replace(/[^a-z]/g, '');
+  if (/dry|none|nothing/.test(m)) return 'discharge:none';
+  if (/egg|stretch|clear|slippery/.test(m)) return 'discharge:egg-white';
+  if (/water|wet/.test(m)) return 'discharge:watery';
+  if (/cream|lotion/.test(m)) return 'discharge:creamy';
+  if (/stick|tacky|paste/.test(m)) return 'discharge:sticky';
+  return resolve(v, 'tags');
+}
 
 const norm = (s: string) => s.toLowerCase().replace(/[\s_\-().°/]/g, '');
 
@@ -103,7 +130,7 @@ export function parseFlow(raw: string): Flow | null {
   if (/spot/.test(s) || s === '1') return 1;
   if (/light|low|^2$/.test(s)) return 2;
   if (/heavy|high|strong|^4$/.test(s)) return 4;
-  if (/medium|moderate|normal|^3$|yes|true|period|bleed|^x$/.test(s)) return 3;
+  if (/medium|moderate|normal|^3$|yes|true|period|bleed|menstrua|^x$/.test(s)) return 3;
   return null;
 }
 
@@ -119,6 +146,8 @@ export interface ImportOptions {
   weightUnit?: 'kg' | 'lb';
   /** Length used to fill periods that only have a start date. */
   periodLength?: number;
+  /** Which DayLog list a plain (un-namespaced) option id belongs to. */
+  classify?: (id: string) => 'symptoms' | 'moods';
 }
 
 export interface ImportResult {
@@ -132,6 +161,8 @@ export interface ImportResult {
   unknownLabels: string[];
   range: [DateStr, DateStr] | null;
   periodDays: number;
+  /** Which app or format the data came from, when recognised. */
+  source?: string;
 }
 
 /**
@@ -198,6 +229,10 @@ export function importRows(input: string[][], opts: ImportOptions): ImportResult
         const id = opts.resolve(label, kind);
         if (id) { if (!l[kind].includes(id)) l[kind].push(id); } else unknown.add(label);
       }
+    }
+    for (const f of ['lh', 'pregTest', 'sex', 'mucus'] as const) {
+      const t = extraTags(f, cell(f), opts.resolve);
+      if (t && !l.tags.includes(t)) l.tags.push(t);
     }
     const bbt = num(cell('bbt'));
     if (bbt != null) { const c = fahrenheit ? ((bbt - 32) * 5) / 9 : bbt; if (c >= 34 && c <= 42) l.bbt = Math.round(c * 100) / 100; }

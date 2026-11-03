@@ -83,9 +83,13 @@ export function planReminders(p: Prediction, settings: Settings, prefs: Reminder
   for (let i = 0; i < cycles; i++) {
     const start = addDays(p.nextPeriodStart, i * p.stats.avgCycle);
     const n = prefs.periodSoon.daysBefore;
-    add('periodSoon', prefs.periodSoon, addDays(start, -n), n === 0 ? 'Your period is expected today.' : `Your period is expected in ${n} day${n === 1 ? '' : 's'}.`);
+    // With a wide window, warn ahead of its start rather than its middle.
+    const soon = i === 0 && p.nextPeriodRange && p.confidence === 'low' ? p.nextPeriodRange[0] : start;
+    const around = soon !== start ? ' or so' : '';
+    add('periodSoon', prefs.periodSoon, addDays(soon, -n), n === 0 ? `Your period may start today${around}.` : `Your period may start in ${n} day${n === 1 ? '' : 's'}${around}.`);
     add('periodStart', prefs.periodStart, start, 'Has your period started? Tap to log it.');
     add('periodEnd', prefs.periodEnd, addDays(start, p.stats.avgPeriod - 1), 'Has your period ended? Log your last day.');
+    if (p.fertileHidden) continue;
     const ov = addDays(start, -luteal);
     add('ovulation', prefs.ovulation, ov, 'Ovulation is estimated for today.');
     add('fertile', prefs.fertile, addDays(ov, -5), 'Your fertile window is estimated to start today.');

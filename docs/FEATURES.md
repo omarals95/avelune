@@ -198,6 +198,13 @@ A coloured header with a gently floating illustration, the article text fading i
 - **Hide content**: turn sex content off. It disappears from logging, quick actions and articles.
 - **Units**: °C/°F and kg/lb.
 - **Health connections**: the same screen as §3.6.
+- **Health profile**: conditions and contraception (§7).
+- **Backups**:
+  - automatic daily encrypted backups (Android: a folder you choose; iOS: Files › On My iPhone › Avelune; web: download on demand);
+  - backup passphrase;
+  - last backup date;
+  - **Test restore**;
+  - **Restore** (merge or replace), also offered on the first screen of a fresh install.
 - **Sync & encryption**:
   - Connect to your server, or show the connection status and last sync time.
   - **Sync now** and **Disconnect** (keeps the data on the device).
@@ -211,6 +218,8 @@ A coloured header with a gently floating illustration, the article text fading i
   - **Delete my account and server data**, shown when connected. This also removes partner shares.
 
 ### 3.12 Import from file (Settings → Your data)
+
+- Imports from **Apple Health** (`export.zip`, streamed with a progress bar), **drip.**, **Natural Cycles**, **Flo**, **Clue**, Avelune exports and spreadsheets. See `docs/import-format.md`.
 - **Download example.xlsx**: a ready-made spreadsheet to fill in.
   - A *Your data* sheet with a date column, a flow drop-down and tips on every column.
   - A filled-in *Example* sheet, which is never imported.
@@ -299,19 +308,46 @@ Cycle reminders pause in pregnancy mode. On the web, reminders are set up from t
 
 ---
 
-## 7. Predictions
+## 7. Predictions that fit your life
 
 - **What it predicts**:
-  - next period;
-  - fertile window;
-  - ovulation day;
-  - current phase (menstrual, follicular, ovulation, luteal);
-  - cycle day;
-  - late-period detection.
-- **What it uses**: your settings at first, then your logged history once you have logged a few periods.
-- **Statistics**: average cycle and period length, and a regularity rating.
+  - next period, shown as a **likely window** (for example 11–17 Nov, most likely 14 Nov) with a **confidence level** (high, medium or low);
+  - fertile window and ovulation day;
+  - current phase and cycle day.
+- **Why this estimate**: a list on the Today screen explains each forecast:
+  - how many cycles it is based on;
+  - how much your cycles vary;
+  - which cycles were left out and why;
+  - how your health profile changes it.
+
+  When the estimate moves by two or more days, Today says so.
+- **Honest irregular-cycle handling**:
+  - It uses the median of your last six counted cycles, so one odd month doesn't skew the average.
+  - Unusual cycles (likely a missed log or a one-off) are left out automatically. On Insights › Recent cycle length you can count or leave out any cycle.
+  - There is no 60-day cap on cycle length: cycles of 10–120 days count, and the setting accepts 15–90 days.
+  - "Late" only starts after the likely window ends. It is worded neutrally, and you can hide it for the current cycle.
+- **Health profile** (Settings › Health profile) changes the predictions:
+  - **Conditions:**
+    - PCOS, perimenopause (with or without HRT), thyroid conditions and fertility treatment give wider ranges and lower confidence.
+    - Endometriosis adds a note only.
+    - No uterus or ablation turns the period forecast off.
+  - **Contraception:**
+    - Combined pill, ring, patch, implant and injection hide the fertile window.
+    - Mini pill and hormonal IUD give wider ranges.
+    - Copper IUD adds a note only.
+  - **Stopped hormonal birth control:** bleeds before that date don't count as cycles, and ranges are wider for the next six months.
+- **Forecast off**: show only days since your last period, with no dates or late notices.
+- **Pause tracking**: stops predictions and cycle reminders. Logs are still saved.
+- **Life stages** (Settings › Pregnancy & after):
+  - **Pregnancy mode**: week and day, due date, and weeks to go.
+  - **"My baby was born"** starts the postpartum stage. Bleeding in the first six weeks isn't counted as a period, and there are no predictions until your period returns (tap *Period started*). A breastfeeding switch is included.
+  - **"My pregnancy ended (loss)"** starts a gentle mode:
+    - pregnancy content is hidden;
+    - there are no late notices;
+    - predictions resume after your next period;
+    - the cycle that included the pregnancy is never counted.
+- **Statistics**: typical cycle and period length, and a regularity rating.
 - **BBT**: temperature-shift ovulation detection on the chart.
-- **Pregnancy mode**: week and day, due date, and weeks to go. Period predictions are paused.
 
 ---
 

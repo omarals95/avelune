@@ -2,7 +2,7 @@ import type { ThemePref } from './theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import {
+import { type BackupPayload,
   DEFAULT_REMINDERS, DEFAULT_SETTINGS, MIN_PASSPHRASE, SETTINGS_ID, buildSnapshot, createKeyInfo, dayId, decodeInvite, decryptRecord,
   encryptRecord, mergeLogs, newShareKey, normalizeReminders, openSnapshot, sealSnapshot, shouldApply, today as todayFn, unlockKeys,
   type DateStr, type DayLog, type Invite, type KeyInfo, type PartnerSnapshot, type ReminderPrefs, type Settings, type SyncRecord, type SyncResponse,
@@ -16,6 +16,20 @@ export interface ServerConn {
   cursor: number;
   lastSync: number | null;
 }
+
+export interface BackupState {
+  enabled: boolean;
+  /** Android: folder chosen through the system picker (content:// tree URI). */
+  dirUri: string | null;
+  dirLabel: string | null;
+  lastAt: number | null;
+  lastFile: string | null;
+  lastDays: number | null;
+  lastError: string | null;
+  verifiedAt: number | null;
+  keep: number;
+}
+export const DEFAULT_BACKUP: BackupState = { enabled: false, dirUri: null, dirLabel: null, lastAt: null, lastFile: null, lastDays: null, lastError: null, verifiedAt: null, keep: 10 };
 
 interface State {
   records: Record<string, SyncRecord>;
@@ -33,10 +47,12 @@ interface State {
   hideSex: boolean;
   /** Appearance: follow the phone, or force light/dark. */
   theme: ThemePref;
+  /** Last next-period date the user has seen, to explain when the estimate moves. */
+  seenForecast?: DateStr | null;
   /** Partner's display name, kept only on this device. */
   partnerName?: string;
   weightUnit: 'kg' | 'lb';
-  setPrefs: (p: Partial<Pick<State, 'name' | 'hideSex' | 'weightUnit' | 'unit' | 'theme' | 'partnerName'>>) => void;
+  setPrefs: (p: Partial<Pick<State, 'name' | 'hideSex' | 'weightUnit' | 'unit' | 'theme' | 'partnerName' | 'seenForecast'>>) => void;
   /** Import many day logs at once (CSV). Returns how many days changed. */
   importLogs: (logs: DayLog[], overwrite: boolean) => number;
   /** Toggle period days in bulk (calendar "Edit period dates"). */
@@ -54,6 +70,17 @@ interface State {
   leavePartner: () => void;
   saveDay: (log: DayLog) => void;
   saveSettings: (s: Settings) => void;
+  /** Merge a patch into the synced settings record. */
+  updateSettings: (patch: Partial<Settings>) => void;
+  /** Leave pregnancy mode: birth (postpartum stage), loss (gentle stage) or simply turned off. */
+  endPregnancy: (outcome: 'birth' | 'loss' | 'ended', on: DateStr, breastfeeding?: boolean) => void;
+  /** Encrypted local backups (see backup.ts). */
+  backup: BackupState;
+  setBackup: (b: Partial<BackupState>) => void;
+  /** Apply a decrypted backup: merge (newer edits win) or replace everything. Returns records written. */
+  restoreBackup: (payload: BackupPayload, mode: 'merge' | 'replace') => number;
+  /** Device preferences included in backups. */
+  backupPrefs: () => Record<string, unknown>;
   completeOnboarding: (lastPeriod: DateStr, s: Settings) => void;
   setUnit: (u: 'C' | 'F') => void;
   connect: (url: string, email: string, password: string, passphrase: string, mode: 'login' | 'register') => Promise<void>;
@@ -199,6 +226,47 @@ export const useStore = create<State>()(
           put({ id: dayId(log.date), data: deleted ? null : log, updatedAt: Date.now(), deleted });
         },
         saveSettings: (s) => put({ id: SETTINGS_ID, data: s, updatedAt: Date.now(), deleted: false }),
+        updateSettings: (patch) => get().saveSettings({ ...selectSettings(get().records), ...patch }),
+        endPregnancy: (outcome, on, breastfeeding) => {
+          const st = selectSettings(get().records);
+          const pregnancies = [...(st.pregnancies ?? [])];
+          if (st.pregnancyLmp) pregnancies.push({ lmp: st.pregnancyLmp, end: on, outcome });
+          get().saveSettings({
+            ...st, pregnancyLmp: null, pregnancies, lateDismissedFor: null,
+            stage: outcome === 'birth' ? { kind: 'postpartum', since: on, breastfeeding: !!breastfeeding, returnedOn: null } : outcome === 'loss' ? { kind: 'loss', since: on } : { kind: 'cycling' },
+          });
+        },
+
+        backup: DEFAULT_BACKUP,
+        setBackup: (b) => set((s) => ({ backup: { ...s.backup, ...b } })),
+        backupPrefs: () => {
+          const s = get();
+          return { name: s.name, unit: s.unit, weightUnit: s.weightUnit, hideSex: s.hideSex, theme: s.theme, partnerName: s.partnerName, reminders: s.reminders };
+        },
+        restoreBackup: (payload, mode) => {
+          const now = Date.now();
+          let n = 0;
+          set((s) => {
+            const records = mode === 'replace' ? {} as Record<string, SyncRecord> : { ...s.records };
+            const dirty = { ...s.dirty };
+            if (mode === 'replace') for (const id of Object.keys(s.records)) { records[id] = { ...s.records[id], data: null, deleted: true, updatedAt: now }; dirty[id] = true; }
+            for (const r of payload.records) {
+              const cur = s.records[r.id];
+              if (mode === 'merge' && cur && cur.updatedAt >= r.updatedAt) continue;
+              // Re-stamp so the restored version wins on any synced devices too.
+              records[r.id] = { ...r, updatedAt: mode === 'replace' ? now + 1 : r.updatedAt };
+              dirty[r.id] = true;
+              n++;
+            }
+            const p = (payload.prefs ?? {}) as Partial<State>;
+            const prefs = mode === 'replace' || !s.onboarded
+              ? { name: p.name ?? s.name, unit: p.unit ?? s.unit, weightUnit: p.weightUnit ?? s.weightUnit, hideSex: p.hideSex ?? s.hideSex, theme: p.theme ?? s.theme, partnerName: p.partnerName ?? s.partnerName, reminders: normalizeReminders(p.reminders ?? s.reminders) }
+              : {};
+            return { records, dirty, onboarded: true, ...prefs };
+          });
+          if (get().server) { clearTimeout(syncTimer); syncTimer = setTimeout(() => void get().sync(), 1500); }
+          return n;
+        },
 
         completeOnboarding: (lastPeriod, s) => {
           const now = Date.now();
@@ -317,12 +385,12 @@ export const useStore = create<State>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({
         records: s.records, dirty: s.dirty, onboarded: s.onboarded, unit: s.unit, server: s.server, reminders: s.reminders,
-        name: s.name, hideSex: s.hideSex, theme: s.theme, partnerName: s.partnerName, weightUnit: s.weightUnit, share: s.share, partner: s.partner,
+        name: s.name, hideSex: s.hideSex, theme: s.theme, partnerName: s.partnerName, seenForecast: s.seenForecast, weightUnit: s.weightUnit, share: s.share, partner: s.partner, backup: s.backup,
       }),
       // Older installs stored a flatter reminders shape; fill in anything missing.
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<State>;
-        return { ...current, ...p, reminders: normalizeReminders(p.reminders) };
+        return { ...current, ...p, reminders: normalizeReminders(p.reminders), backup: { ...DEFAULT_BACKUP, ...(p.backup ?? {}) } };
       },
     },
   ),

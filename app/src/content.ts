@@ -15,6 +15,31 @@ export interface Article {
 /** Original, general-information articles. Not medical advice. */
 export const ARTICLES: Article[] = [
   {
+    id: 'irregular', title: 'Why your forecast is a range', tint: '#F3E3E7', ink: '#A84461', icon: 'calendar-clock', phases: ['late'],
+    body: [
+      'No cycle is exactly the same length every month. Avelune looks at your recent cycles, leaves out any that look unusual (you can include them again), and shows the dates your period is most likely to start rather than a single day.',
+      'The window is wider when your cycles vary more, when you have only logged a few periods, or when something in your health profile, such as PCOS, perimenopause, recently stopping the pill or the months after giving birth, makes timing less predictable.',
+      'If your period has not started by the end of the window, Avelune says so plainly. If that is normal for you, you can hide the notice for this cycle.',
+      'Very long, very frequent, very heavy or very painful periods are worth mentioning to a clinician.',
+    ],
+  },
+  {
+    id: 'after-loss', title: 'After a pregnancy loss', tint: '#EEE7EE', ink: '#482F49', icon: 'heart-outline',
+    body: [
+      'There is no right way to feel after a pregnancy loss, and no timetable for grief. Take the time you need.',
+      'Bleeding afterwards can last for a week or two. Your first period usually comes four to eight weeks later, and that first cycle may be longer or shorter than you are used to. Avelune pauses predictions and “late” notices until your next period starts.',
+      'Contact a clinician urgently for very heavy bleeding, fever, strong pain or anything that worries you. Support from people you trust, or from a counsellor or support organisation, can help.',
+    ],
+  },
+  {
+    id: 'postpartum', title: 'Your cycle after giving birth', tint: '#F5E8D9', ink: '#936039', icon: 'baby-face-outline',
+    body: [
+      'Bleeding after birth (lochia) is not a period. It usually fades over four to six weeks.',
+      'If you are not breastfeeding, periods often return six to twelve weeks after birth. Breastfeeding can keep them away for months. Ovulation can happen before your first period, so you can get pregnant before it returns.',
+      'Avelune keeps predictions off until your first period. Tap “My period is back” when it arrives, and expect the first few cycles to be irregular.',
+    ],
+  },
+  {
     id: 'phases', title: 'Your cycle in four phases', tint: '#E8E1F1', ink: '#765399', icon: 'chart-donut', phases: ['follicular'],
     body: [
       'A cycle starts on the first day of bleeding and ends the day before the next period. Most cycles last somewhere between 21 and 35 days, and a few days of variation from month to month is normal.',

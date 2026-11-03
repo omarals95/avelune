@@ -25,6 +25,36 @@ export interface DayLog {
   notes?: string;
 }
 
+/** Health conditions that change how cycles behave. "no-uterus" covers hysterectomy and endometrial ablation. */
+export type Condition = 'pcos' | 'endometriosis' | 'thyroid' | 'perimenopause' | 'no-uterus';
+
+export type Contraception =
+  | 'none' | 'combined-pill' | 'mini-pill' | 'hormonal-iud' | 'copper-iud' | 'implant'
+  | 'ring' | 'patch' | 'injection' | 'barrier' | 'fam';
+
+/** Context the prediction engine uses to adjust ranges, confidence and which cycles count. */
+export interface CycleProfile {
+  conditions?: Condition[];
+  contraception?: Contraception;
+  /** When the current contraception was started or inserted. */
+  contraceptionSince?: DateStr | null;
+  /** Date hormonal birth control was stopped (cycles before it are withdrawal bleeds, not cycles). */
+  stoppedHormonalOn?: DateStr | null;
+  /** Hormone replacement therapy (perimenopause/menopause). */
+  hrt?: boolean;
+  /** In fertility treatment (IVF/IUI): cycles follow the clinic's plan. */
+  fertilityTreatment?: boolean;
+}
+
+/** Life stage outside of ordinary cycling. Pregnancy itself is `pregnancyLmp`. */
+export type LifeStage =
+  | { kind: 'cycling' }
+  | { kind: 'postpartum'; since: DateStr; breastfeeding?: boolean; returnedOn?: DateStr | null }
+  | { kind: 'loss'; since: DateStr }
+  | { kind: 'paused'; since: DateStr };
+
+export interface PastPregnancy { lmp: DateStr; end: DateStr; outcome: 'birth' | 'loss' | 'ended' }
+
 export interface Settings {
   cycleLength: number;
   periodLength: number;
@@ -37,6 +67,16 @@ export interface Settings {
   pregnancyLmp?: DateStr | null;
   /** Daily water target in ml. */
   waterTarget?: number;
+  profile?: CycleProfile;
+  stage?: LifeStage;
+  /** Finished pregnancies; cycles that overlap them never count toward averages. */
+  pregnancies?: PastPregnancy[];
+  /** Per-cycle override keyed by the cycle's period start date. */
+  cycleOverrides?: Record<DateStr, 'include' | 'exclude'>;
+  /** 'off' = no forecast, only "days since your last period". */
+  forecastMode?: 'auto' | 'off';
+  /** Expected period date whose "late" notice the user dismissed. */
+  lateDismissedFor?: DateStr | null;
 }
 
 export const DEFAULT_SETTINGS: Settings = {

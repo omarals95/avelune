@@ -63,7 +63,7 @@ export function PartnerTab() {
   const settings = selectSettings(st.records);
   const p = useMemo(() => predict(logs, settings, todayFn()), [logs, settings]);
   const cd = cycleDayOf(todayFn(), logs);
-  const next = p.daysUntilPeriod == null ? '—' : p.daysUntilPeriod < 0 ? `${-p.daysUntilPeriod} days late` : p.daysUntilPeriod === 0 ? 'today' : `in ${p.daysUntilPeriod} day${p.daysUntilPeriod === 1 ? '' : 's'}`;
+  const next = p.daysUntilPeriod == null ? '—' : p.lateBy && !p.lateDismissed ? 'not started yet' : p.daysUntilPeriod <= 0 ? 'any day now' : `in ${p.daysUntilPeriod} day${p.daysUntilPeriod === 1 ? '' : 's'}`;
   const who = st.partnerName?.trim() || 'Your partner';
 
   return (

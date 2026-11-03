@@ -3,7 +3,7 @@ import { Animated, Easing, Platform, ScrollView, StyleSheet, View, useWindowDime
 import { Text } from './text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
-import { addDays, diffDays, parseDate, type DateStr, type DayKind, type Phase } from '@cyclo/core';
+import { addDays, diffDays, parseDate, type DateStr, type DayKind, type LifeStage, type NoForecast, type Phase } from '@cyclo/core';
 import { FadeIn, ND, PressScale, useLoop, usePop, useReduceMotion } from './anim';
 import { Icon, type IconName } from './icons';
 import { blobColor, circleFill, colors, phaseGradient, scheme, shadow, type Mood, themed } from './theme';
@@ -27,6 +27,11 @@ export interface StatusInput {
   fertileWindow: [DateStr, DateStr] | null;
   ovulationDate: DateStr | null;
   inPeriod: boolean;
+  /** Days past the END of the likely window (null = not late). */
+  lateBy?: number | null;
+  lateDismissed?: boolean;
+  noForecast?: NoForecast | null;
+  stage?: LifeStage;
 }
 export interface Status { mood: Mood; kicker: string; big: string; sub: string }
 
@@ -47,8 +52,22 @@ export function statusFor(i: StatusInput): Status {
     return map[i.kind];
   }
   if (i.inPeriod) return { mood: 'menstrual', kicker: 'Period', big: `Day ${i.cycleDay ?? 1}`, sub: 'Log your flow and how you feel' };
+  const cd = i.cycleDay ? `Day ${i.cycleDay}` : '—';
+  switch (i.noForecast) {
+    case 'paused': return { mood: 'none', kicker: 'Tracking paused', big: cd, sub: 'since your last period' };
+    case 'postpartum': {
+      const wk = i.stage?.kind === 'postpartum' ? Math.floor(diffDays(i.stage.since, i.today) / 7) + 1 : null;
+      return { mood: 'follicular', kicker: 'After birth', big: wk ? `Week ${wk}` : 'Postpartum', sub: i.stage?.kind === 'postpartum' && i.stage.breastfeeding ? 'Breastfeeding' : 'Log bleeding any time' };
+    }
+    case 'loss': return { mood: 'none', kicker: 'Be gentle with yourself', big: cd, sub: 'Predictions return after your next period' };
+    case 'no-uterus': return { mood: 'none', kicker: 'Today', big: 'Check in', sub: 'No period forecast' };
+    case 'user': return { mood: 'none', kicker: 'Since your last period', big: cd, sub: 'Forecast off' };
+    default: break;
+  }
   const d = i.daysUntilPeriod;
-  if (d != null && d < 0) return { mood: 'late', kicker: 'Late for', big: plural(-d, 'day'), sub: 'Log your period when it starts' };
+  if (i.lateBy && !i.lateDismissed) return { mood: 'late', kicker: 'Period not started', big: cd, sub: `${plural(i.lateBy, 'day')} past your likely window` };
+  if (d != null && d < 0 && i.lateDismissed) return { mood: i.phase ?? 'none', kicker: 'Cycle', big: cd, sub: 'No period logged yet' };
+  if (d != null && d < 0) return { mood: 'menstrual', kicker: 'Period', big: 'Due any day', sub: 'Within your likely window' };
   if (d === 0) return { mood: 'menstrual', kicker: 'Period', big: 'Expected today', sub: 'Log it when it starts' };
   if (i.fertileWindow && i.ovulationDate && i.date >= i.fertileWindow[0] && i.date <= i.fertileWindow[1]) {
     const toOv = diffDays(i.date, i.ovulationDate);
@@ -58,7 +77,8 @@ export function statusFor(i: StatusInput): Status {
       sub: 'Higher chance of getting pregnant',
     };
   }
-  return { mood: i.phase ?? 'none', kicker: 'Period in', big: plural(d ?? 0, 'day'), sub: 'Lower chance of getting pregnant' };
+  if (d == null) return { mood: i.phase ?? 'none', kicker: 'Cycle', big: cd, sub: 'No forecast' };
+  return { mood: i.phase ?? 'none', kicker: 'Period in', big: plural(d, 'day'), sub: i.fertileWindow ? 'Lower chance of getting pregnant' : 'Based on your recent cycles' };
 }
 
 /** Phase-tinted gradient with slowly drifting soft blobs. Cross-fades when the mood changes. */

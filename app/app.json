@@ -8,7 +8,10 @@
     "ios": {
       "bundleIdentifier": "app.cyclo.tracker",
       "supportsTablet": true,
-      "infoPlist": {}
+      "infoPlist": {
+        "UIFileSharingEnabled": true,
+        "LSSupportsOpeningDocumentsInPlace": true
+      }
     },
     "android": {
       "package": "app.cyclo.tracker",

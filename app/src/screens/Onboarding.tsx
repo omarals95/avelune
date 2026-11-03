@@ -11,6 +11,7 @@ import { useStore } from '../store';
 import { colors, scheme, themed } from '../theme';
 import { Btn, Card, Muted, Stepper } from '../ui';
 import { JoinPartner } from './Partner';
+import { RestoreBackup } from './Backup';
 import { Animated, Image } from 'react-native';
 
 /** Official Avelune lockup (symbol + wordmark), used unaltered with clear space around it. */
@@ -58,7 +59,7 @@ export function Onboarding() {
   const insets = useSafeAreaInsets();
   const complete = useStore((s) => s.completeOnboarding);
   const today = todayFn();
-  const [step, setStep] = useState<'welcome' | 'date' | 'lengths' | 'restore' | 'partner'>('welcome');
+  const [step, setStep] = useState<'welcome' | 'date' | 'lengths' | 'restore' | 'partner' | 'backup'>('welcome');
   const [start, setStart] = useState<DateStr>(addDays(today, -DEFAULT_SETTINGS.periodLength));
   const [cycle, setCycle] = useState(DEFAULT_SETTINGS.cycleLength);
   const [period, setPeriod] = useState(DEFAULT_SETTINGS.periodLength);
@@ -76,7 +77,8 @@ export function Onboarding() {
         {step === 'welcome' && (
           <FadeIn delay={120}>
             <Btn title="Start tracking" onPress={() => setStep('date')} />
-            <Btn kind="ghost" title="I already use a Avelune server" onPress={() => setStep('restore')} />
+            <Btn kind="ghost" title="Restore from a backup file" onPress={() => setStep('backup')} />
+            <Btn kind="ghost" title="I already use an Avelune server" onPress={() => setStep('restore')} />
             <Btn kind="ghost" title="My partner shared their cycle" onPress={() => setStep('partner')} />
             <Muted style={{ textAlign: 'center', marginTop: 16 }}>No account needed. Your data stays on this device unless you connect your own encrypted server.</Muted>
           </FadeIn>
@@ -112,6 +114,16 @@ export function Onboarding() {
             <Card>
               <Text style={ob.q}>Sign in to your server</Text>
               <ServerForm allowRegister={false} />
+              <Btn kind="ghost" title="Back" onPress={() => setStep('welcome')} />
+            </Card>
+          </FadeIn>
+        )}
+
+        {step === 'backup' && (
+          <FadeIn key="backup">
+            <Card>
+              <Text style={ob.q}>Restore your data</Text>
+              <RestoreBackup onboarding />
               <Btn kind="ghost" title="Back" onPress={() => setStep('welcome')} />
             </Card>
           </FadeIn>

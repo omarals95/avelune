@@ -32,6 +32,7 @@ export const CATEGORIES: Category[] = [
     id: 'sex', title: 'Sex and sex drive', field: 'tags', tint: '#F6E4EA', ink: '#8E3B5A', sensitive: true,
     options: [
       { id: 'none', label: "Didn't have sex", icon: 'heart-off-outline' },
+      { id: 'had', label: 'Had sex', icon: 'heart-outline' },
       { id: 'protected', label: 'Protected sex', icon: 'lock-outline' },
       { id: 'unprotected', label: 'Unprotected sex', icon: 'lock-open-variant-outline' },
       { id: 'solo', label: 'Masturbation', icon: 'heart-pulse' },

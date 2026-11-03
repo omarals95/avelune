@@ -18,8 +18,9 @@ describe('planReminders', () => {
   });
   it('period soon: N days before at the chosen time, across cycles', () => {
     const r = planReminders(pred, DEFAULT_SETTINGS, on({ periodSoon: { on: true, daysBefore: 2, hour: 10, minute: 30 } }), now);
-    expect(r.map((x) => x.date).slice(0, 2)).toEqual(['2026-10-27', '2026-11-24']);
-    expect(r[0].at).toEqual(new Date(2026, 9, 27, 10, 30));
+    // Few cycles logged → low confidence → the first warning counts back from the start of the likely window (±3 days).
+    expect(r.map((x) => x.date).slice(0, 2)).toEqual(['2026-10-24', '2026-11-24']);
+    expect(r[0].at).toEqual(new Date(2026, 9, 24, 10, 30));
     expect(r).toHaveLength(4);
   });
   it('ovulation, fertile start, period start and end', () => {

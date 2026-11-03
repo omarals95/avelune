@@ -109,13 +109,25 @@ function Body({ id, d, width }: { id: WidgetId; d: WD; width: number }) {
     }
     case 'nextPeriod': {
       const n = d.p.daysUntilPeriod;
+      if (d.p.noForecast && d.p.lastPeriodStart) return <Muted style={{ marginTop: 10, color: colors.text }}>No forecast right now.</Muted>;
       if (n == null) return <Empty text="Log a period to see this" />;
+      if (n < 0) {
+        const late = d.p.lateBy && !d.p.lateDismissed;
+        return (
+          <View style={{ alignItems: 'center', marginTop: 8 }}>
+            <Ring progress={1} size={Math.min(110, inner)} stroke={10} color={late ? colors.faint : colors.period} track={colors.tile}>
+              <Text style={{ fontSize: 15, color: colors.heading, fontWeight: '700', textAlign: 'center' }}>{late ? `${d.p.lateBy} days past` : 'Any day'}</Text>
+              <Text style={{ fontSize: 12, color: colors.text }}>{late ? 'the window' : 'now'}</Text>
+            </Ring>
+          </View>
+        );
+      }
       const prog = 1 - Math.max(0, Math.min(1, n / d.p.stats.avgCycle));
       return (
         <View style={{ alignItems: 'center', marginTop: 8 }}>
-          <Ring progress={n < 0 ? 1 : prog} size={Math.min(110, inner)} stroke={10} color={colors.period} track={colors.tile}>
+          <Ring progress={prog} size={Math.min(110, inner)} stroke={10} color={colors.period} track={colors.tile}>
             <CountUp value={Math.abs(n)} style={{ fontSize: 30, color: colors.heading }} />
-            <Text style={{ fontSize: 12, color: colors.text }}>{n < 0 ? 'days late' : n === 1 ? 'day' : 'days'}</Text>
+            <Text style={{ fontSize: 12, color: colors.text }}>{n === 1 ? 'day' : 'days'}</Text>
           </Ring>
         </View>
       );

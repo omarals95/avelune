@@ -23,6 +23,7 @@ import { selectLogs, selectSettings, useStore } from './store';
 import { applyScheme, colors, scheme, themed } from './theme';
 import { Sheet } from './ui';
 import { SheetOutlet } from './sheet';
+import { maybeAutoBackup } from './backup';
 import { CalendarView } from './screens/Calendar';
 import { ChartScreen, Insights } from './screens/Insights';
 import { LogSheet } from './screens/LogSheet';
@@ -111,6 +112,8 @@ function Main() {
   const publishShare = useStore((s) => s.publishShare);
 
   useEffect(() => { if (connected) void sync(); }, [connected, sync]);
+  // Encrypted local backup: once a day when something changed (no-op unless turned on in Settings → Backups).
+  useEffect(() => { const t = setTimeout(() => void maybeAutoBackup(), 4000); return () => clearTimeout(t); }, [records]);
   // Keep on-device reminders and the encrypted partner snapshot in step with the data (debounced).
   useEffect(() => {
     const t = setTimeout(() => {

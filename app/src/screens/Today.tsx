@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { classifyDay, cycleDayOf, predict, pregnancyStatus, today as todayFn, type DateStr } from '@cyclo/core';
+import { classifyDay, cycleDayOf, diffDays, predict, pregnancyStatus, today as todayFn, type DateStr } from '@cyclo/core';
 import { FadeIn, PressScale } from '../anim';
 import { ARTICLES } from '../content';
 import { WeekStrip, fmtDay, statusFor, type Status } from '../components';
@@ -12,6 +12,7 @@ import { useNav } from '../nav';
 import { selectLogs, selectSettings, useStore } from '../store';
 import { bloomFor, colors, scheme, shadow, themed, type Bloom, type Mood } from '../theme';
 import { HomeWidgets } from '../widgets';
+import { Btn } from '../ui';
 
 export function Avatar({ onPress }: { onPress: () => void }) {
   const name = useStore((s) => s.name);
@@ -48,13 +49,13 @@ const HEADLINE: Record<Mood, string> = {
 /** Map the status copy onto the bloom centre (short kicker, large title, quiet sub-line). */
 export function centre(s: Status, cycleDay: number | null, logged: boolean, isToday: boolean): { kicker: string; big: string; sub?: string; glyph?: IconName } {
   const cd = cycleDay ? `Cycle day ${cycleDay}` : undefined;
-  if (s.mood === 'menstrual' && s.big !== 'Expected today' && s.kicker !== 'Period in') {
+  if (s.mood === 'menstrual' && s.kicker === 'Period' && s.big.startsWith('Day')) {
     return { kicker: 'Period', big: s.big.startsWith('Day') ? s.big : `Day ${cycleDay ?? 1}`, sub: logged ? 'Logged' : 'Predicted', glyph: 'water' };
   }
   if (s.mood === 'fertile') return { kicker: '', big: 'Fertile window', sub: isToday && s.big.startsWith('Ovulation in') ? s.big : 'Estimated', glyph: 'sprout' };
   if (s.mood === 'ovulation') return { kicker: '', big: 'Ovulation', sub: isToday ? 'Estimated today' : 'Estimated', glyph: 'sparkle' };
-  if (s.mood === 'follicular' && isToday) return { kicker: '', big: 'After your period', sub: cd, glyph: 'sprout' };
-  if (s.mood === 'luteal' && isToday) return { kicker: s.kicker, big: s.big, sub: cd, glyph: 'flower-outline' };
+  if (s.mood === 'follicular' && isToday && s.kicker === 'Period in') return { kicker: '', big: 'After your period', sub: cd, glyph: 'sprout' };
+  if (s.mood === 'luteal' && isToday && s.kicker === 'Period in') return { kicker: s.kicker, big: s.big, sub: cd, glyph: 'flower-outline' };
   return { kicker: s.kicker, big: s.big, sub: s.sub, glyph: undefined };
 }
 
@@ -79,13 +80,25 @@ export function Today() {
     hasData: !!p.lastPeriodStart, today, date: selected, kind: kindOf(selected), cycleDay, phase: p.phase,
     daysUntilPeriod: p.daysUntilPeriod, fertileWindow: settings.showFertileWindow === false ? null : p.fertileWindow, ovulationDate: p.ovulationDate,
     inPeriod: !!lastPeriodEnd && selected >= p.lastPeriodStart! && selected <= lastPeriodEnd && (map.get(selected)?.flow ?? 0) >= 1,
+    lateBy: p.lateBy, lateDismissed: p.lateDismissed, noForecast: p.noForecast, stage: settings.stage,
   });
+  const updateSettings = useStore((s) => s.updateSettings);
+  const stage = settings.stage;
   const mood: Mood = preg ? 'pregnancy' : status.mood;
   const bloom: Bloom = bloomFor(mood);
   const c = centre(status, cycleDay, (map.get(selected)?.flow ?? 0) >= 1, selected === today);
-  const progress = preg ? Math.min(1, (preg.week * 7 + preg.day) / 280) : cycleDay ? Math.min(1, cycleDay / Math.max(p.stats.avgCycle, cycleDay)) : null;
+  const progress = preg ? Math.min(1, (preg.week * 7 + preg.day) / 280) : p.noForecast ? null : cycleDay ? Math.min(1, cycleDay / Math.max(p.stats.avgCycle, cycleDay)) : null;
 
-  const tipKey = p.daysUntilPeriod != null && p.daysUntilPeriod < 0 ? 'late' : p.phase ?? 'none';
+  const tipKey = p.lateBy && !p.lateDismissed ? 'late' : p.phase ?? 'none';
+  // Calm, situation-aware headline + article for the insight card.
+  const insight: { title: string; article?: string } =
+    p.noForecast === 'loss' ? { title: 'Be gentle with yourself', article: 'after-loss' }
+      : p.noForecast === 'postpartum' ? { title: 'Your cycle after giving birth', article: 'postpartum' }
+        : p.noForecast === 'paused' ? { title: 'Tracking is paused. Resume whenever you like' }
+          : p.noForecast === 'user' ? { title: 'Your cycle, at your own pace', article: 'irregular' }
+            : p.noForecast === 'no-uterus' ? { title: 'Listen to your body today' }
+          : p.lateBy && !p.lateDismissed ? { title: 'Why your forecast is a range', article: 'irregular' }
+            : { title: HEADLINE[mood] };
   const tips = ARTICLES.filter((a) => !(hideSex && a.sensitive)).sort((a, b) => +!!b.phases?.includes(tipKey as never) - +!!a.phases?.includes(tipKey as never));
 
   return (
@@ -112,6 +125,16 @@ export function Today() {
               <ActionPill icon="baby" label="This week" onPress={() => nav.openWeek(preg.week)} />
               <ActionPill icon={scheme === 'dark' ? 'waveform' : 'symptoms'} label="Symptoms" onPress={() => nav.openLog(selected)} />
             </>
+          ) : stage?.kind === 'paused' ? (
+            <>
+              <ActionPill icon="refresh" label="Resume" onPress={() => updateSettings({ stage: { kind: 'cycling' } })} />
+              <ActionPill icon={scheme === 'dark' ? 'waveform' : 'symptoms'} label="Symptoms" onPress={() => nav.openLog(selected)} />
+            </>
+          ) : p.noForecast === 'postpartum' && stage?.kind === 'postpartum' ? (
+            <>
+              <ActionPill icon={scheme === 'dark' ? 'water' : 'water-outline'} label="Period started" onPress={() => { updateSettings({ stage: { ...stage, returnedOn: today } }); nav.openCalendar(true); }} />
+              <ActionPill icon={scheme === 'dark' ? 'waveform' : 'symptoms'} label="Log today" onPress={() => nav.openLog(selected)} />
+            </>
           ) : (
             <>
               <ActionPill icon={scheme === 'dark' ? 'water' : 'water-outline'} label="Log period" onPress={() => nav.openCalendar(true)} />
@@ -121,20 +144,87 @@ export function Today() {
         </FadeIn>
 
         <FadeIn delay={200} style={{ marginHorizontal: 16 }}>
-          <InsightCard bloom={bloom} title={HEADLINE[mood]} onPress={() => (preg ? nav.openWeek(preg.week) : nav.openArticle(tips[0].id))} />
+          <InsightCard bloom={bloom} title={insight.title} onPress={() => (preg ? nav.openWeek(preg.week) : nav.openArticle(insight.article ?? tips[0].id))} />
         </FadeIn>
 
         <HomeWidgets onOpen={(def) => (def.opens ? nav.openHealth(def.opens) : def.id === 'cycleStats' || def.id === 'nextPeriod' ? nav.openChart('cycles') : nav.openLog(today))} />
 
-        {!preg && p.nextPeriodStart && (
-          <FadeIn delay={320} style={st.summary}>
-            <SummaryItem icon="water" color={colors.period} label="Next period" value={fmtDay(p.nextPeriodStart)} />
-            {settings.showFertileWindow !== false && p.fertileWindow && <SummaryItem icon="flower-outline" color={colors.fertile} label="Fertile window" value={`${fmtDay(p.fertileWindow[0]).split(' ')[0]}–${fmtDay(p.fertileWindow[1])}`} />}
-            <SummaryItem icon="refresh" color={colors.ovulation} label="Average cycle" value={`${p.stats.avgCycle} days`} last />
-          </FadeIn>
-        )}
+        {!preg && p.lastPeriodStart ? <ForecastCard p={p} today={today} showFertile={settings.showFertileWindow !== false} /> : null}
       </ScrollView>
     </View>
+  );
+}
+
+const CONF_LABEL = { high: 'High confidence', medium: 'Medium confidence', low: 'Low confidence' } as const;
+const fmtRange = (a: DateStr, b: DateStr) => (a.slice(5, 7) === b.slice(5, 7) ? `${+a.slice(8)}–${fmtDay(b)}` : `${fmtDay(a)} – ${fmtDay(b)}`);
+
+/**
+ * "Next period" card: the likely window and confidence, the reasons behind it ("why this date"),
+ * a note when the estimate moved, and a neutral late notice that can be dismissed for this cycle.
+ */
+function ForecastCard({ p, today, showFertile }: { p: ReturnType<typeof predict>; today: DateStr; showFertile: boolean }) {
+  const nav = useNav();
+  const [why, setWhy] = useState(false);
+  const seen = useStore((s) => s.seenForecast);
+  const setPrefs = useStore((s) => s.setPrefs);
+  const updateSettings = useStore((s) => s.updateSettings);
+  const next = p.nextPeriodStart;
+  useEffect(() => { if (next && !seen) setPrefs({ seenForecast: next }); }, [next, seen, setPrefs]);
+  const moved = next && seen && seen !== next && Math.abs(diffDays(seen, next)) >= 2 ? seen : null;
+  const late = p.lateBy && !p.lateDismissed;
+  return (
+    <FadeIn delay={320} style={st.summary}>
+      {p.noForecast ? (
+        <View style={{ paddingVertical: 12 }}>
+          <Text style={st.fcTitle}>{p.noForecast === 'user' ? 'Forecast off' : p.noForecast === 'paused' ? 'Tracking paused' : 'No forecast right now'}</Text>
+          {p.notes.map((n, i) => <Text key={i} style={st.fcNote}>{n}</Text>)}
+          {p.noForecast === 'user' ? <Btn kind="ghost" title="Turn forecast on" onPress={() => updateSettings({ forecastMode: 'auto' })} style={{ marginTop: 8 }} /> : null}
+        </View>
+      ) : next && p.nextPeriodRange ? (
+        <>
+          <View style={[st.sumRow, st.sumDivider, { alignItems: 'flex-start' }]}>
+            <View style={[st.sumIcon, { backgroundColor: colors.tile }]}><Icon name="water" size={20} color={colors.period} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 16, color: colors.text }}>Next period</Text>
+              <Text style={st.fcBig}>{fmtRange(p.nextPeriodRange[0], p.nextPeriodRange[1])}</Text>
+              <Text style={st.fcSub}>Most likely {fmtDay(next)}</Text>
+            </View>
+            <View style={[st.chip, p.confidence === 'high' ? { borderColor: colors.fertile } : p.confidence === 'low' ? { borderColor: colors.faint } : null]}>
+              <Text style={st.chipT}>{CONF_LABEL[p.confidence]}</Text>
+            </View>
+          </View>
+          {late ? (
+            <View style={[st.sumDivider, { paddingVertical: 12 }]} accessibilityLiveRegion="polite">
+              <Text style={st.fcTitle}>Your period hasn’t started yet</Text>
+              <Text style={st.fcNote}>It is {p.lateBy} day{p.lateBy === 1 ? '' : 's'} past your likely window. Cycles vary, and stress, travel, illness or changes in contraception can shift timing.</Text>
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+                <Btn kind="ghost" title="Log period" onPress={() => nav.openCalendar(true)} style={{ flex: 1 }} />
+                <Btn kind="ghost" title="Hide for this cycle" onPress={() => updateSettings({ lateDismissedFor: next })} style={{ flex: 1 }} />
+              </View>
+            </View>
+          ) : null}
+          {moved ? (
+            <View style={[st.sumDivider, { paddingVertical: 12, flexDirection: 'row', alignItems: 'center' }]}>
+              <Text style={[st.fcNote, { flex: 1, marginTop: 0 }]}>Estimate moved from {fmtDay(moved)} to {fmtDay(next)} after your latest logs.</Text>
+              <PressScale accessibilityRole="button" accessibilityLabel="Got it" onPress={() => setPrefs({ seenForecast: next })} style={{ padding: 10 }}><Text style={{ color: colors.primary, fontWeight: '700' }}>OK</Text></PressScale>
+            </View>
+          ) : null}
+          {showFertile && p.fertileWindow && p.fertileWindow[1] >= today ? <SummaryItem icon="flower-outline" color={colors.fertile} label="Fertile window" value={fmtRange(p.fertileWindow[0], p.fertileWindow[1])} /> : null}
+          <SummaryItem icon="refresh" color={colors.ovulation} label="Typical cycle" value={`${p.stats.avgCycle} days`} />
+          <PressScale accessibilityRole="button" accessibilityState={{ expanded: why }} accessibilityLabel="Why this estimate" onPress={() => setWhy(!why)} style={st.whyRow}>
+            <Icon name="info" size={18} color={colors.muted} />
+            <Text style={{ flex: 1, marginLeft: 8, fontSize: 15, color: colors.text }}>Why this estimate</Text>
+            <Icon name={why ? 'chevron-left' : 'chevron-right'} size={16} color={colors.muted} style={{ transform: [{ rotate: why ? '-90deg' : '90deg' }] }} />
+          </PressScale>
+          {why ? (
+            <View style={{ paddingBottom: 12 }}>
+              {p.notes.map((n, i) => <Text key={i} style={st.fcNote}>• {n}</Text>)}
+              <PressScale accessibilityRole="button" onPress={() => nav.openChart('cycles')} style={{ paddingVertical: 8 }}><Text style={{ color: colors.primary, fontWeight: '700', fontSize: 15 }}>Review which cycles count</Text></PressScale>
+            </View>
+          ) : null}
+        </>
+      ) : null}
+    </FadeIn>
   );
 }
 
@@ -157,5 +247,12 @@ const st = themed(() => StyleSheet.create({
   summary: { backgroundColor: colors.card, borderRadius: 24, marginHorizontal: 16, marginTop: 20, paddingVertical: 4, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.border, ...shadow },
   sumRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
   sumDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.divider },
+  fcTitle: { fontSize: 17, fontWeight: '600', color: colors.heading },
+  fcBig: { fontSize: 22, fontWeight: '700', color: colors.heading, marginTop: 2 },
+  fcSub: { fontSize: 14, color: colors.muted, marginTop: 2 },
+  fcNote: { fontSize: 14.5, color: colors.text, lineHeight: 21, marginTop: 6 },
+  chip: { borderWidth: 1.5, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginLeft: 8 },
+  chipT: { fontSize: 12, color: colors.heading, fontWeight: '600' },
+  whyRow: { flexDirection: 'row', alignItems: 'center', minHeight: 48 },
   sumIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
 }));
