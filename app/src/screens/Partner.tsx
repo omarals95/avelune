@@ -4,7 +4,7 @@ import { Text, TextInput } from '../text';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { DEFAULT_SHARE_ITEMS, buildSnapshot, cycleDayOf, decodeInvite, encodeInvite, inviteLink, predict, snapshotKind, today as todayFn, type PartnerSnapshot, type Phase, type ShareItems } from '@cyclo/core';
+import { DEFAULT_SHARE_ITEMS, addDays, pregnancyView, buildSnapshot, cycleDayOf, decodeInvite, encodeInvite, inviteLink, predict, snapshotKind, today as todayFn, type PartnerSnapshot, type Phase, type ShareItems } from '@cyclo/core';
 import { FadeIn, PressScale, useLoop } from '../anim';
 import { labelOf } from '../catalog';
 import { WeekStrip, ago, fmtDay, statusFor, useNow } from '../components';
@@ -16,6 +16,7 @@ import { bloomFor, colors, flowers, shadow, themed } from '../theme';
 import { Btn, Card, Field, Muted, Row, Sheet } from '../ui';
 import { CalendarView } from './Calendar';
 import { QR } from '../qr';
+import { PregnancyCaption, PregnancyIllustration } from '../pregnancyArt';
 import { QRScanner, scanSupported } from '../scan';
 import { TabHeader, centre } from './Today';
 import { CornerBloom } from './Insights';
@@ -251,8 +252,11 @@ export function PartnerView({ snapshot, onClose, preview, onRefresh, fetchedAt, 
         </View>
         <WeekStrip today={today} selected={selected} onSelect={setSelected} kindOf={(d) => snapshotKind(s, d)} />
         {s.pregnancy ? (
-          <BloomCircle bloom="follicular" kicker={`Week ${s.pregnancy.week}`} big={`Day ${s.pregnancy.day + 1}`} sub={`Due ${fmtDay(s.pregnancy.dueDate)}`} glyph="baby"
-            progress={Math.min(1, (s.pregnancy.week * 7 + s.pregnancy.day) / 280)} />
+          (() => {
+            // The snapshot carries week/day/due date; rebuild the same view as the owner's Today screen.
+            const v = pregnancyView(addDays(s.pregnancy.dueDate, -280), today);
+            return v ? <><PregnancyIllustration stage={v.stage} /><PregnancyCaption view={v} /></> : null;
+          })()
         ) : (
           <BloomCircle bloom={bloomFor(status.mood)} {...centre(status, selCycleDay, snapshotKind(s, selected) === 'period', selected === today)}
             progress={selCycleDay && daysUntil != null && daysUntil >= 0 ? Math.min(1, selCycleDay / (s.cycleDay! + daysUntil)) : null}

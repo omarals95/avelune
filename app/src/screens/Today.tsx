@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { classifyDay, contraceptionStatus, cycleDayOf, diffDays, predict, pregnancyStatus, today as todayFn, type DateStr } from '@cyclo/core';
+import { classifyDay, contraceptionStatus, cycleDayOf, diffDays, predict, pregnancyView, type DateStr } from '@cyclo/core';
+import { PregnancyCaption, PregnancyIllustration, PregnancySetup } from '../pregnancyArt';
+import { useToday } from '../today';
 import { FadeIn, PressScale } from '../anim';
 import { ARTICLES } from '../content';
 import { WeekStrip, fmtDay, statusFor, type Status } from '../components';
@@ -66,13 +68,22 @@ export function Today() {
   const hideSex = useStore((s) => s.hideSex);
   const logs = useMemo(() => selectLogs(records), [records]);
   const settings = selectSettings(records);
-  const today = todayFn();
+  // Stays current across midnight and when the app returns to the foreground.
+  const today = useToday();
   const [selected, setSelected] = useState<DateStr>(today);
+  const prevToday = useRef(today);
+  useEffect(() => {
+    // If the user was looking at "today", follow the date when it changes.
+    const prev = prevToday.current;
+    if (prev !== today) { prevToday.current = today; setSelected((s) => (s === prev ? today : s)); }
+  }, [today]);
   const p = useMemo(() => predict(logs, settings, today), [logs, settings, today]);
   const map = useMemo(() => new Map(logs.map((l) => [l.date, l])), [logs]);
   // In pregnancy mode cycle predictions are paused: only logged days are coloured.
   const kindOf = (d: DateStr) => (settings.pregnancyLmp ? ((map.get(d)?.flow ?? 0) >= 2 ? 'period' : 'none') : classifyDay(d, map, p, settings));
-  const preg = settings.pregnancyLmp ? pregnancyStatus(settings.pregnancyLmp, selected) : null;
+  // Pregnancy mode: one calculation (core pregnancyView) drives both the illustration and the caption.
+  const pregMode = !!settings.pregnancyLmp;
+  const preg = pregMode ? pregnancyView(settings.pregnancyLmp, selected) : null;
 
   const lastPeriodEnd = p.lastPeriodStart && logs.filter((l) => l.flow >= 2 && l.date >= p.lastPeriodStart!).map((l) => l.date).sort().pop();
   const cycleDay = cycleDayOf(selected, logs);
@@ -110,9 +121,12 @@ export function Today() {
 
         <View style={{ marginTop: 4 }}>
           {preg ? (
-            <BloomCircle bloom={bloom} progress={progress} celebrateKey={nav.celebrateKey} glyph="baby"
-              kicker={`Week ${preg.week}`} big={`Day ${preg.day + 1}`}
-              sub={preg.daysToGo > 0 ? `${Math.ceil(preg.daysToGo / 7)} weeks to go` : `Due ${fmtDay(preg.dueDate)}`} />
+            <>
+              <PregnancyIllustration stage={preg.stage} />
+              <PregnancyCaption view={preg} />
+            </>
+          ) : pregMode ? (
+            <PregnancySetup onSetup={() => nav.openSettings('pregnancy')} />
           ) : (
             <BloomCircle bloom={bloom} progress={progress} celebrateKey={nav.celebrateKey} {...c}
               a11y={`${status.kicker} ${status.big}. ${status.sub}`} />

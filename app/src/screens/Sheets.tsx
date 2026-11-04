@@ -6,7 +6,8 @@ import { FadeIn, PressScale, useLoop } from '../anim';
 import { ARTICLES, DISCLAIMER, pregnancyWeek } from '../content';
 import { Icon } from '../icons';
 import { colors, phase, scheme, themed } from '../theme';
-import { GrowthMark } from '../growth';
+import { PregnancyIllustration } from '../pregnancyArt';
+import { pregnancyStage } from '@cyclo/core';
 import { Muted, TopBar } from '../ui';
 
 export function ArticleSheet({ id, onClose }: { id: string; onClose: () => void }) {
@@ -38,8 +39,8 @@ export function WeekSheet({ week: initial, onClose }: { week: number; onClose: (
     <View style={{ flex: 1 }}>
       <LinearGradient colors={scheme === 'dark' ? ['#3A2A1E', colors.pregnancySoft, colors.bg] : ['#EBD3BA', phase.pregnancy.soft, colors.bg]} style={StyleSheet.absoluteFill} />
       <TopBar onClose={onClose} />
-      <View style={{ alignItems: 'center', justifyContent: 'center', height: 260 }}>
-        <GrowthMark key={week} week={week} size={210} />
+      <View style={{ alignItems: 'center', justifyContent: 'center', height: 264 }}>
+        <PregnancyIllustration stage={pregnancyStage(week)} size={250} />
       </View>
       <ScrollView ref={chips} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 14 }}
         onLayout={() => chips.current?.scrollTo({ x: Math.max(0, (week - 6) * 92), animated: false })}>
@@ -53,6 +54,7 @@ export function WeekSheet({ week: initial, onClose }: { week: number; onClose: (
         <View style={sh.grab} />
         <FadeIn key={week}>
           <Text style={sh.title}>What happens at {week} weeks</Text>
+          <Text style={sh.h}>Month {pregnancyStage(week)} · {week < 14 ? 'First' : week < 28 ? 'Second' : 'Third'} trimester</Text>
           <Text style={sh.h}>How big is the baby?</Text>
           <Text style={sh.p}>About the size of {w.size}. All sizes are approximate and vary within a normal range.</Text>
           <Text style={sh.h}>Your baby</Text>

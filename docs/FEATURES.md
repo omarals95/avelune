@@ -478,3 +478,34 @@ Cycle reminders pause in pregnancy mode. On the web, reminders are set up from t
   - Show the invite as a QR code.
   - Your partner scans it with the phone camera (it opens Avelune straight to joining) or with the scanner built into Avelune.
   - Pasting the code still works too.
+
+---
+
+## 12. Pregnancy growth illustrations
+
+- **Pregnancy mode on Today:** the cycle flower is replaced by a growth illustration for the current pregnancy month.
+  - It is the same size and position as the flower, centred, uncropped, and in both light and dark themes.
+- **Stages:** the stage comes from completed gestational weeks since the LMP, or from the due date (which uses the same LMP + 280 days):
+
+  | Completed weeks | Month | Image |
+  |---|---|---|
+  | 0–4 | 1 | emb-01 |
+  | 5–8 | 2 | emb-02 |
+  | 9–13 | 3 | emb-03 |
+  | 14–17 | 4 | emb-04 |
+  | 18–22 | 5 | emb-05 |
+  | 23–27 | 6 | emb-06 |
+  | 28–31 | 7 | emb-07 |
+  | 32–35 | 8 | emb-08 |
+  | 36–42+ | 9 | emb-09 |
+
+- **Text placement:** no text is drawn on the artwork. A caption sits in its own row below it ("Week 12 · Month 3 · First trimester"), with weeks and days and the due date underneath.
+- **Automatic updates:** the image and caption come from one calculation (`pregnancyView` in core), so they always agree. They update:
+  - at local midnight;
+  - when the app returns to the foreground;
+  - when the pregnancy date is edited.
+- **Stage changes:** the old image fades out while the new one fades in (about 0.5 s). Reduced-motion settings skip the animation.
+- **Missing artwork or dating:** a missing image falls back to the flower artwork. A missing or invalid pregnancy date shows a "Set pregnancy dates" prompt.
+- **Also used in:** the week-by-week sheet and the partner's view of a pregnancy.
+- **Assets:** originals are in `design/pregnancy/emb-0x.png`; the app bundles optimised copies from `app/assets/pregnancy/emb-0x.webp`. The single stage→image map is `PREGNANCY_ART` in `app/src/pregnancyArt.tsx`.
+
