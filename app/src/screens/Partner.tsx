@@ -19,7 +19,6 @@ import { QR } from '../qr';
 import { PregnancyCaption, PregnancyIllustration } from '../pregnancyArt';
 import { QRScanner, scanSupported } from '../scan';
 import { TabHeader, centre } from './Today';
-import { CornerBloom } from './Insights';
 
 /** Two figures and a child held together inside a heart of petals, gently breathing. */
 function Together() {
@@ -91,7 +90,6 @@ export function PartnerTab() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 140, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
-        <CornerBloom top={insets.top} bloom="follicular" />
         <TabHeader title="Partner" onAvatar={() => nav.openSettings()} />
         <View style={{ paddingHorizontal: 16 }}>
         {!share ? (
