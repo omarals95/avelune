@@ -509,3 +509,16 @@ Cycle reminders pause in pregnancy mode. On the web, reminders are set up from t
 - **Also used in:** the week-by-week sheet and the partner's view of a pregnancy.
 - **Assets:** originals are in `design/pregnancy/emb-0x.png`; the app bundles optimised copies from `app/assets/pregnancy/emb-0x.webp`. The single stage→image map is `PREGNANCY_ART` in `app/src/pregnancyArt.tsx`.
 
+
+## 13. First-use notice, terms and privacy
+
+- **Welcome notice:** shown before anything else the first time the app opens, on phones and on the web, including partner devices. It also appears once for people already using the app. It explains:
+  - Avelune is a free, personal open-source project, not a company or a paid product. There are no subscriptions, ads or premium features.
+  - Why it exists: technology is a necessity, and tracking shouldn't need a monthly or yearly subscription.
+  - The privacy model: no account, analytics or trackers.
+  - Avelune is not medical advice and not contraception.
+  - An invitation to contribute, with a link to the GitHub repository.
+- **Terms and privacy:** the full terms of use and privacy policy can be expanded on the notice. The notice ends with "I understand and agree". Nothing is stored until the person agrees.
+- **Re-showing the notice:** the agreement is stored on the device with a version (`TERMS_VERSION`). Bumping the version shows the notice again.
+- **Settings → About Avelune:** the same points, ways to support the project, a GitHub link, and the terms and privacy policy.
+- **Source of the text:** `app/src/legal.ts`. `node scripts/legal-docs.mjs` regenerates `TERMS.md` and `PRIVACY.md` from it. The repository also has `LICENSE` (MIT), `CONTRIBUTING.md`, and screenshots in `docs/screenshots/`.

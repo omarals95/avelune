@@ -16,7 +16,7 @@ import { RestoreBackup } from './Backup';
 import { Animated, Image } from 'react-native';
 
 /** Official Avelune lockup (symbol + wordmark), used unaltered with clear space around it. */
-function Logo() {
+export function Logo() {
   const v = useLoop(3200);
   return (
     <Animated.View style={{ transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] }) }] }}>

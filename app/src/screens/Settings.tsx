@@ -15,6 +15,7 @@ import { selectLogs, selectSettings, useStore } from '../store';
 import { colors, type ThemePref } from '../theme';
 import { Btn, Card, Chip, Field, Muted, Page, Row, Section, Stepper, TopBar } from '../ui';
 import { BackupSettings } from './Backup';
+import { AboutPage } from './About';
 import { DoctorReport, MedsSettings, SecuritySettings } from './SettingsExtra';
 
 async function shareText(filename: string, text: string, mime: string) {
@@ -40,7 +41,7 @@ export function Settings({ page: initial, onClose }: { page: SettingsPage; onClo
   const [page, setPage] = useState<SettingsPage>(initial);
   const back = () => (page === 'main' || initial !== 'main' ? onClose() : setPage('main'));
   const titles: Record<SettingsPage, string> = {
-    main: 'Settings', appearance: 'Appearance', profile: 'Health profile', backup: 'Backups', security: 'Privacy & security', meds: 'Contraception & meds', report: 'Doctor report', health: 'Health connections', import: 'Import data', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy & after', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units',
+    main: 'Settings', appearance: 'Appearance', profile: 'Health profile', backup: 'Backups', security: 'Privacy & security', meds: 'Contraception & meds', report: 'Doctor report', health: 'Health connections', import: 'Import data', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy & after', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units', about: 'About Avelune',
   };
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -61,6 +62,7 @@ export function Settings({ page: initial, onClose }: { page: SettingsPage; onClo
       {page === 'health' && <Connections onClose={back} embedded onImport={() => setPage('import')} />}
       {page === 'data' && <Data go={setPage} />}
       {page === 'import' && <ImportCSV />}
+      {page === 'about' && <AboutPage />}
     </View>
   );
 }
@@ -90,7 +92,10 @@ function Main({ go }: { go: (p: SettingsPage) => void }) {
         <Row icon="cloud-lock-outline" title="Sync & encryption" subtitle={st.server ? `Connected · ${st.server.email}` : 'Off: data stays on this device'} onPress={() => go('sync')} />
         <Row icon="database-export-outline" title="Your data" subtitle="Export, doctor summary, delete" onPress={() => go('data')} />
       </Card>
-      <Muted style={{ textAlign: 'center' }}>Avelune is an independent, private tracker. Predictions are estimates and not a method of contraception.</Muted>
+      <Card>
+        <Row icon="hand-heart" title="About Avelune" subtitle="Free & open source · terms · privacy policy" onPress={() => go('about')} />
+      </Card>
+      <Muted style={{ textAlign: 'center' }}>Avelune is a free, independent, open-source tracker. Predictions are estimates and not a method of contraception.</Muted>
     </Page>
   );
 }

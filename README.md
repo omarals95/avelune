@@ -2,24 +2,46 @@
 
 *Your rhythm. Your space.*
 
+Avelune (code name Cyclo) is a private, local-first period, ovulation, fertile-window and pregnancy tracker for **iPhone, Android and the web**,
+with an optional **self-hosted, end-to-end encrypted sync server**.
 
-Avelune (code name Cyclo) is a private, local-first period, ovulation and fertile-window tracker for **iPhone, Android and the web**,
-with an optional **self-hosted sync server**. Independent open-source project; not affiliated with any other tracking app.
+> **A free, personal open-source project, not a paid product.**
+> Avelune is not a company. There are no subscriptions, ads, in-app purchases or premium features, and there never will be. Anyone is free to use it.
+>
+> Technology today is a necessity for everyone, and understanding your own body should not depend on paying a monthly or yearly
+> subscription. Avelune was created to add real value for people who cannot pay for one, or would rather not.
+>
+> **If you have the ability to contribute to this project and support it for the community, please go ahead.** See [CONTRIBUTING.md](CONTRIBUTING.md).
+>
+> Avelune is **not a medical device** and must not be used as contraception or to diagnose anything. By using it you agree to the
+> [terms of use](TERMS.md) and [privacy policy](PRIVACY.md). The app shows the same notice the first time it opens.
+
+## Screenshots
+
+| | | | |
+|:-:|:-:|:-:|:-:|
+| <img src="docs/screenshots/welcome.webp" width="200" alt="First-use notice: free, open source, private, not medical advice"><br>First-use notice | <img src="docs/screenshots/today.webp" width="200" alt="Today screen with the animated phase flower"><br>Today | <img src="docs/screenshots/today-dark.webp" width="200" alt="Today screen in dark mode"><br>Dark mode | <img src="docs/screenshots/calendar.webp" width="200" alt="Calendar with period, predicted, fertile and ovulation days"><br>Calendar |
+| <img src="docs/screenshots/log.webp" width="200" alt="Daily log with quick picks, mood and water"><br>Daily log | <img src="docs/screenshots/insights.webp" width="200" alt="Insights with average cycle and cycle-length history"><br>Insights | <img src="docs/screenshots/temperature.webp" width="200" alt="Basal temperature chart with confirmed ovulation"><br>Temperature &amp; ovulation | <img src="docs/screenshots/health.webp" width="200" alt="Health page with steps and sleep"><br>Health |
+| <img src="docs/screenshots/pregnancy.webp" width="200" alt="Pregnancy mode with the month 5 illustration and caption below"><br>Pregnancy | <img src="docs/screenshots/partner.webp" width="200" alt="Partner sharing screen"><br>Partner sharing | <img src="docs/screenshots/settings.webp" width="200" alt="Settings"><br>Settings | |
+
+<sub>Screenshots from the web build with made-up demo data.</sub>
+
+## Features
 
 - **Works fully offline.** All data is stored on the device. No account is needed.
 - **Today:** swipeable week strip, a breathing status circle ("Period in 5 days", "Ovulation in 3 days", "Late for 2 days") on a phase-tinted animated background, quick actions, daily tip cards.
 - **Calendar:** Month / Year views, period, predicted, fertile and ovulation styling, optional cycle-day numbers, "Edit period dates" mode.
 - **Daily log:** search, quick picks, flow, sex & sex drive, mood, symptoms, discharge, tests, pill, other, activity, water glasses, BBT, weight, sleep, distance, notes.
 - **Graphs & reports:** cycle-length history, BBT with automatic ovulation (temperature-shift) detection, weight, activity, water vs target, sleep, most-logged symptoms and moods.
-- **Pregnancy mode:** week and day, due date, progress ring, week-by-week size comparison and notes.
+- **Pregnancy mode:** a growth illustration for each month of pregnancy, week and day, trimester, due date, and week-by-week notes.
 - **Health:** Apple Health (iOS), Health Connect (Android, which also covers Samsung Health, Fitbit and Google), or Fitbit account sign-in. A dedicated Health page with Samsung-style icon navigation, Days/Weeks/Months charts and a cycle-phase overlay. Health data stays on the device.
 - **Home widgets:** 12 animated widgets (cycle stats rings, steps, sleep, heart, weight, temperature with phases, water, activity, mood, symptoms, SpO₂), with add, remove and reorder.
 - **Partner (view-only):** share a live, end-to-end encrypted view of your cycle with one person via an invite code; revoke any time. No chat, community or social features.
 - **Reminders (iOS/Android):** period soon/start/end, ovulation, fertile window, pill, water, weight, sleep, temperature, daily check-in; discreet wording by default.
 - **Import / export CSV:** Settings → Your data. Import accepts one row per day (date, flow, symptoms, mood, BBT, weight, water, sleep, notes, steps) or one row per period (start, end). Delimiters `,` `;` tab; day-first or month-first dates detected (or chosen); °F and lb converted; common symptom names from other apps mapped; a preview shows what will change before anything is written, and existing entries are kept unless you choose to replace them.
-- **Privacy:** optional end-to-end encrypted sync to your own server; hide sex content; JSON export and doctor summary.
+- **Privacy:** no account, analytics or trackers; app lock and screenshot blocking; optional end-to-end encrypted sync to your own server; encrypted backups; hide sex content; JSON export and a PDF report for your doctor.
 
-> Predictions are estimates for personal awareness. Not a medical device; not for contraception.
+The full list of screens and features is in [docs/FEATURES.md](docs/FEATURES.md).
 
 ## Design
 
@@ -102,3 +124,14 @@ unzip it and install `app-release.apk` on your phone (allow "install unknown app
 The generated project signs release builds with Expo's debug keystore, which is fine for sideloading but not for Play Store
 upload; for that, configure your own keystore. Locally (Android SDK + JDK 17 required):
 `cd app && npx expo prebuild --platform android && cd android && ./gradlew assembleRelease`.
+
+## Contributing
+
+Bug reports, ideas, code, design, translations and testing are all welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md).
+The most important rules: keep it private (no analytics or trackers), keep it free (no paywalls), and be honest that predictions are estimates.
+
+## License, terms and privacy
+
+- Code: [MIT License](LICENSE). Free to use, copy, modify and share.
+- [Terms of use](TERMS.md) and [privacy policy](PRIVACY.md), generated from [`app/src/legal.ts`](app/src/legal.ts), the same text the app shows on first use and in **Settings → About Avelune**.
+- Avelune is provided as is, without warranty. It is an independent project, not affiliated with any other tracking app or health service.

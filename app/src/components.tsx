@@ -98,7 +98,7 @@ export function MoodBackground({ mood }: { mood: Mood }) {
       { transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [-dx, dx] }) }, { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [-dy, dy] }) }] }]} />
   );
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]} pointerEvents="none">
       {prev ? <LinearGradient colors={phaseGradient[prev]} style={StyleSheet.absoluteFill} /> : null}
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: fade }]}>
         <LinearGradient colors={phaseGradient[shown]} style={StyleSheet.absoluteFill} />

@@ -2,7 +2,12 @@
   "name": "cyclo",
   "private": true,
   "version": "0.1.0",
-  "workspaces": ["packages/core", "server", "app"],
+  "license": "MIT",
+  "workspaces": [
+    "packages/core",
+    "server",
+    "app"
+  ],
   "scripts": {
     "test": "npm run test -w @cyclo/core && npm run test -w @cyclo/server",
     "typecheck": "npm run typecheck -w @cyclo/core && npm run typecheck -w @cyclo/server && npm run typecheck -w @cyclo/app",

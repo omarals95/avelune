@@ -1,4 +1,5 @@
 import type { ThemePref } from './theme';
+import { TERMS_VERSION } from './legal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -47,6 +48,9 @@ interface State {
   /** Record ids with local edits not yet acknowledged by the server. */
   dirty: Record<string, true>;
   onboarded: boolean;
+  /** Version of the first-use notice (terms + privacy) the person agreed to on this device. */
+  termsAccepted: string | null;
+  acceptTerms: () => void;
   unit: 'C' | 'F';
   server: ServerConn | null;
   syncing: boolean;
@@ -138,10 +142,11 @@ export const useStore = create<State>()(
         }
       };
       return {
-        records: {}, dirty: {}, onboarded: false, unit: 'C', server: null, syncing: false, syncError: null, reminders: DEFAULT_REMINDERS,
+        records: {}, dirty: {}, onboarded: false, termsAccepted: null, unit: 'C', server: null, syncing: false, syncError: null, reminders: DEFAULT_REMINDERS,
         setReminders: (r) => set((st) => ({ reminders: { ...st.reminders, ...r } })),
         name: '', hideSex: false, theme: 'system', weightUnit: 'kg', share: null, partner: null,
         setPrefs: (p) => set(p),
+        acceptTerms: () => set({ termsAccepted: TERMS_VERSION }),
 
         importLogs: (incoming, overwrite) => {
           const now = Date.now();
@@ -404,7 +409,7 @@ export const useStore = create<State>()(
       name: 'cyclo-v1',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({
-        records: s.records, dirty: s.dirty, onboarded: s.onboarded, unit: s.unit, server: s.server, reminders: s.reminders,
+        records: s.records, dirty: s.dirty, onboarded: s.onboarded, termsAccepted: s.termsAccepted, unit: s.unit, server: s.server, reminders: s.reminders,
         name: s.name, hideSex: s.hideSex, theme: s.theme, partnerName: s.partnerName, seenForecast: s.seenForecast, weightUnit: s.weightUnit, share: s.share, partner: s.partner, backup: s.backup, security: s.security,
       }),
       // Older installs stored a flatter reminders shape; fill in anything missing.

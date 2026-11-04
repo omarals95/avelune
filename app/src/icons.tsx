@@ -132,6 +132,9 @@ import { Wind } from 'phosphor-react-native/src/icons/Wind';
 import { Wine } from 'phosphor-react-native/src/icons/Wine';
 import { X } from 'phosphor-react-native/src/icons/X';
 import { XCircle } from 'phosphor-react-native/src/icons/XCircle';
+import { GithubLogo } from 'phosphor-react-native/src/icons/GithubLogo';
+import { HandHeart } from 'phosphor-react-native/src/icons/HandHeart';
+import { FileText } from 'phosphor-react-native/src/icons/FileText';
 
 type C = React.ComponentType<PhosphorProps>;
 type Entry = C | [C, IconWeight];
@@ -187,6 +190,7 @@ const MAP = {
   'test-tube-empty': [TestTube, 'light'], pill: Pill, 'map-marker-outline': MapPin, bandage: Bandaids, 'glass-wine': Wine,
   'medical-bag': FirstAidKit, 'sofa-outline': Couch, yoga: PersonSimpleTaiChi, dumbbell: Barbell, 'music-note-outline': MusicNote,
   swim: SwimmingPool, basketball: Basketball, bike: Bicycle, 'heart-off': HeartBreak, baby: Baby, symptoms: ClipboardText, ring: CircleNotch, qr: QrCode, scan: Scan, 'file-pdf': FilePdf, fingerprint: Fingerprint, backspace: Backspace, printer: Printer, calendar: Calendar, 'file-xls': FileXls, download: DownloadSimple, waveform: Waveform,
+  github: GithubLogo, 'hand-heart': HandHeart, 'file-text': FileText,
 } satisfies Record<string, Entry>;
 
 export type IconName = keyof typeof MAP;

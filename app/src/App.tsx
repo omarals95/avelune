@@ -29,6 +29,8 @@ import { maybeAutoBackup } from './backup';
 import { CalendarView } from './screens/Calendar';
 import { ChartScreen, Insights } from './screens/Insights';
 import { LogSheet } from './screens/LogSheet';
+import { Welcome } from './screens/About';
+import { TERMS_VERSION } from './legal';
 import { Onboarding } from './screens/Onboarding';
 import { PartnerRoot, PartnerTab } from './screens/Partner';
 import { Settings } from './screens/Settings';
@@ -54,6 +56,7 @@ function Root() {
   const [hydrated, setHydrated] = useState(useStore.persist.hasHydrated());
   const onboarded = useStore((s) => s.onboarded);
   const partner = useStore((s) => s.partner);
+  const agreed = useStore((s) => s.termsAccepted) === TERMS_VERSION;
   const pref = useStore((s) => s.theme) ?? 'system';
   const system = useColorScheme();
   const eff = pref === 'system' ? (system === 'dark' ? 'dark' : 'light') : pref;
@@ -74,7 +77,7 @@ function Root() {
   return (
     <View key={eff} style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style={eff === 'dark' ? 'light' : 'dark'} />
-      {partner && !onboarded ? <PartnerRoot /> : !onboarded ? <Onboarding /> : <Main />}
+      {!agreed ? <Welcome /> : partner && !onboarded ? <PartnerRoot /> : !onboarded ? <Onboarding /> : <Main />}
       <SystemBarBackdrop />
       <SheetOutlet />
       <LockLayer />
