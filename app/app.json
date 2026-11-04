@@ -1,0 +1,117 @@
+{
+  "expo": {
+    "name": "Avelune",
+    "slug": "avelune",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "app.avelune.tracker",
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIFileSharingEnabled": true,
+        "LSSupportsOpeningDocumentsInPlace": true
+      }
+    },
+    "android": {
+      "package": "app.avelune.tracker",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FCF8F5"
+      },
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_DISTANCE",
+        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_RESTING_HEART_RATE",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.READ_BASAL_BODY_TEMPERATURE",
+        "android.permission.health.READ_BODY_TEMPERATURE",
+        "android.permission.health.READ_OXYGEN_SATURATION",
+        "android.permission.health.READ_HYDRATION",
+        "android.permission.health.READ_HEALTH_DATA_HISTORY",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.CAMERA"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "Avelune",
+      "shortName": "Avelune",
+      "themeColor": "#482F49",
+      "backgroundColor": "#FCF8F5"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#482F49"
+        }
+      ],
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#FCF8F5",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#1C1418"
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          }
+        }
+      ],
+      "expo-health-connect",
+      [
+        "react-native-health",
+        {
+          "healthSharePermission": "Avelune reads steps, sleep, heart rate, weight, temperature and water to show them next to your cycle. Health data stays on your device."
+        }
+      ],
+      "expo-asset",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Avelune uses Face ID to keep your cycle data private."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Avelune uses the camera only to scan your partner\u2019s sharing QR code.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ]
+    ],
+    "icon": "./assets/icon.png",
+    "backgroundColor": "#FCF8F5",
+    "primaryColor": "#482F49",
+    "scheme": "avelune",
+    "androidStatusBar": {
+      "translucent": true,
+      "backgroundColor": "#00000000",
+      "barStyle": "dark-content"
+    }
+  }
+}

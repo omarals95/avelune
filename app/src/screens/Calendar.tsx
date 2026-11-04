@@ -1,0 +1,218 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../text';
+import { addDays, classifyDay, cycleDayOf, predict, toDateStr, today as todayFn, type DateStr, type DayKind } from '@avelune/core';
+import { ND, PressScale } from '../anim';
+import { DOW, KIND_LABEL, KIND_STYLE, MONTHS, mondayIndex } from '../components';
+import { Icon } from '../icons';
+import { useNav } from '../nav';
+import { selectLogs, selectSettings, useStore } from '../store';
+import { colors, shadow, themed } from '../theme';
+import { Segmented, TopBar } from '../ui';
+
+const fmtA11y = (d: DateStr) => `${+d.slice(8)} ${MONTHS[+d.slice(5, 7) - 1]} ${d.slice(0, 4)}`;
+
+/** Visible key for the calendar symbols (shape + colour). */
+function Legend() {
+  const items: [DayKind, string][] = [['period', 'Period'], ['predicted-period', 'Predicted'], ['fertile', 'Fertile'], ['ovulation', 'Ovulation']];
+  return (
+    <View style={cal.legend} accessibilityRole="text" accessibilityLabel="Legend: filled rose is a logged period, dashed rose ring is predicted, green fill is fertile, dashed violet ring is ovulation">
+      {items.map(([k, l]) => (
+        <View key={k} style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 6 }}>
+          <View style={[{ width: 16, height: 16, borderRadius: 8, marginRight: 6 }, KIND_STYLE[k].box]} />
+          <Text style={{ fontSize: 13, color: colors.text }}>{l}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const monthKey = (y: number, m: number) => `${y}-${String(m + 1).padStart(2, '0')}`;
+
+export function CalendarView({ startEditing, onClose, onDay, kindOf: kindOverride, readOnly, title }: {
+  startEditing?: boolean; onClose: () => void; onDay?: (d: DateStr) => void;
+  kindOf?: (d: DateStr) => DayKind; readOnly?: boolean; title?: string;
+}) {
+  const nav = readOnly ? null : useNavSafe();
+  const records = useStore((s) => s.records);
+  const logs = useMemo(() => selectLogs(records), [records]);
+  const settings = selectSettings(records);
+  const today = todayFn();
+  const p = useMemo(() => predict(logs, settings, today), [logs, settings, today]);
+  const map = useMemo(() => new Map(logs.map((l) => [l.date, l])), [logs]);
+  const kindOf = kindOverride ?? ((d: DateStr) => classifyDay(d, map, p, settings));
+  const [mode, setMode] = useState<'month' | 'year'>('month');
+  const [editing, setEditing] = useState(!!startEditing);
+  const [draft, setDraft] = useState<Set<DateStr>>(new Set());
+  const setPeriodDays = useStore((s) => s.setPeriodDays);
+
+  useEffect(() => {
+    if (editing) setDraft(new Set(logs.filter((l) => l.flow >= 2).map((l) => l.date)));
+  }, [editing]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const save = () => {
+    const before = new Set(logs.filter((l) => l.flow >= 2).map((l) => l.date));
+    const on = [...draft].filter((d) => !before.has(d));
+    const off = [...before].filter((d) => !draft.has(d));
+    setPeriodDays(on, off);
+    setEditing(false);
+    if (on.length || off.length) { onClose(); nav?.celebrate(); }
+  };
+  const toggle = (d: DateStr) => setDraft((s) => {
+    const n = new Set(s);
+    if (n.has(d)) n.delete(d);
+    else {
+      n.add(d);
+      // Tapping the first day of a new period fills in your usual period length, like most trackers.
+      const prevDay = addDays(d, -1);
+      if (!n.has(prevDay) && !n.has(addDays(d, 1))) for (let i = 1; i < settings.periodLength; i++) { const x = addDays(d, i); if (x <= today) n.add(x); }
+    }
+    return n;
+  });
+
+  const ty = +today.slice(0, 4), tm = +today.slice(5, 7) - 1;
+  const months = useMemo(() => Array.from({ length: 19 }, (_, i) => { const dt = new Date(ty, tm - 12 + i, 1); return { y: dt.getFullYear(), m: dt.getMonth() }; }), [ty, tm]);
+  const [ready, setReady] = useState(false);
+  const scroll = useRef<ScrollView>(null);
+  const offsets = useRef<Record<string, number>>({});
+  const [target, setTarget] = useState(monthKey(ty, tm));
+  const jump = (k: string) => { const y = offsets.current[k]; if (y != null) scroll.current?.scrollTo({ y, animated: false }); return y != null; };
+  // Scroll only once every month has been measured: on Android, scrolling during the first layout pass is ignored.
+  const settle = () => {
+    if (!target || Object.keys(offsets.current).length < months.length) return;
+    requestAnimationFrame(() => { if (jump(target)) { setTarget(''); setReady(true); } });
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.card }}>
+      <TopBar onClose={onClose} title={title}
+        right={!readOnly ? <PressScale accessibilityLabel="Cycle settings" onPress={() => { onClose(); nav?.openSettings('cycle'); }} style={{ padding: 8 }}><Icon name="cog-outline" size={28} color={colors.text} /></PressScale> : null} />
+      <View style={{ alignItems: 'center', marginTop: -50, marginBottom: 8 }} pointerEvents="box-none">
+        {!title && <Segmented options={[['month', 'Month'], ['year', 'Year']]} value={mode} onChange={(m) => { if (m === 'month') { offsets.current = {}; setReady(false); setTarget(monthKey(ty, tm)); } setMode(m); }} />}
+      </View>
+      <Legend />
+      <View style={cal.dowRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{DOW.map((d, i) => <Text key={i} style={cal.dow} maxFontSizeMultiplier={1.2}>{d}</Text>)}</View>
+
+      {mode === 'month' ? (
+        <ScrollView ref={scroll} contentContainerStyle={{ paddingBottom: 120 }} onContentSizeChange={settle} style={{ opacity: ready || !target ? 1 : 0 }}>
+          {months.map(({ y, m }) => (
+            <View key={monthKey(y, m)} onLayout={(e) => { offsets.current[monthKey(y, m)] = e.nativeEvent.layout.y; settle(); }}>
+              <Month y={y} m={m} today={today} kindOf={kindOf} editing={editing} draft={draft} showCycleDays={!!settings.showCycleDays}
+                cycleDayOf={(d) => cycleDayOf(d, logs)} onDay={(d) => (editing ? (d <= today && toggle(d)) : onDay?.(d))} />
+            </View>
+          ))}
+        </ScrollView>
+      ) : (
+        <ScrollView contentContainerStyle={{ padding: 12, flexDirection: 'row', flexWrap: 'wrap', paddingBottom: 60 }}>
+          {Array.from({ length: 12 }, (_, m) => (
+            <Pressable key={m} style={{ width: '33.3%', padding: 6 }} accessibilityLabel={`${MONTHS[m]} ${ty}`} onPress={() => { offsets.current = {}; setReady(false); setTarget(monthKey(ty, m)); setMode('month'); }}>
+              <MiniMonth y={ty} m={m} today={today} kindOf={kindOf} />
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+
+      {!readOnly && mode === 'month' && (
+        <View style={cal.fabWrap} pointerEvents="box-none">
+          {editing ? (
+            <View style={{ flexDirection: 'row' }}>
+              <PressScale onPress={() => setEditing(false)} style={[cal.fab, { backgroundColor: colors.tile, marginRight: 12 }]}><Text style={[cal.fabT, { color: colors.primary }]}>Cancel</Text></PressScale>
+              <PressScale onPress={save} style={cal.fab}><Text style={cal.fabT}>Save</Text></PressScale>
+            </View>
+          ) : (
+            <PressScale onPress={() => setEditing(true)} style={cal.fab}><Text style={cal.fabT}>Edit period dates</Text></PressScale>
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function useNavSafe() { try { return useNav(); } catch { return null; } }
+
+function Month({ y, m, today, kindOf, editing, draft, onDay, showCycleDays, cycleDayOf }: {
+  y: number; m: number; today: DateStr; kindOf: (d: DateStr) => DayKind; editing: boolean; draft: Set<DateStr>;
+  onDay: (d: DateStr) => void; showCycleDays: boolean; cycleDayOf: (d: DateStr) => number | null;
+}) {
+  const days = new Date(y, m + 1, 0).getDate();
+  const first = toDateStr(new Date(y, m, 1));
+  const cells: (DateStr | null)[] = [...Array(mondayIndex(first)).fill(null), ...Array.from({ length: days }, (_, i) => toDateStr(new Date(y, m, i + 1)))];
+  while (cells.length % 7) cells.push(null);
+  return (
+    <View style={{ paddingTop: 18, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+      <Text style={cal.mTitle}>{MONTHS[m]}{y !== +today.slice(0, 4) ? ` ${y}` : ''}</Text>
+      <View style={cal.grid}>
+        {cells.map((d, i) => d ? (
+          <DayCell key={d} d={d} today={today} kind={kindOf(d)} editing={editing} checked={draft.has(d)} onPress={() => onDay(d)}
+            cycleDay={showCycleDays && !editing ? cycleDayOf(d) : null} />
+        ) : <View key={i} style={cal.cell} />)}
+      </View>
+    </View>
+  );
+}
+
+function DayCell({ d, today, kind, editing, checked, onPress, cycleDay }: {
+  d: DateStr; today: DateStr; kind: DayKind; editing: boolean; checked: boolean; onPress: () => void; cycleDay: number | null;
+}) {
+  const isToday = d === today;
+  const future = d > today;
+  const pop = useRef(new Animated.Value(1)).current;
+  const press = () => { pop.setValue(0.8); Animated.spring(pop, { toValue: 1, useNativeDriver: ND, speed: 30, bounciness: 14 }).start(); onPress(); };
+  const k = KIND_STYLE[kind];
+  const txt = isToday && !editing ? colors.onPrimary : editing ? colors.text : k.color;
+  return (
+    <Pressable style={cal.cell} onPress={press} disabled={editing && future} accessibilityRole={editing ? 'checkbox' : 'button'} accessibilityState={editing ? { checked, disabled: future } : undefined}
+      accessibilityLabel={`${fmtA11y(d)}${isToday ? ', today' : ''}${kind !== 'none' ? ', ' + KIND_LABEL[kind] : ''}`}>
+      <Text style={[cal.cd, isToday && !editing && { color: colors.text, fontWeight: '700' }]} numberOfLines={1} maxFontSizeMultiplier={1.1}>{isToday && !editing ? 'Today' : cycleDay ?? ' '}</Text>
+      <Animated.View style={[cal.day, { transform: [{ scale: pop }] }, !editing && k.box,
+        !editing && isToday && { backgroundColor: colors.today, borderWidth: 0 }]}>
+        <Text style={[cal.dayT, { color: txt }, editing && future && { color: colors.faint }]} maxFontSizeMultiplier={1.2}>{+d.slice(8)}</Text>
+      </Animated.View>
+      {editing ? (
+        <View style={[cal.check, checked && { backgroundColor: colors.period, borderColor: colors.period }, future && { opacity: 0 }]}>
+          {checked ? <Icon name="check" size={14} color="#fff" /> : null}
+        </View>
+      ) : <View style={{ height: 22 }} />}
+    </Pressable>
+  );
+}
+
+function MiniMonth({ y, m, today, kindOf }: { y: number; m: number; today: DateStr; kindOf: (d: DateStr) => DayKind }) {
+  const days = new Date(y, m + 1, 0).getDate();
+  const first = toDateStr(new Date(y, m, 1));
+  const cells: (DateStr | null)[] = [...Array(mondayIndex(first)).fill(null), ...Array.from({ length: days }, (_, i) => toDateStr(new Date(y, m, i + 1)))];
+  return (
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Text style={{ fontWeight: '700', fontSize: 15, marginBottom: 4, color: colors.heading }}>{MONTHS[m].slice(0, 3)}</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        {cells.map((d, i) => {
+          const k = d ? kindOf(d) : 'none';
+          const bg = !d ? 'transparent' : d === today ? colors.today : k === 'period' ? colors.period : k === 'predicted-period' ? colors.predictedSoft : k === 'ovulation' ? colors.ovulation : k === 'fertile' ? colors.fertileSoft : 'transparent';
+          return (
+            <View key={i} style={{ width: `${100 / 7}%`, aspectRatio: 1, padding: 1 }}>
+              <View style={{ flex: 1, borderRadius: 99, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 9, color: d === today || k === 'period' || k === 'ovulation' ? '#fff' : colors.text }}>{d ? +d.slice(8) : ''}</Text>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const cal = themed(() => StyleSheet.create({
+  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', paddingVertical: 8 },
+  dowRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 8, paddingHorizontal: 6 },
+  dow: { flex: 1, textAlign: 'center', color: colors.muted, fontSize: 15 },
+  mTitle: { textAlign: 'center', fontSize: 24, fontWeight: '700', color: colors.heading, marginBottom: 6 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 6, paddingBottom: 12 },
+  cell: { width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 2 },
+  cd: { fontSize: 11, color: colors.muted, height: 15, fontWeight: '600' },
+  day: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+  dayT: { fontSize: 20 },
+  check: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.faint, marginTop: 2, alignItems: 'center', justifyContent: 'center' },
+  fabWrap: { position: 'absolute', bottom: 28, left: 0, right: 0, alignItems: 'center' },
+  fab: { backgroundColor: colors.primary, borderRadius: 999, paddingVertical: 16, paddingHorizontal: 30, ...shadow, shadowOpacity: 0.2 },
+  fabT: { color: colors.onPrimary, fontSize: 18, fontWeight: '700' },
+}));
