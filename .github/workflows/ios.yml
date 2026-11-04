@@ -1,0 +1,74 @@
+name: iOS build
+
+# Compiles the iOS app on a macOS runner without an Apple developer account:
+#  - avelune-ios-unsigned-ipa: a Release build for real iPhones, NOT signed. Install it with a sideloading tool that
+#    re-signs it with your own Apple ID (e.g. Sideloadly or AltStore), or sign it with your developer account.
+#  - avelune-ios-simulator: a Release build for the iOS Simulator in Xcode on a Mac (drag the .app onto a simulator).
+on:
+  workflow_dispatch: {}
+  push:
+    tags: ['v*']
+
+jobs:
+  ios:
+    name: iOS (${{ matrix.target }})
+    runs-on: macos-15
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: device
+            sdk: iphoneos
+            destination: generic/platform=iOS
+          - target: simulator
+            sdk: iphonesimulator
+            destination: generic/platform=iOS Simulator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Generate native iOS project
+        working-directory: app
+        run: npx expo prebuild --platform ios --no-install
+        env:
+          CI: '1'
+      - name: Install CocoaPods
+        working-directory: app/ios
+        run: pod install
+      - name: Build (${{ matrix.sdk }}, Release, unsigned)
+        working-directory: app/ios
+        run: |
+          set -o pipefail
+          WS=$(ls -d *.xcworkspace | head -1); SCHEME="${WS%.xcworkspace}"
+          echo "Workspace $WS, scheme $SCHEME"
+          if ! xcodebuild -workspace "$WS" -scheme "$SCHEME" -configuration Release -sdk ${{ matrix.sdk }} \
+               -destination '${{ matrix.destination }}' -derivedDataPath build \
+               CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build > build.log 2>&1; then
+            tail -80 build.log
+            msg=$(grep -nE "error:|\*\* BUILD FAILED|Command .* failed" build.log | tail -40 | sed -e 's/%/%25/g' -e 's/\r//g' | awk 'BEGIN{ORS="%0A"} {print}')
+            echo "::error title=Xcode build failed::${msg}"
+            exit 1
+          fi
+          tail -5 build.log
+      - name: Package
+        working-directory: app/ios
+        run: |
+          APP=$(ls -d build/Build/Products/Release-${{ matrix.sdk }}/*.app | head -1)
+          echo "Built $APP"; du -sh "$APP"
+          mkdir -p out
+          if [ "${{ matrix.sdk }}" = iphoneos ]; then
+            mkdir Payload && cp -R "$APP" Payload/ && zip -qry out/Avelune-unsigned.ipa Payload
+          else
+            ditto -c -k --keepParent "$APP" out/Avelune-simulator.zip
+          fi
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target == 'device' && 'avelune-ios-unsigned-ipa' || 'avelune-ios-simulator' }}
+          path: app/ios/out/*
+          if-no-files-found: error
