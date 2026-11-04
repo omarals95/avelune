@@ -3,7 +3,7 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Reanimated, { FadeInDown, LinearTransition, ZoomOut } from 'react-native-reanimated';
 import {
   addDays, classifyDay, derivePeriods, fmtSleep, latest, predict, series, today as todayFn, type DateStr, type DayLog, type HealthDay,
-} from '@cyclo/core';
+} from '@avelune/core';
 import { PressScale } from './anim';
 import { labelOf } from './catalog';
 import { CountUp, Glass, MiniBars, Ring, STAGGER, Sparkline } from './motion';

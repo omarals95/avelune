@@ -14,7 +14,7 @@ Avelune is a private tracker for periods, ovulation and pregnancy. It runs on An
 | **Web app** | The same app built for the browser and served by your self-hosted server. |
 | **Self-hosted server** | Fastify + SQLite. It stores only encrypted data. It handles sign-in, sync and partner shares. |
 | **Core library** | Shared logic for predictions, encryption, reminders, health data, CSV import/export and partner snapshots. It has 46 unit tests. |
-| **Android APK** | Built automatically by GitHub Actions (`cyclo-android-apk` artifact). |
+| **Android APK** | Built automatically by GitHub Actions (`avelune-android-apk` artifact). |
 
 ---
 
@@ -522,3 +522,10 @@ Cycle reminders pause in pregnancy mode. On the web, reminders are set up from t
 - **Re-showing the notice:** the agreement is stored on the device with a version (`TERMS_VERSION`). Bumping the version shows the notice again.
 - **Settings → About Avelune:** the same points, ways to support the project, a GitHub link, and the terms and privacy policy.
 - **Source of the text:** `app/src/legal.ts`. `node scripts/legal-docs.mjs` regenerates `TERMS.md` and `PRIVACY.md` from it. The repository also has `LICENSE` (MIT), `CONTRIBUTING.md`, and screenshots in `docs/screenshots/`.
+
+## 14. Donations
+
+- **Donations box:** "Help keep Avelune free" appears on the first-use notice, in Settings and in Settings → About Avelune. It opens GitHub Sponsors (github.com/sponsors/omarals95).
+- **Wording:** donations are voluntary, unlock nothing, and every feature stays free. The terms of use say the same.
+- **Platforms:** shown on Android and the web. Hidden on iPhone because App Store rules don't allow apps to link to outside donation payments to the developer.
+- **Repository:** `.github/FUNDING.yml` adds a Sponsor button to the GitHub page.

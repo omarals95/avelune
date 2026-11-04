@@ -82,7 +82,7 @@ describe('partner sharing choices', () => {
     expect(s.todaySymptoms).toBeUndefined();
   });
   it('QR link form decodes to the same invite', () => {
-    const inv = { url: 'https://cyclo.example.com', id: 'A'.repeat(22), key: 'B'.repeat(43) };
+    const inv = { url: 'https://avelune.example.com', id: 'A'.repeat(22), key: 'B'.repeat(43) };
     expect(decodeInvite(inviteLink(inv))).toEqual(inv);
     expect(decodeInvite(encodeInvite(inv))).toEqual(inv);
   });

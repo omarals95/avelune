@@ -1,4 +1,4 @@
-import type { Prediction, ReminderPrefs, Settings } from '@cyclo/core';
+import type { Prediction, ReminderPrefs, Settings } from '@avelune/core';
 
 /** Browsers cannot reliably fire scheduled notifications while the page is closed, so reminders are mobile-only. */
 export const remindersSupported = false;

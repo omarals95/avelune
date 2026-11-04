@@ -6,7 +6,7 @@ import * as Sharing from 'expo-sharing';
 import {
   addDays, buildDoctorReport, contraceptionEvents, contraceptionStatus, today as todayFn,
   type CycleProfile, type MedKind, type Medication, type PillPack,
-} from '@cyclo/core';
+} from '@avelune/core';
 import { labelOf } from '../catalog';
 import { fmtDay } from '../components';
 import { Icon } from '../icons';

@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
-import { backupFileName, createBackupKey, openBackup, openBackupWithKey, readBackupHeader, sealBackup, type BackupKey, type BackupPayload } from '@cyclo/core';
+import { backupFileName, createBackupKey, openBackup, openBackupWithKey, readBackupHeader, sealBackup, type BackupKey, type BackupPayload } from '@avelune/core';
 import { secure } from './secure';
 import { useStore } from './store';
 

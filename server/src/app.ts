@@ -3,7 +3,7 @@ import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify';
 import { existsSync } from 'node:fs';
-import type { KeyInfo, WireRecord } from '@cyclo/core';
+import type { KeyInfo, WireRecord } from '@avelune/core';
 import { hashPassword, hashToken, newToken, verifyPassword } from './auth.js';
 import type { DB } from './db.js';
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { DEFAULT_SETTINGS, addDays, today as todayFn, toDateStr, type DateStr } from '@cyclo/core';
+import { DEFAULT_SETTINGS, addDays, today as todayFn, toDateStr, type DateStr } from '@avelune/core';
 import { FadeIn, PressScale, useLoop } from '../anim';
 import { DOW, MONTHS, MoodBackground, fmtDay, mondayIndex } from '../components';
 import { Icon } from '../icons';

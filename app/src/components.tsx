@@ -3,7 +3,7 @@ import { Animated, Easing, Platform, ScrollView, StyleSheet, View, useWindowDime
 import { Text } from './text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
-import { addDays, diffDays, parseDate, type DateStr, type DayKind, type LifeStage, type NoForecast, type Phase } from '@cyclo/core';
+import { addDays, diffDays, parseDate, type DateStr, type DayKind, type LifeStage, type NoForecast, type Phase } from '@avelune/core';
 import { FadeIn, ND, PressScale, useLoop, usePop, useReduceMotion } from './anim';
 import { Icon, type IconName } from './icons';
 import { blobColor, circleFill, colors, phaseGradient, scheme, shadow, type Mood, themed } from './theme';

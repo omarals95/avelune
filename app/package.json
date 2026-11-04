@@ -1,5 +1,5 @@
 {
-  "name": "@cyclo/app",
+  "name": "@avelune/app",
   "version": "0.1.0",
   "license": "MIT",
   "private": true,
@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@cyclo/core": "*",
+    "@avelune/core": "*",
     "@expo-google-fonts/nunito-sans": "^0.4.2",
     "@expo-google-fonts/playfair-display": "^0.4.2",
     "@expo-google-fonts/varela-round": "^0.4.1",

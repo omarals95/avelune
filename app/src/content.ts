@@ -1,4 +1,4 @@
-import type { Phase } from '@cyclo/core';
+import type { Phase } from '@avelune/core';
 import type { IconName } from './icons';
 
 export interface Article {

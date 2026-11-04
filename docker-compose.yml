@@ -1,5 +1,5 @@
 services:
-  cyclo:
+  avelune:
     build: .
     restart: unless-stopped
     ports:
@@ -8,6 +8,6 @@ services:
       # Set to "false" after you create your account(s) to close sign-ups.
       ALLOW_REGISTRATION: "true"
     volumes:
-      - cyclo-data:/data
+      - avelune-data:/data
 volumes:
-  cyclo-data:
+  avelune-data:

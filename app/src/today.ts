@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
-import { today } from '@cyclo/core';
+import { today } from '@avelune/core';
 
 export const todayISO = () => today();
 

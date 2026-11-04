@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { exportMaster, keysFromMaster, type Keys } from '@cyclo/core';
+import { exportMaster, keysFromMaster, type Keys } from '@avelune/core';
 
-const NAME = 'cyclo.e2ee.master.v1';
+const NAME = 'avelune.e2ee.master.v1';
 let cached: Keys | null = null;
 
 /**

@@ -9,7 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useFonts, VarelaRound_400Regular } from '@expo-google-fonts/varela-round';
 import { PlayfairDisplay_500Medium, PlayfairDisplay_600SemiBold } from '@expo-google-fonts/playfair-display';
 import { NunitoSans_400Regular, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold } from '@expo-google-fonts/nunito-sans';
-import { predict, today as todayFn } from '@cyclo/core';
+import { predict, today as todayFn } from '@avelune/core';
 import { ND, PressScale } from './anim';
 import { Icon, type IconName } from './icons';
 import { NavContext, resume, type ChartKind, type Nav, type SettingsPage } from './nav';

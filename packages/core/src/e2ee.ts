@@ -79,8 +79,8 @@ export function b64decode(s: string): Uint8Array {
 function expand(master: Uint8Array): Keys {
   return {
     master,
-    enc: hkdf(sha256, master, undefined, te.encode('cyclo/enc/v1'), 32),
-    id: hkdf(sha256, master, undefined, te.encode('cyclo/id/v1'), 32),
+    enc: hkdf(sha256, master, undefined, te.encode('avelune/enc/v1'), 32),
+    id: hkdf(sha256, master, undefined, te.encode('avelune/id/v1'), 32),
   };
 }
 
@@ -104,7 +104,7 @@ function open(key: Uint8Array, blob: string, aad: string): Uint8Array {
   return xchacha20poly1305(key, b64decode(n), te.encode(aad)).decrypt(b64decode(c));
 }
 
-const CHECK_PLAINTEXT = 'cyclo-key-check';
+const CHECK_PLAINTEXT = 'avelune-key-check';
 
 /** Create the public parameters for a brand-new account. */
 export async function createKeyInfo(passphrase: string): Promise<{ info: KeyInfo; keys: Keys }> {

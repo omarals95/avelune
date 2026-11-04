@@ -7,7 +7,7 @@ import { DEFAULT_SHARE_ITEMS, type ShareItems, type BackupPayload,
   DEFAULT_REMINDERS, DEFAULT_SETTINGS, MIN_PASSPHRASE, SETTINGS_ID, buildSnapshot, createKeyInfo, dayId, decodeInvite, decryptRecord,
   encryptRecord, mergeLogs, newShareKey, normalizeReminders, openSnapshot, sealSnapshot, shouldApply, today as todayFn, unlockKeys,
   type DateStr, type DayLog, type Invite, type KeyInfo, type PartnerSnapshot, type ReminderPrefs, type Settings, type SyncRecord, type SyncResponse,
-} from '@cyclo/core';
+} from '@avelune/core';
 import { clearKeys, loadKeys, saveKeys } from './keyring';
 
 export interface ServerConn {
@@ -406,7 +406,7 @@ export const useStore = create<State>()(
       };
     },
     {
-      name: 'cyclo-v1',
+      name: 'avelune-v1',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({
         records: s.records, dirty: s.dirty, onboarded: s.onboarded, termsAccepted: s.termsAccepted, unit: s.unit, server: s.server, reminders: s.reminders,

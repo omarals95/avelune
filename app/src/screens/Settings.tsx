@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Platform, Share, View } from 'react-native';
 import { Text } from '../text';
-import { addDays, derivePeriods, exportCSV, lmpFromDueDate, predict, pregnancyStatus, today as todayFn, type Condition, type Contraception, type CycleProfile, type ReminderPrefs, type TimeOfDay } from '@cyclo/core';
+import { addDays, derivePeriods, exportCSV, lmpFromDueDate, predict, pregnancyStatus, today as todayFn, type Condition, type Contraception, type CycleProfile, type ReminderPrefs, type TimeOfDay } from '@avelune/core';
 import { FadeIn, PressScale } from '../anim';
 import { fmtDay } from '../components';
 import { Icon, type IconName } from '../icons';
@@ -15,7 +15,7 @@ import { selectLogs, selectSettings, useStore } from '../store';
 import { colors, type ThemePref } from '../theme';
 import { Btn, Card, Chip, Field, Muted, Page, Row, Section, Stepper, TopBar } from '../ui';
 import { BackupSettings } from './Backup';
-import { AboutPage } from './About';
+import { AboutPage, DonateBox } from './About';
 import { DoctorReport, MedsSettings, SecuritySettings } from './SettingsExtra';
 
 async function shareText(filename: string, text: string, mime: string) {
@@ -95,6 +95,7 @@ function Main({ go }: { go: (p: SettingsPage) => void }) {
       <Card>
         <Row icon="hand-heart" title="About Avelune" subtitle="Free & open source · terms · privacy policy" onPress={() => go('about')} />
       </Card>
+      <DonateBox compact />
       <Muted style={{ textAlign: 'center' }}>Avelune is a free, independent, open-source tracker. Predictions are estimates and not a method of contraception.</Muted>
     </Page>
   );

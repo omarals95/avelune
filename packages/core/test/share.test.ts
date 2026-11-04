@@ -31,12 +31,11 @@ describe('partner snapshot', () => {
   });
   it('invite codes round-trip and reject garbage', () => {
     const k = newShareKey();
-    const inv = { url: 'https://cyclo.example.com', ...k };
+    const inv = { url: 'https://avelune.example.com', ...k };
     expect(decodeInvite(encodeInvite(inv))).toEqual(inv);
     expect(decodeInvite(`  ${encodeInvite(inv)}\n`)).toEqual(inv);
     expect(() => decodeInvite('avelune-partner:abc')).toThrow();
     expect(encodeInvite(inv).startsWith('avelune-partner:')).toBe(true);
-    expect(decodeInvite(encodeInvite(inv).replace('avelune-partner:', 'cyclo-partner:'))).toEqual(inv); // pre-rebrand codes
     expect(() => decodeInvite('hello')).toThrow();
   });
 });

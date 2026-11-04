@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createKeyInfo, decryptRecord, encryptRecord, unlockKeys, type Keys, type KeyInfo, type SyncRecord } from '@cyclo/core';
+import { createKeyInfo, decryptRecord, encryptRecord, unlockKeys, type Keys, type KeyInfo, type SyncRecord } from '@avelune/core';
 import { buildApp } from '../src/app';
 import { openDb } from '../src/db';
 
@@ -126,7 +126,7 @@ describe('sync (ciphertext only)', () => {
   });
 });
 
-import { buildSnapshot, newShareKey, openSnapshot, sealSnapshot, DEFAULT_SETTINGS } from '@cyclo/core';
+import { buildSnapshot, newShareKey, openSnapshot, sealSnapshot, DEFAULT_SETTINGS } from '@avelune/core';
 describe('partner shares', () => {
   const snap = () => buildSnapshot([{ date: '2026-10-01', flow: 3, symptoms: [], moods: [], tags: [] }], DEFAULT_SETTINGS, '2026-10-10');
   it('owner publishes, partner reads without an account, only the owner can overwrite or revoke', async () => {

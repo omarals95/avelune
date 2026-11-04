@@ -6,13 +6,14 @@ paying a monthly or yearly subscription. If you have the ability to contribute a
 
 ## Ways to help
 
-- **Report a bug.** Open an [issue](https://github.com/omarals95/Cyclo/issues) with your phone or browser, the app version and the steps to reproduce it. Please never attach real health data. Describe it or use made-up values instead.
+- **Report a bug.** Open an [issue](https://github.com/omarals95/avelune/issues) with your phone or browser, the app version and the steps to reproduce it. Please never attach real health data. Describe it or use made-up values instead.
 - **Suggest a feature.** Open an issue that explains the problem you want solved, not only the solution.
 - **Improve the code.** Fix a bug, add a feature from the roadmap, or improve accessibility and performance.
 - **Design and writing.** Improve screens, illustrations, icons, wording or help articles. Health content must be general information, not medical advice.
 - **Translate** the app into your language.
 - **Test** new builds on your phone and share feedback.
 - **Spread the word.** Tell someone who could use a free, private tracker, or star the repository.
+- **Donate.** If you can't contribute time, a [donation through GitHub Sponsors](https://github.com/sponsors/omarals95) helps cover the costs of maintaining the app. It is always optional.
 
 ## Getting started
 

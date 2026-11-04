@@ -7,7 +7,7 @@ import { ARTICLES, DISCLAIMER, pregnancyWeek } from '../content';
 import { Icon } from '../icons';
 import { colors, phase, scheme, themed } from '../theme';
 import { PregnancyIllustration } from '../pregnancyArt';
-import { pregnancyStage } from '@cyclo/core';
+import { pregnancyStage } from '@avelune/core';
 import { Muted, TopBar } from '../ui';
 
 export function ArticleSheet({ id, onClose }: { id: string; onClose: () => void }) {

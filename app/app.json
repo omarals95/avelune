@@ -1,12 +1,12 @@
 {
   "expo": {
     "name": "Avelune",
-    "slug": "cyclo",
+    "slug": "avelune",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "app.cyclo.tracker",
+      "bundleIdentifier": "app.avelune.tracker",
       "supportsTablet": true,
       "infoPlist": {
         "UIFileSharingEnabled": true,
@@ -14,7 +14,7 @@
       }
     },
     "android": {
-      "package": "app.cyclo.tracker",
+      "package": "app.avelune.tracker",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FCF8F5"

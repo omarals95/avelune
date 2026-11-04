@@ -1,4 +1,4 @@
-import type { Phase } from '@cyclo/core';
+import type { Phase } from '@avelune/core';
 
 /**
  * Avelune design tokens, light and dark ("Cycle in Bloom").

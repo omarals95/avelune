@@ -28,7 +28,7 @@ export function QRScanner({ onCode, onCancel }: { onCode: (text: string) => void
         <CameraView style={{ flex: 1 }} facing="back" barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
           onBarcodeScanned={(r) => {
             if (done.current || !r.data) return;
-            if (!/avelune-partner:|cyclo-partner:|avelune:\/\/partner/.test(r.data)) { setErr('That QR code is not an Avelune invite.'); return; }
+            if (!/avelune-partner:|avelune:\/\/partner/.test(r.data)) { setErr('That QR code is not an Avelune invite.'); return; }
             done.current = true;
             onCode(r.data);
           }} />

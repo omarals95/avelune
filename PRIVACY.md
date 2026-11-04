@@ -30,7 +30,7 @@ If you use a server run by someone else, that operator can see the limited infor
 
 ## Questions
 
-Open an issue at https://github.com/omarals95/Cyclo/issues. Because the code is open source, anyone can check exactly what Avelune does with data.
+Open an issue at https://github.com/omarals95/avelune/issues. Because the code is open source, anyone can check exactly what Avelune does with data.
 
 ---
 

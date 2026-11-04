@@ -24,10 +24,10 @@ Method: code review of every screen, WCAG contrast measurements, and Playwright 
 
 ## Verified
 - 42 unit tests pass (core + server). TypeScript clean.
-- End-to-end in Chromium at 375 px: onboarding, logging, calendar edit, encrypted sync, partner link/join/revoke (old `cyclo-partner:` invites still accepted), pregnancy mode. No page errors.
+- End-to-end in Chromium at 375 px: onboarding, logging, calendar edit, encrypted sync, partner link/join/revoke, pregnancy mode. No page errors.
 
 ## Not yet verified / recommended next
 1. **On-device QA**: largest Dynamic Type / Android font scale, TalkBack/VoiceOver pass, landscape on tablets. The web build cannot emulate these.
 2. **Dark mode**: the app is light-only (`userInterfaceStyle: light`). A dark theme needs its own contrast pass (Ink Plum surfaces, lifted phase accents).
-3. **Store identity**: display name is now Avelune, but the bundle id/package stays `app.cyclo.tracker` so the existing install keeps its data. Change it before a store release.
+3. **Store identity**: display name, bundle id and package are `app.avelune.tracker`, ready for a store release.
 4. **Charts**: add tap tooltips with exact values (currently visual only, with a text headline).

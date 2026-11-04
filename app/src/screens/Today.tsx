@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { classifyDay, contraceptionStatus, cycleDayOf, diffDays, predict, pregnancyView, type DateStr } from '@cyclo/core';
+import { classifyDay, contraceptionStatus, cycleDayOf, diffDays, predict, pregnancyView, type DateStr } from '@avelune/core';
 import { PregnancyCaption, PregnancyIllustration, PregnancySetup } from '../pregnancyArt';
 import { useToday } from '../today';
 import { FadeIn, PressScale } from '../anim';

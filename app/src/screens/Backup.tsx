@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
-import type { BackupPayload } from '@cyclo/core';
+import type { BackupPayload } from '@avelune/core';
 import { BACKUP_ERRORS, MIN_BACKUP_PASSPHRASE, backupCaps, backupError, backupNow, chooseBackupFolder, forgetBackupKey, loadBackupKey, readBackup, setBackupPassphrase, verifyLatestBackup } from '../backup';
 import { Icon } from '../icons';
 import { useStore } from '../store';

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FadeIn, PressScale } from '../anim';
 import { MoodBackground } from '../components';
 import { Icon } from '../icons';
-import { CONTRIBUTE, HIGHLIGHTS, PRIVACY, REPO_URL, TERMS, TERMS_DATE, WHY, type LegalSection } from '../legal';
+import { CONTRIBUTE, DONATE, DONATE_URL, HIGHLIGHTS, PRIVACY, REPO_URL, TERMS, TERMS_DATE, WHY, type LegalSection } from '../legal';
 import { useStore } from '../store';
 import { Text } from '../text';
 import { colors, themed } from '../theme';
@@ -12,6 +12,28 @@ import { Btn, Card, Muted, Page, Row } from '../ui';
 import { Logo } from './Onboarding';
 
 const openRepo = () => void Linking.openURL(REPO_URL).catch(() => undefined);
+
+/**
+ * Apple does not allow iOS apps to link to outside payment for donations to the developer,
+ * so the donation box is shown on Android and the web only.
+ */
+export const DONATIONS_SHOWN = Platform.OS !== 'ios';
+
+/** Voluntary donations box (GitHub Sponsors). Optional; unlocks nothing. */
+export function DonateBox({ compact }: { compact?: boolean }) {
+  if (!DONATIONS_SHOWN) return null;
+  return (
+    <View style={a.donate} testID="donate-box">
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={[a.pointIcon, { marginRight: 0, backgroundColor: colors.card }]}><Icon name="hand-heart" size={22} color={colors.primary} /></View>
+        <Text style={[a.secT, { flex: 1 }]} accessibilityRole="header">{DONATE.title}</Text>
+      </View>
+      <Text style={a.p}>{DONATE.body}</Text>
+      {compact ? null : <Text style={[a.p, { color: colors.muted }]}>{DONATE.note}</Text>}
+      <Btn icon="heart" title={DONATE.button} onPress={() => void Linking.openURL(DONATE_URL).catch(() => undefined)} />
+    </View>
+  );
+}
 
 /** One highlight with its icon (free & open source, privacy, not medical advice, contribute). */
 function Point({ icon, title, body }: (typeof HIGHLIGHTS)[number]) {
@@ -79,6 +101,7 @@ export function Welcome() {
             <Text style={[a.p, { marginTop: 8 }]}>If you have the ability to contribute to Avelune and support it for the community, please go ahead. Every bug report, idea and improvement helps.</Text>
             <Btn kind="ghost" icon="github" title="View the project on GitHub" onPress={openRepo} />
           </Card>
+          <DonateBox />
           <Card>
             <Doc title="Terms of use" sections={TERMS} testID="terms" />
             <Doc title="Privacy policy" sections={PRIVACY} testID="privacy" />
@@ -113,6 +136,7 @@ export function AboutPage() {
         ))}
         <Row icon="github" title="Avelune on GitHub" subtitle="Source code, issues and how to contribute" onPress={openRepo} />
       </Card>
+      <DonateBox />
       <Card>
         <Doc title="Terms of use" sections={TERMS} />
         <Doc title="Privacy policy" sections={PRIVACY} />
@@ -132,6 +156,7 @@ const a = themed(() => StyleSheet.create({
   secT: { fontSize: 16, fontWeight: '700', color: colors.heading },
   p: { fontSize: 15, color: colors.text, lineHeight: 22, marginTop: 6 },
   doc: { paddingVertical: 4 },
+  donate: { borderRadius: 24, padding: 18, marginBottom: 16, backgroundColor: colors.tile, borderWidth: 1, borderColor: colors.border },
   docHead: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48 },
   docT: { flex: 1, fontSize: 16, fontWeight: '600', color: colors.heading },
 }));

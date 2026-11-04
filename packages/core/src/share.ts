@@ -95,8 +95,6 @@ export function openSnapshot(k: ShareKey, blob: string): PartnerSnapshot {
 }
 
 const PREFIX = 'avelune-partner:';
-/** Codes created before the rebrand used this prefix; they keep working. */
-const LEGACY_PREFIXES = ['cyclo-partner:'];
 export const encodeInvite = (i: Invite) => PREFIX + b64encode(utf8Encode(JSON.stringify({ u: i.url, i: i.id, k: i.key })));
 
 /** Link form of an invite, for QR codes: phone cameras open Avelune directly. */
@@ -107,9 +105,8 @@ export function decodeInvite(code: string): Invite {
   // Accept the QR link form (avelune://partner?code=…) as well as the bare code.
   const q = /[?&]code=([^&#]+)/.exec(raw);
   if (q) raw = decodeURIComponent(q[1]);
-  const prefix = [PREFIX, ...LEGACY_PREFIXES].find((p) => raw.startsWith(p));
-  if (!prefix) throw new Error('bad_invite');
-  const o = JSON.parse(utf8Decode(b64decode(raw.slice(prefix.length))));
+  if (!raw.startsWith(PREFIX)) throw new Error('bad_invite');
+  const o = JSON.parse(utf8Decode(b64decode(raw.slice(PREFIX.length))));
   if (typeof o.u !== 'string' || !/^https?:\/\//.test(o.u) || !/^[A-Za-z0-9_-]{22}$/.test(o.i) || !/^[A-Za-z0-9_-]{43}$/.test(o.k)) throw new Error('bad_invite');
   return { url: o.u, id: o.i, key: o.k };
 }

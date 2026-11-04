@@ -1,7 +1,7 @@
 import {
   SdkAvailabilityStatus, aggregateGroupByPeriod, getSdkStatus, initialize, openHealthConnectSettings, readRecords, requestPermission, type Permission,
 } from 'react-native-health-connect';
-import type { HealthDay } from '@cyclo/core';
+import type { HealthDay } from '@avelune/core';
 import { averageByDay, localDate, sleepWindow, type Provider } from './types';
 
 /**

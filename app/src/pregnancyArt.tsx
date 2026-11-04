@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, View, useWindowDimensions, type ImageSourcePropType } from 'react-native';
 import Reanimated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import type { PregnancyStage, PregnancyView } from '@cyclo/core';
+import type { PregnancyStage, PregnancyView } from '@avelune/core';
 import { useReduceMotion } from './anim';
 import { fmtDay } from './components';
 import { Text } from './text';

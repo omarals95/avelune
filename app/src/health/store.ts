@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { dropSource, mergeHealthDays, sampleHealth, today, type DateStr, type DayLog, type HealthDay, type HealthSource } from '@cyclo/core';
+import { dropSource, mergeHealthDays, sampleHealth, today, type DateStr, type DayLog, type HealthDay, type HealthSource } from '@avelune/core';
 import { makeFitbit } from './fitbit';
 import { makeOura } from './oura';
 import { healthConnect } from './healthconnect';

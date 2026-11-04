@@ -8,6 +8,8 @@ Avelune is a free, personal open-source project. By using it you agree to these 
 
 Avelune is a free, personal open-source project released under the MIT License. It is not a paid product and is not run by a company. The official project never charges for the app, shows ads or sells data. If someone asks you to pay for it, that is not this project.
 
+You can support the project with a voluntary donation through GitHub Sponsors. Donations are optional, are not payment for the app, and do not unlock any features or support obligations.
+
 You may use, copy, modify and share it under the terms of the MIT License in the project repository.
 
 ## Not a medical device

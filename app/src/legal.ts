@@ -5,9 +5,18 @@
  */
 export const TERMS_VERSION = '2026-11-04';
 export const TERMS_DATE = '4 November 2026';
-export const REPO_URL = 'https://github.com/omarals95/Cyclo';
+export const REPO_URL = 'https://github.com/omarals95/avelune';
 export const ISSUES_URL = `${REPO_URL}/issues`;
 export const CONTRIBUTING_URL = `${REPO_URL}/blob/main/CONTRIBUTING.md`;
+/** Voluntary donations (GitHub Sponsors). */
+export const DONATE_URL = 'https://github.com/sponsors/omarals95';
+
+export const DONATE = {
+  title: 'Help keep Avelune free',
+  body: 'Avelune has no ads, subscriptions or paid features. If it helps you and you are able to, a donation helps cover the costs of keeping it going: app store accounts, test devices, hosting, and the time to fix bugs and build new features.',
+  note: 'Donating is completely optional and unlocks nothing. Every feature stays free for everyone.',
+  button: 'Donate with GitHub Sponsors',
+};
 
 export interface LegalSection { title: string; body: string[] }
 
@@ -44,6 +53,7 @@ export const TERMS: LegalSection[] = [
     title: 'What Avelune is',
     body: [
       'Avelune is a free, personal open-source project released under the MIT License. It is not a paid product and is not run by a company. The official project never charges for the app, shows ads or sells data. If someone asks you to pay for it, that is not this project.',
+      'You can support the project with a voluntary donation through GitHub Sponsors. Donations are optional, are not payment for the app, and do not unlock any features or support obligations.',
       'You may use, copy, modify and share it under the terms of the MIT License in the project repository.',
     ],
   },

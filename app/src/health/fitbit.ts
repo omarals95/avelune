@@ -1,6 +1,6 @@
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import type { HealthDay } from '@cyclo/core';
+import type { HealthDay } from '@avelune/core';
 import { secure } from '../secure';
 import { localDate, sleepWindow, type Provider } from './types';
 

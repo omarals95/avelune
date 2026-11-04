@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../text';
-import { addDays, classifyDay, cycleDayOf, predict, toDateStr, today as todayFn, type DateStr, type DayKind } from '@cyclo/core';
+import { addDays, classifyDay, cycleDayOf, predict, toDateStr, today as todayFn, type DateStr, type DayKind } from '@avelune/core';
 import { ND, PressScale } from '../anim';
 import { DOW, KIND_LABEL, KIND_STYLE, MONTHS, mondayIndex } from '../components';
 import { Icon } from '../icons';

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../text';
-import { addDays, cycleDayOf, today as todayFn, type DateStr, type DayLog, type Flow } from '@cyclo/core';
+import { addDays, cycleDayOf, today as todayFn, type DateStr, type DayLog, type Flow } from '@avelune/core';
 import { FadeIn, PressScale } from '../anim';
 import { CATEGORIES, tagId, type Category } from '../catalog';
 import { fmtDay } from '../components';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Platform } from 'react-native';
-import { MIN_PASSPHRASE } from '@cyclo/core';
+import { MIN_PASSPHRASE } from '@avelune/core';
 import { useStore } from './store';
 import { Btn, Field, Muted } from './ui';
 import { colors } from './theme';
@@ -38,7 +38,7 @@ export function ServerForm({ allowRegister = true }: { allowRegister?: boolean }
   return (
     <>
       <Muted>Run the Avelune server on your own machine and sign in to sync between devices. Your data is end-to-end encrypted on this device before it is uploaded. Without a server, everything stays on this device.</Muted>
-      <Field label="Server URL" value={url} onChangeText={setUrl} placeholder="https://cyclo.example.com" keyboardType="url" />
+      <Field label="Server URL" value={url} onChangeText={setUrl} placeholder="https://avelune.example.com" keyboardType="url" />
       <Field label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
       <Field label="Account password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" />
       <Field label="Encryption passphrase" value={pass} onChangeText={setPass} secureTextEntry />

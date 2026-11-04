@@ -1,5 +1,5 @@
 {
-  "name": "cyclo",
+  "name": "avelune",
   "private": true,
   "version": "0.1.0",
   "license": "MIT",
@@ -9,9 +9,9 @@
     "app"
   ],
   "scripts": {
-    "test": "npm run test -w @cyclo/core && npm run test -w @cyclo/server",
-    "typecheck": "npm run typecheck -w @cyclo/core && npm run typecheck -w @cyclo/server && npm run typecheck -w @cyclo/app",
-    "server": "npm run start -w @cyclo/server",
-    "web:build": "npm run build:web -w @cyclo/app"
+    "test": "npm run test -w @avelune/core && npm run test -w @avelune/server",
+    "typecheck": "npm run typecheck -w @avelune/core && npm run typecheck -w @avelune/server && npm run typecheck -w @avelune/app",
+    "server": "npm run start -w @avelune/server",
+    "web:build": "npm run build:web -w @avelune/app"
   }
 }

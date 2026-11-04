@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Animated, Image, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { addDays, derivePeriods, describeSources, detectOvulation, diffDays, predict, today as todayFn, type DateStr, type DayLog } from '@cyclo/core';
+import { addDays, derivePeriods, describeSources, detectOvulation, diffDays, predict, today as todayFn, type DateStr, type DayLog } from '@avelune/core';
 import { FadeIn, PressScale, useLoop } from '../anim';
 import { labelOf } from '../catalog';
 import { Chart, CycleBar, MiniBars, type Pt } from '../charts';

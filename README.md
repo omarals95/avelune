@@ -2,7 +2,7 @@
 
 *Your rhythm. Your space.*
 
-Avelune (code name Cyclo) is a private, local-first period, ovulation, fertile-window and pregnancy tracker for **iPhone, Android and the web**,
+Avelune is a private, local-first period, ovulation, fertile-window and pregnancy tracker for **iPhone, Android and the web**,
 with an optional **self-hosted, end-to-end encrypted sync server**.
 
 > **A free, personal open-source project, not a paid product.**
@@ -11,7 +11,8 @@ with an optional **self-hosted, end-to-end encrypted sync server**.
 > Technology today is a necessity for everyone, and understanding your own body should not depend on paying a monthly or yearly
 > subscription. Avelune was created to add real value for people who cannot pay for one, or would rather not.
 >
-> **If you have the ability to contribute to this project and support it for the community, please go ahead.** See [CONTRIBUTING.md](CONTRIBUTING.md).
+> **If you have the ability to contribute to this project and support it for the community, please go ahead.** See [CONTRIBUTING.md](CONTRIBUTING.md),
+> or [donate through GitHub Sponsors](https://github.com/sponsors/omarals95) to help maintain it.
 >
 > Avelune is **not a medical device** and must not be used as contraception or to diagnose anything. By using it you agree to the
 > [terms of use](TERMS.md) and [privacy policy](PRIVACY.md). The app shows the same notice the first time it opens.
@@ -67,7 +68,7 @@ Brand tokens, typography and accessibility rules: [`design-system/avelune/MASTER
 docker compose up -d --build
 # open http://localhost:8787  (put it behind HTTPS for anything beyond your LAN)
 ```
-Data lives in the `cyclo-data` volume. After creating your account(s) set `ALLOW_REGISTRATION: "false"`.
+Data lives in the `avelune-data` volume. After creating your account(s) set `ALLOW_REGISTRATION: "false"`.
 
 Without Docker: `npm install && npm run web:build && npm run server` (Node 22).
 
@@ -82,7 +83,7 @@ Standalone builds: `npx eas build -p android` / `-p ios` (iOS needs an Apple dev
 `npx expo run:android` / `run:ios` locally (Android SDK / Xcode required).
 In the app: **Settings → Cloud sync → enter your server URL → create account / sign in.**
 On a phone use your server's LAN IP or public HTTPS URL (not `localhost`).
-A new device can restore by tapping **"I already use a Cyclo server"** on the first screen.
+A new device can restore by tapping **"I already use an Avelune server"** on the first screen.
 
 ## Develop
 
@@ -119,11 +120,21 @@ passphrase ──scrypt(N=2^14,r=8,p=1, public salt)──▶ master ──HKDF�
 
 ## Build the Android APK
 
-GitHub → **Actions → Android APK → Run workflow**. When it finishes, download `cyclo-android-apk` from the run page,
+GitHub → **Actions → Android APK → Run workflow**. When it finishes, download `avelune-android-apk` from the run page,
 unzip it and install `app-release.apk` on your phone (allow "install unknown apps").
 The generated project signs release builds with Expo's debug keystore, which is fine for sideloading but not for Play Store
 upload; for that, configure your own keystore. Locally (Android SDK + JDK 17 required):
 `cd app && npx expo prebuild --platform android && cd android && ./gradlew assembleRelease`.
+
+## Support Avelune
+
+Avelune has no ads, subscriptions or paid features. If it helps you and you are able to, a donation helps cover the costs of keeping
+it going: app store accounts, test devices, hosting, and the time to fix bugs and build new features.
+
+[![Sponsor Avelune](https://img.shields.io/badge/Sponsor-Avelune-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/omarals95)
+
+Donating is completely optional and unlocks nothing. Every feature stays free for everyone. The same box is in the app under
+**Settings** and **Settings → About Avelune** (Android and web; Apple does not allow donation links in iOS apps).
 
 ## Contributing
 

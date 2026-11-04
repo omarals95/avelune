@@ -1,5 +1,5 @@
 {
-  "name": "@cyclo/server",
+  "name": "@avelune/server",
   "version": "0.1.0",
   "license": "MIT",
   "private": true,
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@cyclo/core": "*",
+    "@avelune/core": "*",
     "@fastify/cors": "^10.0.1",
     "@fastify/rate-limit": "^10.2.1",
     "@fastify/static": "^8.0.3",

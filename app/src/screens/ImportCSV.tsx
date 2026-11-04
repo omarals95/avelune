@@ -4,7 +4,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 import Reanimated, { FadeInDown } from 'react-native-reanimated';
-import { importDripCsv, importRows, importText, importXmlStream, importZip, isDripCsv, parseCSV, pickSheet, readXlsx, type DateOrder, type ImportResult } from '@cyclo/core';
+import { importDripCsv, importRows, importText, importXmlStream, importZip, isDripCsv, parseCSV, pickSheet, readXlsx, type DateOrder, type ImportResult } from '@avelune/core';
 import { CATEGORIES, tagId } from '../catalog';
 import { fmtDay } from '../components';
 import { useHealth } from '../health/store';

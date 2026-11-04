@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Reanimated, { FadeIn, FadeInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { addDays, fmtSleep, series, type Bucket, type DateStr, type HealthMetric } from '@cyclo/core';
+import { addDays, fmtSleep, series, type Bucket, type DateStr, type HealthMetric } from '@avelune/core';
 import { PressScale } from '../anim';
 import { Chart } from '../charts';
 import { fmtDay } from '../components';

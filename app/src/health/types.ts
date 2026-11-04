@@ -1,4 +1,4 @@
-import type { HealthDay, HealthSource } from '@cyclo/core';
+import type { HealthDay, HealthSource } from '@avelune/core';
 
 export type ProviderId = 'appleHealth' | 'healthConnect' | 'fitbit' | 'oura';
 
