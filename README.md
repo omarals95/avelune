@@ -126,6 +126,18 @@ The generated project signs release builds with Expo's debug keystore, which is 
 upload; for that, configure your own keystore. Locally (Android SDK + JDK 17 required):
 `cd app && npx expo prebuild --platform android && cd android && ./gradlew assembleRelease`.
 
+## Build the iOS app
+
+GitHub → **Actions → iOS build → Run workflow** compiles the app on a macOS runner, with no Apple developer account needed:
+
+- `avelune-ios-unsigned-ipa`: a Release build for real iPhones. It is **not signed**, so an iPhone will not install it as is.
+  Install it with a sideloading tool that signs it with your own Apple ID (for example Sideloadly or AltStore; with a free Apple ID
+  the app must be refreshed every 7 days), or sign it with an Apple Developer account.
+- `avelune-ios-simulator`: a Release build for the iOS Simulator. On a Mac with Xcode, unzip it and drag `Avelune.app` onto a running simulator.
+
+For TestFlight or the App Store you need an Apple Developer account ($99/year) and a signed build, for example with
+`npx eas build -p ios`. Locally on a Mac (Xcode 16 required): `cd app && npx expo run:ios`.
+
 ## Support Avelune
 
 Avelune has no ads, subscriptions or paid features. If it helps you and you are able to, a donation helps cover the costs of keeping
