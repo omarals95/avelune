@@ -9,6 +9,7 @@ import { FadeIn, PressScale } from '../anim';
 import { ARTICLES } from '../content';
 import { WeekStrip, fmtDay, statusFor, type Status } from '../components';
 import { ActionPill, BloomCircle, InsightCard } from '../bloom';
+import { PetalBackdrop } from '../petals';
 import { Icon, type IconName } from '../icons';
 import { useNav } from '../nav';
 import { selectLogs, selectSettings, useStore } from '../store';
@@ -114,6 +115,7 @@ export function Today() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <PetalBackdrop />
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 140, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
         <TabHeader title={selected === today ? 'Today' : fmtDay(selected)} onAvatar={() => nav.openSettings()}
           right={<PressScale accessibilityLabel="Open calendar" onPress={() => nav.openCalendar()} style={st.iconBtn}><Icon name="calendar-month-outline" size={28} color={colors.heading} /></PressScale>} />
@@ -158,7 +160,7 @@ export function Today() {
         </FadeIn>
 
         <FadeIn delay={200} style={{ marginHorizontal: 16 }}>
-          <InsightCard bloom={bloom} title={insight.title} onPress={() => (preg ? nav.openWeek(preg.week) : nav.openArticle(insight.article ?? tips[0].id))} />
+          <InsightCard title={insight.title} onPress={() => (preg ? nav.openWeek(preg.week) : nav.openArticle(insight.article ?? tips[0].id))} />
         </FadeIn>
 
         <HomeWidgets onOpen={(def) => (def.opens ? nav.openHealth(def.opens) : def.id === 'cycleStats' || def.id === 'nextPeriod' ? nav.openChart('cycles') : nav.openLog(today))} />

@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Animated, Image, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDays, derivePeriods, describeSources, detectOvulation, diffDays, predict, today as todayFn, type DateStr, type DayLog } from '@avelune/core';
 import { FadeIn, PressScale, useLoop } from '../anim';
+import { PetalBackdrop } from '../petals';
 import { labelOf } from '../catalog';
 import { Chart, CycleBar, MiniBars, type Pt } from '../charts';
 import { fmtShort } from '../components';
@@ -11,7 +12,7 @@ import { ARTICLES, DISCLAIMER } from '../content';
 import { Icon, type IconName } from '../icons';
 import { useNav, type ChartKind } from '../nav';
 import { cToDisplay, kgToDisplay, selectLogs, selectSettings, useStore } from '../store';
-import { colors, flowers, scheme, shadow, themed, type Bloom } from '../theme';
+import { colors, scheme, shadow, themed } from '../theme';
 import { Btn, Muted, PillTabs, TopBar } from '../ui';
 import { TabHeader } from './Today';
 
@@ -19,17 +20,6 @@ const REG = { unknown: 'Log 3+ cycles', regular: 'Regular', 'somewhat-irregular'
 
 type InsTab = 'cycle' | 'trends' | 'patterns';
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/** Decorative bloom tucked into the top-right corner of a tab screen. */
-export function CornerBloom({ bloom = 'menstrual', top = 0 }: { bloom?: Bloom; top?: number }) {
-  const v = useLoop(6000);
-  return (
-    <Animated.View pointerEvents="none" style={{ position: 'absolute', right: -112, top: top - 138, width: 260, height: 260, opacity: scheme === 'dark' ? 0.9 : 0.95,
-      transform: [{ rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['-4deg', '4deg'] }) }] }}>
-      <Image source={flowers[bloom]} style={{ width: 260, height: 260 }} resizeMode="contain" accessibilityIgnoresInvertColors />
-    </Animated.View>
-  );
-}
 
 export function Insights() {
   const nav = useNav();
@@ -68,8 +58,8 @@ export function Insights() {
   ];
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <PetalBackdrop />
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 140, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
-        <CornerBloom top={insets.top} />
         <TabHeader title="Insights" onAvatar={() => nav.openSettings()} />
         <View style={{ marginTop: 6, marginBottom: 6, paddingRight: 64 }}>
           <PillTabs fill options={[['cycle', 'Cycle'], ['trends', 'Trends'], ['patterns', 'Patterns']]} value={tab} onChange={setTab} />

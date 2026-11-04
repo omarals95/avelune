@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { CardPetals } from './petals';
 import { Image, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Reanimated, {
@@ -205,13 +206,13 @@ export function ActionPill({ icon, label, onPress }: { icon: IconName; label: st
   );
 }
 
-/** Daily insight card with a cropped bloom fading in from the right edge. */
-export function InsightCard({ title, bloom, onPress, eyebrow = 'Daily insight' }: { title: string; bloom: Bloom; onPress: () => void; eyebrow?: string }) {
+/** Daily insight card with the theme's card petals along the right edge. */
+export function InsightCard({ title, onPress, eyebrow = 'Daily insight' }: { title: string; onPress: () => void; eyebrow?: string }) {
   return (
     <PressScale accessibilityRole="button" accessibilityLabel={`${eyebrow}: ${title}`} onPress={onPress}>
       <View style={b2.insight}>
-        <Image source={flowers[bloom]} style={b2.insightArt} resizeMode="cover" accessibilityIgnoresInvertColors />
-        <LinearGradient colors={[colors.card, colors.card, 'transparent']} locations={[0, 0.5, 0.72]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
+        <CardPetals />
+        <LinearGradient colors={[colors.card, colors.card, 'transparent']} locations={[0, 0.34, 0.56]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
         <View style={{ flex: 1, paddingRight: 120 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
             <Icon name="sprout" size={18} color={colors.muted} />
@@ -238,7 +239,6 @@ const b2 = themed(() => StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', minHeight: 126, borderRadius: 24, padding: 20, overflow: 'hidden',
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, ...shadow,
   },
-  insightArt: { position: 'absolute', right: -300, top: -170, width: 460, height: 460 },
   eyebrow: { fontSize: 14, color: colors.muted, marginLeft: 8 },
   insightT: { flexShrink: 1, fontSize: 21, lineHeight: 27, color: colors.heading, fontWeight: '700' },
 }));

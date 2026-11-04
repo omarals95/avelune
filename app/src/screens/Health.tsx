@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { PetalBackdrop } from '../petals';
 import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Reanimated, { FadeIn, FadeInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -90,6 +91,8 @@ export function Health() {
   useEffect(() => { if (nav.healthTab) setTab(nav.healthTab); }, [nav.healthTab, nav.healthKey]);
   const d = useWidgetData();
   const [date, setDate] = useState<DateStr>(d.today);
+  // The tab row is see-through at the top (so the corner petals show) and solid once it sticks over content.
+  const [stuck, setStuck] = useState(false);
   const connections = useHealth((s) => s.connections);
   const sample = useHealth((s) => s.sample);
   const connected = Object.keys(connections).length > 0;
@@ -128,40 +131,44 @@ export function Health() {
     { metric: 'tempDeviationC', title: 'Temperature vs baseline', icon: 'thermometer', kind: 'line', color: colors.period, fmt: (v) => `${v >= 0 ? '+' : '−'}${Math.abs(d.unit === 'F' ? v * 1.8 : v).toFixed(2)} °${d.unit}`, opens: 'body', optional: true },
   ];
   return (
-    <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 140, maxWidth: 640, width: '100%', alignSelf: 'center' }} stickyHeaderIndices={[1]}>
-      <TabHeader title="Health" onAvatar={() => nav.openSettings()}
-        right={<PressScale accessibilityLabel="Health connections" onPress={() => nav.openConnections()} style={h.iconBtn}><Icon name="link-variant" size={26} color={colors.heading} /></PressScale>} />
-      <View style={{ backgroundColor: colors.bg, paddingVertical: 8 }}>
-        <PillTabs options={TABS} value={tab} onChange={setTab} />
-      </View>
-      {sample ? (
-        <PressScale accessibilityRole="button" accessibilityLabel="Sample data is shown. Open connections" onPress={() => nav.openConnections()} style={h.sampleRow}>
-          <Text style={h.sampleT}>Sample data</Text>
-          <Icon name="info" size={16} color={colors.muted} />
-        </PressScale>
-      ) : null}
-      {tab === 'overview' ? (
-        <Reanimated.View key="overview" entering={FadeIn.duration(220)}>
-          {!connected && (
-            <Reanimated.View entering={FadeInDown.springify()} style={h.card}>
-              <Text style={h.cardTitle}>Connect your health data</Text>
-              <Text style={[h.sub, { color: colors.text, marginVertical: 6 }]}>Apple Health, Health Connect (Samsung Health, Fitbit, Google and more on Android) or your Fitbit account.</Text>
-              <Btn icon="link-variant" title="Connect a tracker" onPress={() => nav.openConnections()} />
-            </Reanimated.View>
-          )}
-          {cards.filter((c) => !c.optional || Object.values(d.days).some((x) => x[c.metric] != null)).map((c, i) => <OverviewCard key={c.metric} def={c} delay={i * STAGGER} onPress={() => setTab(c.opens)} />)}
-        </Reanimated.View>
-      ) : (
-        <Reanimated.View key={tab} entering={FadeIn.duration(220)}>
-          <View style={h.dayNav}>
-            <PressScale accessibilityLabel="Previous day" onPress={() => setDate(addDays(date, -1))} style={h.iconBtn}><Icon name="chevron-left" size={24} color={colors.heading} /></PressScale>
-            <View style={h.dayPill}><Text style={{ fontSize: 18, fontWeight: '600', color: colors.heading }}>{date === d.today ? 'Today' : fmtDay(date)}</Text></View>
-            <PressScale accessibilityLabel="Next day" disabled={date >= d.today} onPress={() => setDate(addDays(date, 1))} style={[h.iconBtn, date >= d.today && { opacity: 0.3 }]}><Icon name="chevron-right" size={24} color={colors.heading} /></PressScale>
-          </View>
-          {cfg[tab].filter((c) => !['hrv', 'tempDeviationC'].includes(c.metric) || Object.values(d.days).some((x) => x[c.metric] != null)).map((c, i) => <MetricBlock key={c.metric} cfg={c} date={date} delay={i * STAGGER * 2} />)}
-        </Reanimated.View>
-      )}
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <PetalBackdrop />
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 140, maxWidth: 640, width: '100%', alignSelf: 'center' }} stickyHeaderIndices={[1]}
+        scrollEventThrottle={32} onScroll={(e) => { const s = e.nativeEvent.contentOffset.y > 24; if (s !== stuck) setStuck(s); }}>
+        <TabHeader title="Health" onAvatar={() => nav.openSettings()}
+          right={<PressScale accessibilityLabel="Health connections" onPress={() => nav.openConnections()} style={h.iconBtn}><Icon name="link-variant" size={26} color={colors.heading} /></PressScale>} />
+        <View style={{ backgroundColor: stuck ? colors.bg : 'transparent', paddingVertical: 8 }}>
+          <PillTabs options={TABS} value={tab} onChange={setTab} />
+        </View>
+        {sample ? (
+          <PressScale accessibilityRole="button" accessibilityLabel="Sample data is shown. Open connections" onPress={() => nav.openConnections()} style={h.sampleRow}>
+            <Text style={h.sampleT}>Sample data</Text>
+            <Icon name="info" size={16} color={colors.muted} />
+          </PressScale>
+        ) : null}
+        {tab === 'overview' ? (
+          <Reanimated.View key="overview" entering={FadeIn.duration(220)}>
+            {!connected && (
+              <Reanimated.View entering={FadeInDown.springify()} style={h.card}>
+                <Text style={h.cardTitle}>Connect your health data</Text>
+                <Text style={[h.sub, { color: colors.text, marginVertical: 6 }]}>Apple Health, Health Connect (Samsung Health, Fitbit, Google and more on Android) or your Fitbit account.</Text>
+                <Btn icon="link-variant" title="Connect a tracker" onPress={() => nav.openConnections()} />
+              </Reanimated.View>
+            )}
+            {cards.filter((c) => !c.optional || Object.values(d.days).some((x) => x[c.metric] != null)).map((c, i) => <OverviewCard key={c.metric} def={c} delay={i * STAGGER} onPress={() => setTab(c.opens)} />)}
+          </Reanimated.View>
+        ) : (
+          <Reanimated.View key={tab} entering={FadeIn.duration(220)}>
+            <View style={h.dayNav}>
+              <PressScale accessibilityLabel="Previous day" onPress={() => setDate(addDays(date, -1))} style={h.iconBtn}><Icon name="chevron-left" size={24} color={colors.heading} /></PressScale>
+              <View style={h.dayPill}><Text style={{ fontSize: 18, fontWeight: '600', color: colors.heading }}>{date === d.today ? 'Today' : fmtDay(date)}</Text></View>
+              <PressScale accessibilityLabel="Next day" disabled={date >= d.today} onPress={() => setDate(addDays(date, 1))} style={[h.iconBtn, date >= d.today && { opacity: 0.3 }]}><Icon name="chevron-right" size={24} color={colors.heading} /></PressScale>
+            </View>
+            {cfg[tab].filter((c) => !['hrv', 'tempDeviationC'].includes(c.metric) || Object.values(d.days).some((x) => x[c.metric] != null)).map((c, i) => <MetricBlock key={c.metric} cfg={c} date={date} delay={i * STAGGER * 2} />)}
+          </Reanimated.View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
