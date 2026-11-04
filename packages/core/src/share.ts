@@ -76,6 +76,29 @@ export function snapshotKind(s: PartnerSnapshot, date: DateStr): DayKind {
   return i >= 0 && i < s.days.kinds.length ? CHAR_KIND[s.days.kinds[i]] ?? 'none' : 'none';
 }
 
+/**
+ * Cycle phase of `date` from the snapshot's 70-day strip: menstrual on period days, ovulation across the fertile
+ * window, luteal after it and follicular after a period. Days with no marks either side are split by a typical
+ * 14-day luteal phase. Null outside the strip.
+ */
+export function snapshotPhase(s: PartnerSnapshot, date: DateStr): Phase | null {
+  const n = s.days.kinds.length;
+  const at = diffDays(s.days.from, date);
+  if (at < 0 || at >= n) return null;
+  const k = snapshotKind(s, date);
+  if (k === 'period' || k === 'predicted-period') return 'menstrual';
+  if (k === 'fertile' || k === 'ovulation') return 'ovulation';
+  const kindAt = (i: number) => CHAR_KIND[s.days.kinds[i]] ?? 'none';
+  let prev: DayKind = 'none';
+  for (let i = at - 1; i >= 0 && prev === 'none'; i--) prev = kindAt(i);
+  let next: DayKind = 'none'; let toNext = 0;
+  for (let i = at + 1; i < n && next === 'none'; i++) { next = kindAt(i); toNext = i - at; }
+  if (prev === 'fertile' || prev === 'ovulation') return 'luteal';
+  if (next === 'fertile' || next === 'ovulation') return 'follicular';
+  if (next === 'period' || next === 'predicted-period') return toNext <= 14 ? 'luteal' : 'follicular';
+  return prev === 'period' || prev === 'predicted-period' ? 'follicular' : s.phase;
+}
+
 export function newShareKey(): ShareKey {
   return { id: b64encode(randomBytes(16)), key: b64encode(randomBytes(32)) };
 }

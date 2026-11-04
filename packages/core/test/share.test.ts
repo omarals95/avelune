@@ -51,3 +51,23 @@ describe('pregnancy + cycle day', () => {
     expect(cycleDayOf('2026-09-01', logs)).toBeNull();
   });
 });
+
+import { snapshotPhase } from '../src';
+describe('snapshotPhase', () => {
+  // from 1 Oct: 5 period days, 4 none, 6 fertile, 1 ovulation, 12 none, 5 predicted period, 3 none
+  const kinds = 'ppppp' + '....' + 'ffffff' + 'o' + '............' + 'qqqqq' + '...';
+  const snap = { days: { from: '2026-10-01', kinds }, phase: 'luteal' } as unknown as Parameters<typeof snapshotPhase>[0];
+  const at = (i: number) => snapshotPhase(snap, addDays('2026-10-01', i));
+  it('maps each day of the strip to its phase', () => {
+    expect(at(0)).toBe('menstrual');
+    expect(at(5)).toBe('follicular');
+    expect(at(8)).toBe('follicular');
+    expect(at(9)).toBe('ovulation');
+    expect(at(15)).toBe('ovulation');
+    expect(at(16)).toBe('luteal');
+    expect(at(27)).toBe('luteal');
+    expect(at(28)).toBe('menstrual');
+    expect(at(33)).toBe('follicular');
+    expect(at(-1)).toBeNull();
+  });
+});

@@ -72,7 +72,7 @@ export function PregnancyIllustration({ stage, size: fixed }: { stage: Pregnancy
   const auto = useArtSize();
   const size = fixed ?? auto;
   const art = PREGNANCY_ART[stage];
-  const source = art ?? flowers.follicular;
+  const source = art ?? flowers.peach;
   const [layers, setLayers] = useState<{ stage: PregnancyStage; src: ImageSourcePropType; k: number; leaving?: boolean }[]>([{ stage, src: source, k: 0 }]);
   useEffect(() => {
     setLayers((ls) => {

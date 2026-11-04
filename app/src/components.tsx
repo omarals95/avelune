@@ -23,6 +23,8 @@ export interface StatusInput {
   kind: DayKind;
   cycleDay: number | null;
   phase: Phase | null;
+  /** Phase of `date` itself (core phaseOn / snapshotPhase); picks the flower for any selected day. */
+  dayPhase?: Phase | null;
   daysUntilPeriod: number | null;
   fertileWindow: [DateStr, DateStr] | null;
   ovulationDate: DateStr | null;
@@ -47,7 +49,7 @@ export function statusFor(i: StatusInput): Status {
       'predicted-period': { mood: 'menstrual', kicker: cd, big: 'Period', sub: 'Predicted period day' },
       fertile: { mood: 'fertile', kicker: cd, big: 'Fertile', sub: 'Higher chance of getting pregnant' },
       ovulation: { mood: 'ovulation', kicker: cd, big: 'Ovulation', sub: 'Estimated ovulation day' },
-      none: { mood: 'none', kicker: fmtDay(i.date), big: i.cycleDay ? `Day ${i.cycleDay}` : '—', sub: 'Lower chance of getting pregnant' },
+      none: { mood: i.dayPhase === 'follicular' || i.dayPhase === 'luteal' ? i.dayPhase : 'none', kicker: fmtDay(i.date), big: i.cycleDay ? `Day ${i.cycleDay}` : '—', sub: 'Lower chance of getting pregnant' },
     };
     return map[i.kind];
   }
@@ -65,8 +67,10 @@ export function statusFor(i: StatusInput): Status {
     default: break;
   }
   const d = i.daysUntilPeriod;
+  // Today's flower follows today's own phase (the engine keeps 'menstrual' for a grace day after a logged period).
+  const ph = i.dayPhase !== undefined ? i.dayPhase : i.phase;
   if (i.lateBy && !i.lateDismissed) return { mood: 'late', kicker: 'Period not started', big: cd, sub: `${plural(i.lateBy, 'day')} past your likely window` };
-  if (d != null && d < 0 && i.lateDismissed) return { mood: i.phase ?? 'none', kicker: 'Cycle', big: cd, sub: 'No period logged yet' };
+  if (d != null && d < 0 && i.lateDismissed) return { mood: ph ?? 'none', kicker: 'Cycle', big: cd, sub: 'No period logged yet' };
   if (d != null && d < 0) return { mood: 'menstrual', kicker: 'Period', big: 'Due any day', sub: 'Within your likely window' };
   if (d === 0) return { mood: 'menstrual', kicker: 'Period', big: 'Expected today', sub: 'Log it when it starts' };
   if (i.fertileWindow && i.ovulationDate && i.date >= i.fertileWindow[0] && i.date <= i.fertileWindow[1]) {
@@ -77,8 +81,8 @@ export function statusFor(i: StatusInput): Status {
       sub: 'Higher chance of getting pregnant',
     };
   }
-  if (d == null) return { mood: i.phase ?? 'none', kicker: 'Cycle', big: cd, sub: 'No forecast' };
-  return { mood: i.phase ?? 'none', kicker: 'Period in', big: plural(d, 'day'), sub: i.fertileWindow ? 'Lower chance of getting pregnant' : 'Based on your recent cycles' };
+  if (d == null) return { mood: ph ?? 'none', kicker: 'Cycle', big: cd, sub: 'No forecast' };
+  return { mood: ph ?? 'none', kicker: 'Period in', big: plural(d, 'day'), sub: i.fertileWindow ? 'Lower chance of getting pregnant' : 'Based on your recent cycles' };
 }
 
 /** Phase-tinted gradient with slowly drifting soft blobs. Cross-fades when the mood changes. */

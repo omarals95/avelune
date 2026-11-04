@@ -354,6 +354,32 @@ export function classifyDay(date: DateStr, logs: Map<DateStr, DayLog>, p: Predic
   return k === 'fertile' && settings.showFertileWindow === false ? 'none' : k;
 }
 
+/**
+ * The cycle phase a given date falls in, for any day (past, today or future):
+ * menstrual on logged or predicted period days, ovulation across the fertile window and ovulation day,
+ * and otherwise follicular before that cycle's ovulation and luteal after it.
+ * Returns null before the first logged period or when there is no forecast to place the date in a cycle.
+ */
+export function phaseOn(date: DateStr, logs: Map<DateStr, DayLog>, p: Prediction, settings: Settings): Phase | null {
+  const kind = classifyDay(date, logs, p, settings);
+  if (kind === 'period' || kind === 'predicted-period') return 'menstrual';
+  if (kind === 'fertile' || kind === 'ovulation') return 'ovulation';
+  if (!p.lastPeriodStart || !p.nextPeriodStart) return null;
+  const starts = derivePeriods([...logs.values()]).map((x) => x.start);
+  if (!starts.length || date < starts[0]) return null;
+  // The start of the next cycle after `date`: a later logged period, or the forecast (projected forward).
+  let next = starts.find((s) => s > date) ?? null;
+  if (!next) {
+    next = p.nextPeriodStart;
+    while (next <= date) next = addDays(next, p.stats.avgCycle);
+  }
+  const ov = next === p.nextPeriodStart && p.ovulationDate ? p.ovulationDate : addDays(next, -p.lutealLength);
+  // Past cycles have no fertile marks on the calendar, but their days still belong to the ovulation phase.
+  const windowShown = !p.fertileHidden && settings.showFertileWindow !== false;
+  if (windowShown && diffDays(addDays(ov, -5), date) >= 0 && diffDays(date, addDays(ov, 1)) >= 0) return 'ovulation';
+  return date > ov ? 'luteal' : 'follicular';
+}
+
 /** 1-based cycle day for any date at or after the first logged period (null before it). */
 export function cycleDayOf(date: DateStr, logs: DayLog[]): number | null {
   const starts = derivePeriods(logs).map((p) => p.start).filter((s) => s <= date);

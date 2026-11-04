@@ -4,7 +4,7 @@ import { Text, TextInput } from '../text';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { DEFAULT_SHARE_ITEMS, addDays, pregnancyView, buildSnapshot, cycleDayOf, decodeInvite, encodeInvite, inviteLink, predict, snapshotKind, today as todayFn, type PartnerSnapshot, type Phase, type ShareItems } from '@avelune/core';
+import { DEFAULT_SHARE_ITEMS, addDays, pregnancyView, buildSnapshot, cycleDayOf, decodeInvite, encodeInvite, inviteLink, predict, snapshotKind, snapshotPhase, today as todayFn, type PartnerSnapshot, type Phase, type ShareItems } from '@avelune/core';
 import { FadeIn, PressScale, useLoop } from '../anim';
 import { labelOf } from '../catalog';
 import { WeekStrip, ago, fmtDay, statusFor, useNow } from '../components';
@@ -235,7 +235,7 @@ export function PartnerView({ snapshot, onClose, preview, onRefresh, fetchedAt, 
   const selCycleDay = s.cycleDay != null ? s.cycleDay + Math.round((Date.parse(selected) - Date.parse(s.today)) / 86400000) : null;
   const status = statusFor({
     hasData: !!s.nextPeriodStart || s.cycleDay != null, today, date: selected, kind, cycleDay: s.cycleDay != null ? s.cycleDay + Math.round((Date.parse(selected) - Date.parse(s.today)) / 86400000) : null,
-    phase: s.phase, daysUntilPeriod: daysUntil, fertileWindow: s.fertileWindow, ovulationDate: s.ovulationDate, inPeriod: snapshotKind(s, today) === 'period' && selected === today,
+    phase: s.phase, dayPhase: snapshotPhase(s, selected), daysUntilPeriod: daysUntil, fertileWindow: s.fertileWindow, ovulationDate: s.ovulationDate, inPeriod: snapshotKind(s, today) === 'period' && selected === today,
   });
   const who = s.name || 'Your partner';
   return (

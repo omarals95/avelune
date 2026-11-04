@@ -207,28 +207,37 @@ export const font = {
 /** Motion tokens (ms). Exits are faster than entrances. */
 export const motion = { press: 120, fast: 180, base: 260, enter: 420, crossfade: 700 };
 
-/** Flower artwork per mood: light screens use the airy blooms, dark screens the saturated ones. */
+/**
+ * The four phase flowers (from the original flowers.zip, numbered in cycle order 1–4):
+ * light screens use the airy blooms, dark screens the saturated ones.
+ */
 const flowerFiles = {
   light: {
-    menstrual: require('../assets/flowers/rose-light.webp'),
-    follicular: require('../assets/flowers/peach-light.webp'),
-    fertile: require('../assets/flowers/sage-light.webp'),
-    ovulation: require('../assets/flowers/lavender-light.webp'),
+    rose: require('../assets/flowers/rose-light.webp'),
+    peach: require('../assets/flowers/peach-light.webp'),
+    sage: require('../assets/flowers/sage-light.webp'),
+    lavender: require('../assets/flowers/lavender-light.webp'),
   },
   dark: {
-    menstrual: require('../assets/flowers/rose-dark.webp'),
-    follicular: require('../assets/flowers/peach-dark.webp'),
-    fertile: require('../assets/flowers/sage-dark.webp'),
-    ovulation: require('../assets/flowers/lavender-dark.webp'),
+    rose: require('../assets/flowers/rose-dark.webp'),
+    peach: require('../assets/flowers/peach-dark.webp'),
+    sage: require('../assets/flowers/sage-dark.webp'),
+    lavender: require('../assets/flowers/lavender-dark.webp'),
   },
 };
 export type Bloom = keyof typeof flowerFiles.light;
 export const flowers: Record<Bloom, number> = { ...flowerFiles.light };
-/** Which bloom represents each mood. */
+/**
+ * Which flower represents each phase:
+ *   1 burgundy rose: period (logged or predicted)
+ *   2 peach blush:   follicular phase (after the period), pregnancy and anything without a phase
+ *   3 cream & sage:  ovulation phase (fertile window and ovulation day)
+ *   4 lavender:      luteal phase (after ovulation until the period), including a late period
+ */
 export const bloomFor = (m: Mood): Bloom =>
-  m === 'menstrual' ? 'menstrual' : m === 'fertile' ? 'fertile' : m === 'ovulation' ? 'ovulation' : m === 'luteal' || m === 'late' ? 'menstrual' : 'follicular';
+  m === 'menstrual' ? 'rose' : m === 'fertile' || m === 'ovulation' ? 'sage' : m === 'luteal' || m === 'late' ? 'lavender' : 'peach';
 /** Glow/orbit colour per bloom. */
-export const bloomTint = (b: Bloom) => (b === 'menstrual' ? colors.period : b === 'fertile' ? colors.fertile : b === 'ovulation' ? colors.ovulation : colors.accent);
+export const bloomTint = (b: Bloom) => (b === 'rose' ? colors.period : b === 'sage' ? colors.fertile : b === 'lavender' ? colors.ovulation : colors.accent);
 
 export let scheme: Scheme = 'light';
 let version = 0;

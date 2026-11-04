@@ -62,3 +62,40 @@ describe('classifyDay', () => {
     expect(classifyDay('2026-10-12', m, p, DEFAULT_SETTINGS)).toBe('none');
   });
 });
+
+import { phaseOn } from '../src';
+describe('phaseOn', () => {
+  const logs = [...periodDays('2026-07-01', 5), ...periodDays('2026-07-29', 5), ...periodDays('2026-08-26', 4), ...periodDays('2026-09-23', 5)];
+  const m = new Map(logs.map((l) => [l.date, l]));
+  const p = predict(logs, DEFAULT_SETTINGS, '2026-10-05');
+  const on = (d: string, s = DEFAULT_SETTINGS) => phaseOn(d, m, p, s);
+  it('follows the current cycle: period, follicular, ovulation phase, luteal, predicted period', () => {
+    expect(on('2026-09-23')).toBe('menstrual');
+    expect(on('2026-09-27')).toBe('menstrual');
+    expect(on('2026-09-28')).toBe('follicular'); // the day after the period ends is not a period day
+    expect(on('2026-10-01')).toBe('follicular');
+    expect(on('2026-10-02')).toBe('ovulation'); // fertile window opens
+    expect(on('2026-10-07')).toBe('ovulation'); // ovulation day
+    expect(on('2026-10-08')).toBe('ovulation');
+    expect(on('2026-10-09')).toBe('luteal');
+    expect(on('2026-10-13')).toBe('luteal'); // cycle day 21
+    expect(on('2026-10-20')).toBe('luteal');
+    expect(on('2026-10-21')).toBe('menstrual'); // predicted period
+    expect(on('2026-10-26')).toBe('follicular'); // next cycle
+  });
+  it('places past cycles too, using when the next period actually started', () => {
+    expect(on('2026-08-27')).toBe('menstrual');
+    expect(on('2026-08-31')).toBe('follicular');
+    expect(on('2026-09-09')).toBe('ovulation'); // 14 days before the 23 Sep period
+    expect(on('2026-09-15')).toBe('luteal');
+    expect(on('2026-09-22')).toBe('luteal');
+  });
+  it('never shows the ovulation phase when the fertile window is hidden', () => {
+    const hidden = { ...DEFAULT_SETTINGS, showFertileWindow: false };
+    expect(on('2026-10-04', hidden)).toBe('follicular');
+    expect(on('2026-10-09', hidden)).toBe('luteal');
+  });
+  it('is null before the first period', () => {
+    expect(on('2026-06-15')).toBeNull();
+  });
+});

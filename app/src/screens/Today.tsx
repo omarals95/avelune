@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { classifyDay, contraceptionStatus, cycleDayOf, diffDays, predict, pregnancyView, type DateStr } from '@avelune/core';
+import { classifyDay, contraceptionStatus, cycleDayOf, diffDays, phaseOn, predict, pregnancyView, type DateStr } from '@avelune/core';
 import { PregnancyCaption, PregnancyIllustration, PregnancySetup } from '../pregnancyArt';
 import { useToday } from '../today';
 import { FadeIn, PressScale } from '../anim';
@@ -89,7 +89,7 @@ export function Today() {
   const lastPeriodEnd = p.lastPeriodStart && logs.filter((l) => l.flow >= 2 && l.date >= p.lastPeriodStart!).map((l) => l.date).sort().pop();
   const cycleDay = cycleDayOf(selected, logs);
   const status = statusFor({
-    hasData: !!p.lastPeriodStart, today, date: selected, kind: kindOf(selected), cycleDay, phase: p.phase,
+    hasData: !!p.lastPeriodStart, today, date: selected, kind: kindOf(selected), cycleDay, phase: p.phase, dayPhase: settings.pregnancyLmp ? null : phaseOn(selected, map, p, settings),
     daysUntilPeriod: p.daysUntilPeriod, fertileWindow: settings.showFertileWindow === false ? null : p.fertileWindow, ovulationDate: p.ovulationDate,
     inPeriod: !!lastPeriodEnd && selected >= p.lastPeriodStart! && selected <= lastPeriodEnd && (map.get(selected)?.flow ?? 0) >= 1,
     lateBy: p.lateBy, lateDismissed: p.lateDismissed, noForecast: p.noForecast, stage: settings.stage,
