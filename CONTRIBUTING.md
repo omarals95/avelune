@@ -13,7 +13,6 @@ paying a monthly or yearly subscription. If you have the ability to contribute a
 - **Translate** the app into your language.
 - **Test** new builds on your phone and share feedback.
 - **Spread the word.** Tell someone who could use a free, private tracker, or star the repository.
-- **Donate.** If you can't contribute time, a [donation through GitHub Sponsors](https://github.com/sponsors/omarals95) helps cover the costs of maintaining the app. It is always optional.
 
 ## Getting started
 

@@ -11,8 +11,7 @@ with an optional **self-hosted, end-to-end encrypted sync server**.
 > Technology today is a necessity for everyone, and understanding your own body should not depend on paying a monthly or yearly
 > subscription. Avelune was created to add real value for people who cannot pay for one, or would rather not.
 >
-> **If you have the ability to contribute to this project and support it for the community, please go ahead.** See [CONTRIBUTING.md](CONTRIBUTING.md),
-> or [donate through GitHub Sponsors](https://github.com/sponsors/omarals95) to help maintain it.
+> **If you have the ability to contribute to this project and support it for the community, please go ahead.** See [CONTRIBUTING.md](CONTRIBUTING.md).
 >
 > Avelune is **not a medical device** and must not be used as contraception or to diagnose anything. By using it you agree to the
 > [terms of use](TERMS.md) and [privacy policy](PRIVACY.md). The app shows the same notice the first time it opens.
@@ -137,16 +136,6 @@ GitHub → **Actions → iOS build → Run workflow** compiles the app on a macO
 
 For TestFlight or the App Store you need an Apple Developer account ($99/year) and a signed build, for example with
 `npx eas build -p ios`. Locally on a Mac (Xcode 16 required): `cd app && npx expo run:ios`.
-
-## Support Avelune
-
-Avelune has no ads, subscriptions or paid features. If it helps you and you are able to, a donation helps cover the costs of keeping
-it going: app store accounts, test devices, hosting, and the time to fix bugs and build new features.
-
-[![Sponsor Avelune](https://img.shields.io/badge/Sponsor-Avelune-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/omarals95)
-
-Donating is completely optional and unlocks nothing. Every feature stays free for everyone. The same box is in the app under
-**Settings** and **Settings → About Avelune** (Android and web; Apple does not allow donation links in iOS apps).
 
 ## Contributing
 

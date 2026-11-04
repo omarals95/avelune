@@ -12,7 +12,7 @@ import { BloomCircle } from '../bloom';
 import { Icon } from '../icons';
 import { useNav } from '../nav';
 import { selectLogs, selectSettings, useStore } from '../store';
-import { bloomFor, colors, flowers, shadow, themed } from '../theme';
+import { bloomFor, colors, shadow, themed } from '../theme';
 import { Btn, Card, Field, Muted, Row, Sheet } from '../ui';
 import { CalendarView } from './Calendar';
 import { QR } from '../qr';
@@ -21,15 +21,14 @@ import { QRScanner, scanSupported } from '../scan';
 import { TabHeader, centre } from './Today';
 import { CornerBloom } from './Insights';
 
-/** Two blooms leaning together, gently breathing. */
+/** Two figures and a child held together inside a heart of petals, gently breathing. */
 function Together() {
   const v = useLoop(2600);
   return (
-    <View style={{ alignItems: 'center', marginVertical: 6, height: 150, justifyContent: 'center' }}>
-      <Animated.View style={{ flexDirection: 'row', transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1.03] }) }] }}>
-        <Image source={flowers.menstrual} style={{ width: 130, height: 130, marginRight: -26, transform: [{ rotate: '-12deg' }] }} resizeMode="contain" />
-        <Image source={flowers.ovulation} style={{ width: 130, height: 130, transform: [{ rotate: '14deg' }] }} resizeMode="contain" />
-      </Animated.View>
+    <View style={{ alignItems: 'center', marginVertical: 6 }}>
+      <Animated.Image source={require('../../assets/partner-together.webp')} resizeMode="contain" testID="partner-art"
+        accessible accessibilityRole="image" accessibilityLabel="Illustration: two people made of petals, holding a child between them inside a heart of flowers."
+        style={{ width: 210, height: 210, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.98, 1.02] }) }] }} />
     </View>
   );
 }

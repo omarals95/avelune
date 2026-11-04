@@ -523,9 +523,3 @@ Cycle reminders pause in pregnancy mode. On the web, reminders are set up from t
 - **Settings → About Avelune:** the same points, ways to support the project, a GitHub link, and the terms and privacy policy.
 - **Source of the text:** `app/src/legal.ts`. `node scripts/legal-docs.mjs` regenerates `TERMS.md` and `PRIVACY.md` from it. The repository also has `LICENSE` (MIT), `CONTRIBUTING.md`, and screenshots in `docs/screenshots/`.
 
-## 14. Donations
-
-- **Donations box:** "Help keep Avelune free" appears on the first-use notice, in Settings and in Settings → About Avelune. It opens GitHub Sponsors (github.com/sponsors/omarals95).
-- **Wording:** donations are voluntary, unlock nothing, and every feature stays free. The terms of use say the same.
-- **Platforms:** shown on Android and the web. Hidden on iPhone because App Store rules don't allow apps to link to outside donation payments to the developer.
-- **Repository:** `.github/FUNDING.yml` adds a Sponsor button to the GitHub page.

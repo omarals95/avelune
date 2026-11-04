@@ -14,10 +14,13 @@ import { Logo } from './Onboarding';
 const openRepo = () => void Linking.openURL(REPO_URL).catch(() => undefined);
 
 /**
+ * Donations are switched off for now. To turn them back on, set DONATIONS_ENABLED to true
+ * (and restore the donation lines in legal.ts, README.md, CONTRIBUTING.md and .github/FUNDING.yml).
  * Apple does not allow iOS apps to link to outside payment for donations to the developer,
- * so the donation box is shown on Android and the web only.
+ * so even when enabled the box is shown on Android and the web only.
  */
-export const DONATIONS_SHOWN = Platform.OS !== 'ios';
+const DONATIONS_ENABLED = false;
+export const DONATIONS_SHOWN = DONATIONS_ENABLED && Platform.OS !== 'ios';
 
 /** Voluntary donations box (GitHub Sponsors). Optional; unlocks nothing. */
 export function DonateBox({ compact }: { compact?: boolean }) {
