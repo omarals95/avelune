@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { useStore } from '../store';
 import { colors, scheme, themed } from '../theme';
 import { Btn, Card, Muted, Stepper } from '../ui';
 import { JoinPartner } from './Partner';
+import { useLinks } from '../links';
 import { RestoreBackup } from './Backup';
 import { Animated, Image } from 'react-native';
 
@@ -62,6 +63,10 @@ export function Onboarding() {
   const [step, setStep] = useState<'welcome' | 'date' | 'lengths' | 'restore' | 'partner' | 'backup'>('welcome');
   const [start, setStart] = useState<DateStr>(addDays(today, -DEFAULT_SETTINGS.periodLength));
   const [cycle, setCycle] = useState(DEFAULT_SETTINGS.cycleLength);
+  // Opened from a partner's QR code (avelune://partner?code=…): go straight to joining.
+  const pending = useLinks((s) => s.invite);
+  const [invite, setInvite] = useState<string | null>(null);
+  useEffect(() => { if (pending) { setInvite(useLinks.getState().take()); setStep('partner'); } }, [pending]);
   const [period, setPeriod] = useState(DEFAULT_SETTINGS.periodLength);
 
   return (
@@ -129,7 +134,7 @@ export function Onboarding() {
           </FadeIn>
         )}
 
-        {step === 'partner' && <FadeIn key="partner"><JoinPartner onCancel={() => setStep('welcome')} /></FadeIn>}
+        {step === 'partner' && <FadeIn key="partner"><JoinPartner initialCode={invite} onCancel={() => setStep('welcome')} /></FadeIn>}
 
         <Muted style={{ textAlign: 'center', marginTop: 20 }}>Avelune gives estimates for personal awareness. It is not a medical device and must not be used for contraception.</Muted>
       </ScrollView>

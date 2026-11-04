@@ -119,6 +119,14 @@ import { Users } from 'phosphor-react-native/src/icons/Users';
 import { Warning } from 'phosphor-react-native/src/icons/Warning';
 import { WarningCircle } from 'phosphor-react-native/src/icons/WarningCircle';
 import { Watch } from 'phosphor-react-native/src/icons/Watch';
+import { CircleNotch } from 'phosphor-react-native/src/icons/CircleNotch';
+import { QrCode } from 'phosphor-react-native/src/icons/QrCode';
+import { Scan } from 'phosphor-react-native/src/icons/Scan';
+import { FilePdf } from 'phosphor-react-native/src/icons/FilePdf';
+import { Fingerprint } from 'phosphor-react-native/src/icons/Fingerprint';
+import { Backspace } from 'phosphor-react-native/src/icons/Backspace';
+import { Printer } from 'phosphor-react-native/src/icons/Printer';
+import { Calendar } from 'phosphor-react-native/src/icons/Calendar';
 import { Waves } from 'phosphor-react-native/src/icons/Waves';
 import { Wind } from 'phosphor-react-native/src/icons/Wind';
 import { Wine } from 'phosphor-react-native/src/icons/Wine';
@@ -178,7 +186,7 @@ const MAP = {
   toilet: Toilet, 'arrow-expand-all': ArrowsOut, 'weather-windy': Wind, 'egg-outline': Egg, 'test-tube': TestTube,
   'test-tube-empty': [TestTube, 'light'], pill: Pill, 'map-marker-outline': MapPin, bandage: Bandaids, 'glass-wine': Wine,
   'medical-bag': FirstAidKit, 'sofa-outline': Couch, yoga: PersonSimpleTaiChi, dumbbell: Barbell, 'music-note-outline': MusicNote,
-  swim: SwimmingPool, basketball: Basketball, bike: Bicycle, 'heart-off': HeartBreak, baby: Baby, symptoms: ClipboardText, 'file-xls': FileXls, download: DownloadSimple, waveform: Waveform,
+  swim: SwimmingPool, basketball: Basketball, bike: Bicycle, 'heart-off': HeartBreak, baby: Baby, symptoms: ClipboardText, ring: CircleNotch, qr: QrCode, scan: Scan, 'file-pdf': FilePdf, fingerprint: Fingerprint, backspace: Backspace, printer: Printer, calendar: Calendar, 'file-xls': FileXls, download: DownloadSimple, waveform: Waveform,
 } satisfies Record<string, Entry>;
 
 export type IconName = keyof typeof MAP;

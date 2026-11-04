@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Animated, Image, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { addDays, derivePeriods, diffDays, predict, today as todayFn, type DateStr, type DayLog } from '@cyclo/core';
+import { addDays, derivePeriods, describeSources, detectOvulation, diffDays, predict, today as todayFn, type DateStr, type DayLog } from '@cyclo/core';
 import { FadeIn, PressScale, useLoop } from '../anim';
 import { labelOf } from '../catalog';
 import { Chart, CycleBar, MiniBars, type Pt } from '../charts';
@@ -190,14 +190,6 @@ export function cyclesOf(logs: DayLog[], today: DateStr): Cycle[] {
 }
 
 /** "3 over 6" rule: the first day where 3 temperatures in a row exceed the previous 6 marks the shift; ovulation ≈ day before. */
-export function detectOvulation(temps: (number | null)[]): number | null {
-  for (let i = 6; i + 2 < temps.length; i++) {
-    const prev = temps.slice(i - 6, i).filter((t): t is number => t != null);
-    const next = temps.slice(i, i + 3);
-    if (prev.length >= 4 && next.every((t) => t != null && t > Math.max(...prev))) return i - 1;
-  }
-  return null;
-}
 
 const TITLES: Record<ChartKind, string> = { cycles: 'Cycle length', bbt: 'Chart', weight: 'Weight', activity: 'Activity', water: 'Water', sleep: 'Sleep' };
 
@@ -246,14 +238,32 @@ export function ChartScreen({ kind, onClose }: { kind: ChartKind; onClose: () =>
 
   if (kind === 'bbt') {
     const pts = series((l) => (l.bbt == null ? undefined : cToDisplay(l.bbt, unit)));
-    const ov = detectOvulation(pts.map((x) => x.y));
+    // One estimate from temperature, LH tests and cervical mucus.
+    const det = detectOvulation(by, cyc.start, days[days.length - 1]);
+    const ov = det ? diffDays(cyc.start, det.date) : null;
+    const idx = (d?: string) => (d ? diffDays(cyc.start, d) : -1);
     const markers = [
-      ...(ov != null ? [{ i: ov, label: 'Ovul.', color: colors.ovulation }] : []),
       ...days.map((d, i) => ((by.get(d)?.flow ?? 0) >= 2 ? { i, label: '', color: colors.period } : null)).filter(Boolean) as { i: number; label: string; color: string }[],
+      ...days.map((d, i) => (by.get(d)?.tags.includes('tests:ovu-pos') ? { i, label: '', color: colors.fertile } : null)).filter(Boolean) as { i: number; label: string; color: string }[],
+      ...days.map((d, i) => (by.get(d)?.tags.some((t) => t === 'discharge:egg-white' || t === 'discharge:watery') && i !== idx(det?.lhDate) ? { i, label: '', color: colors.water } : null)).filter(Boolean) as { i: number; label: string; color: string }[],
+      ...(ov != null && ov >= 0 && ov < days.length ? [{ i: ov, label: det!.confirmed ? 'Ov' : 'Ov?', color: colors.ovulation }] : []),
     ];
-    const [lo, hi] = unit === 'C' ? [35, 38.5] : [95, 101.3];
-    headline = ov != null ? `Temperature shift detected · ovulation ≈ ${fmtShort(days[ov])}` : null;
-    chart = <Chart kind="line" points={pts} yMin={lo} yMax={hi} ticks={7} digits={unit === 'C' ? 2 : 1} xLabels={xLabels} markers={markers} color={colors.ovulation} empty={!pts.some((x) => x.y != null)} height={420} />;
+    const vals = pts.map((x) => x.y).filter((v): v is number => v != null);
+    const [lo, hi] = vals.length ? [Math.floor((Math.min(...vals) - 0.3) * 10) / 10, Math.ceil((Math.max(...vals) + 0.3) * 10) / 10] : unit === 'C' ? [35.8, 37.4] : [96.4, 99.4];
+    headline = det
+      ? det.confirmed ? `Ovulation confirmed ${fmtShort(det.date)} · by ${describeSources(det.sources)}` : `Ovulation likely ${fmtShort(det.date)} · from ${describeSources(det.sources)}`
+      : null;
+    chart = (
+      <>
+        <Chart kind="line" points={pts} yMin={lo} yMax={hi} ticks={6} digits={unit === 'C' ? 2 : 1} xLabels={xLabels} markers={markers} color={colors.ovulation}
+          target={det?.coverline != null ? cToDisplay(det.coverline, unit) : undefined} targetLabel="Cover" empty={!pts.some((x) => x.y != null) && !det} height={420} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: 10, paddingHorizontal: 4 }}>
+          {[[colors.period, 'Period'], [colors.fertile, 'Positive LH test'], [colors.water, 'Fertile mucus'], [colors.ovulation, 'Ovulation']].map(([c, l]) => (
+            <View key={l} style={{ flexDirection: 'row', alignItems: 'center' }}><View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: c, opacity: 0.6, marginRight: 6 }} /><Text style={{ fontSize: 13, color: colors.text }}>{l}</Text></View>
+          ))}
+        </View>
+      </>
+    );
   } else if (kind === 'weight') {
     const pts = series((l) => (l.weight == null ? undefined : kgToDisplay(l.weight, wUnit)));
     const vals = pts.map((x) => x.y).filter((v): v is number => v != null);

@@ -24,9 +24,9 @@ function useGrow(deps: unknown) {
 }
 
 /** Shared frame: y-axis ticks, gridlines, x labels, optional dotted target line, "no data" message. */
-export function Chart({ points, kind, yMin, yMax, ticks = 6, target, markers = [], color = colors.primary, xLabels, empty, digits = 0, height = 360, valueLabels }: {
+export function Chart({ points, kind, yMin, yMax, ticks = 6, target, markers = [], color = colors.primary, xLabels, empty, digits = 0, height = 360, valueLabels, targetLabel = 'Goal' }: {
   points: Pt[]; kind: 'line' | 'bar'; yMin: number; yMax: number; ticks?: number; target?: number; markers?: { i: number; label: string; color: string }[];
-  color?: string; xLabels: string[]; empty?: boolean; digits?: number; height?: number; valueLabels?: boolean;
+  color?: string; xLabels: string[]; empty?: boolean; digits?: number; height?: number; valueLabels?: boolean; targetLabel?: string;
 }) {
   const [w, setW] = useState(0);
   const grow = useGrow(JSON.stringify(points));
@@ -92,7 +92,7 @@ export function Chart({ points, kind, yMin, yMax, ticks = 6, target, markers = [
       )}
       {target != null && w > 0 && (
         <View style={{ position: 'absolute', left: 0, top: y(target) - 11, backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
-          <Text style={{ color: colors.onPrimary, fontSize: 12, fontWeight: '600' }}>Goal</Text>
+          <Text style={{ color: colors.onPrimary, fontSize: 12, fontWeight: '600' }}>{targetLabel}</Text>
         </View>
       )}
       {empty && <View style={{ position: 'absolute', left: 48, right: 0, top: 0, bottom: 30, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.muted, fontSize: 18, textAlign: 'center' }}>No data for this cycle</Text></View>}

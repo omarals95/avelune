@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { classifyDay, cycleDayOf, diffDays, predict, pregnancyStatus, today as todayFn, type DateStr } from '@cyclo/core';
+import { classifyDay, contraceptionStatus, cycleDayOf, diffDays, predict, pregnancyStatus, today as todayFn, type DateStr } from '@cyclo/core';
 import { FadeIn, PressScale } from '../anim';
 import { ARTICLES } from '../content';
 import { WeekStrip, fmtDay, statusFor, type Status } from '../components';
@@ -47,7 +47,7 @@ const HEADLINE: Record<Mood, string> = {
 };
 
 /** Map the status copy onto the bloom centre (short kicker, large title, quiet sub-line). */
-export function centre(s: Status, cycleDay: number | null, logged: boolean, isToday: boolean): { kicker: string; big: string; sub?: string; glyph?: IconName } {
+export function centre(s: Status, cycleDay: number | null, logged: boolean, isToday: boolean, ovConfirmed = false): { kicker: string; big: string; sub?: string; glyph?: IconName } {
   const cd = cycleDay ? `Cycle day ${cycleDay}` : undefined;
   if (s.mood === 'menstrual' && s.kicker === 'Period' && s.big.startsWith('Day')) {
     return { kicker: 'Period', big: s.big.startsWith('Day') ? s.big : `Day ${cycleDay ?? 1}`, sub: logged ? 'Logged' : 'Predicted', glyph: 'water' };
@@ -55,7 +55,7 @@ export function centre(s: Status, cycleDay: number | null, logged: boolean, isTo
   if (s.mood === 'fertile') return { kicker: '', big: 'Fertile window', sub: isToday && s.big.startsWith('Ovulation in') ? s.big : 'Estimated', glyph: 'sprout' };
   if (s.mood === 'ovulation') return { kicker: '', big: 'Ovulation', sub: isToday ? 'Estimated today' : 'Estimated', glyph: 'sparkle' };
   if (s.mood === 'follicular' && isToday && s.kicker === 'Period in') return { kicker: '', big: 'After your period', sub: cd, glyph: 'sprout' };
-  if (s.mood === 'luteal' && isToday && s.kicker === 'Period in') return { kicker: s.kicker, big: s.big, sub: cd, glyph: 'flower-outline' };
+  if (s.mood === 'luteal' && isToday && s.kicker === 'Period in') return { kicker: s.kicker, big: s.big, sub: ovConfirmed ? 'Ovulation confirmed' : cd, glyph: 'flower-outline' };
   return { kicker: s.kicker, big: s.big, sub: s.sub, glyph: undefined };
 }
 
@@ -86,7 +86,7 @@ export function Today() {
   const stage = settings.stage;
   const mood: Mood = preg ? 'pregnancy' : status.mood;
   const bloom: Bloom = bloomFor(mood);
-  const c = centre(status, cycleDay, (map.get(selected)?.flow ?? 0) >= 1, selected === today);
+  const c = centre(status, cycleDay, (map.get(selected)?.flow ?? 0) >= 1, selected === today, !!p.ovulation?.confirmed);
   const progress = preg ? Math.min(1, (preg.week * 7 + preg.day) / 280) : p.noForecast ? null : cycleDay ? Math.min(1, cycleDay / Math.max(p.stats.avgCycle, cycleDay)) : null;
 
   const tipKey = p.lateBy && !p.lateDismissed ? 'late' : p.phase ?? 'none';
@@ -149,7 +149,7 @@ export function Today() {
 
         <HomeWidgets onOpen={(def) => (def.opens ? nav.openHealth(def.opens) : def.id === 'cycleStats' || def.id === 'nextPeriod' ? nav.openChart('cycles') : nav.openLog(today))} />
 
-        {!preg && p.lastPeriodStart ? <ForecastCard p={p} today={today} showFertile={settings.showFertileWindow !== false} /> : null}
+        {!preg && p.lastPeriodStart ? <ForecastCard p={p} today={today} showFertile={settings.showFertileWindow !== false} contra={settings.profile ? contraceptionStatus(settings.profile, today) : null} /> : null}
       </ScrollView>
     </View>
   );
@@ -162,7 +162,7 @@ const fmtRange = (a: DateStr, b: DateStr) => (a.slice(5, 7) === b.slice(5, 7) ? 
  * "Next period" card: the likely window and confidence, the reasons behind it ("why this date"),
  * a note when the estimate moved, and a neutral late notice that can be dismissed for this cycle.
  */
-function ForecastCard({ p, today, showFertile }: { p: ReturnType<typeof predict>; today: DateStr; showFertile: boolean }) {
+function ForecastCard({ p, today, showFertile, contra }: { p: ReturnType<typeof predict>; today: DateStr; showFertile: boolean; contra: string | null }) {
   const nav = useNav();
   const [why, setWhy] = useState(false);
   const seen = useStore((s) => s.seenForecast);
@@ -210,6 +210,8 @@ function ForecastCard({ p, today, showFertile }: { p: ReturnType<typeof predict>
             </View>
           ) : null}
           {showFertile && p.fertileWindow && p.fertileWindow[1] >= today ? <SummaryItem icon="flower-outline" color={colors.fertile} label="Fertile window" value={fmtRange(p.fertileWindow[0], p.fertileWindow[1])} /> : null}
+          {p.ovulation ? <SummaryItem icon="sparkle" color={colors.ovulation} label={p.ovulation.confirmed ? 'Ovulation confirmed' : 'Ovulation (estimated)'} value={fmtDay(p.ovulation.date)} /> : null}
+          {contra ? <SummaryItem icon="pill" color={colors.primary} label="Contraception" value={contra.replace(/^Pill pack /, 'Pack ')} /> : null}
           <SummaryItem icon="refresh" color={colors.ovulation} label="Typical cycle" value={`${p.stats.avgCycle} days`} />
           <PressScale accessibilityRole="button" accessibilityState={{ expanded: why }} accessibilityLabel="Why this estimate" onPress={() => setWhy(!why)} style={st.whyRow}>
             <Icon name="info" size={18} color={colors.muted} />

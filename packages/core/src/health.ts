@@ -2,7 +2,7 @@ import { addDays, diffDays, parseDate, toDateStr } from './dates';
 import type { DateStr } from './types';
 
 /** Where a value came from. `manual` = logged in Avelune, `sample` = demo data (never mixed with real sources). */
-export type HealthSource = 'appleHealth' | 'healthConnect' | 'fitbit' | 'manual' | 'sample';
+export type HealthSource = 'appleHealth' | 'healthConnect' | 'fitbit' | 'oura' | 'garmin' | 'manual' | 'sample';
 
 /**
  * One calendar day of normalised health data. Every provider (HealthKit, Health Connect — which also carries
@@ -25,6 +25,10 @@ export interface HealthDay {
   weightKg?: number;
   /** Basal / skin temperature in °C. */
   temperatureC?: number;
+  /** Night-time skin temperature relative to the wearer's baseline, in °C (Oura, Garmin, Samsung, Apple Watch). */
+  tempDeviationC?: number;
+  /** Average overnight heart-rate variability in ms. */
+  hrv?: number;
   spo2?: number;
   waterMl?: number;
   sources?: Partial<Record<keyof Omit<HealthDay, 'date' | 'sources'>, HealthSource>>;
@@ -33,7 +37,7 @@ export interface HealthDay {
 export type HealthMetric = Exclude<keyof HealthDay, 'date' | 'sources' | 'sleepStart' | 'sleepEnd'>;
 
 /** Higher wins when two connected sources report the same metric for the same day. */
-const PRIORITY: Record<HealthSource, number> = { manual: 5, appleHealth: 4, healthConnect: 3, fitbit: 2, sample: 0 };
+const PRIORITY: Record<HealthSource, number> = { manual: 6, oura: 5, garmin: 4, appleHealth: 4, healthConnect: 3, fitbit: 2, sample: 0 };
 
 export function mergeHealthDays(existing: Record<DateStr, HealthDay>, incoming: HealthDay[], source: HealthSource): Record<DateStr, HealthDay> {
   const out = { ...existing };

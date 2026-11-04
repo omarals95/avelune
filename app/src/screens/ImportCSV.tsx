@@ -178,8 +178,8 @@ export function ImportCSV() {
   const run = () => {
     if (!preview) return;
     const n = st.importLogs(preview.logs, overwrite);
-    if (preview.health.length) importManual(preview.health);
-    setDone(`Imported ${n} day${n === 1 ? '' : 's'}${preview.health.length ? ` and ${preview.health.length} days of step/heart data` : ''}.`);
+    if (preview.health.length) importManual(preview.health, preview.healthSource ?? 'manual');
+    setDone(`Imported ${n} day${n === 1 ? '' : 's'}${preview.health.length ? ` and ${preview.health.length} days of health data` : ''}.`);
     setRows(null); setResult(null);
   };
 
@@ -210,6 +210,7 @@ export function ImportCSV() {
             ['Flo, Clue', 'the data export file they email you (.json or .zip)'],
             ['Natural Cycles', 'the .zip of CSV files from your data request'],
             ['drip.', 'the CSV from Settings › Data › Export'],
+            ['Garmin', 'the .zip from garmin.com › Account › Data Management › Export your data'],
             ['Spreadsheets', 'Excel (.xlsx) or CSV with a date column (use the template above)'],
           ].map(([a, b]) => (
             <Text key={a} style={{ fontSize: 14, color: colors.text, lineHeight: 20 }}><Text style={{ fontWeight: '700' }}>{a}: </Text>{b}</Text>

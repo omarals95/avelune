@@ -163,6 +163,8 @@ export interface ImportResult {
   periodDays: number;
   /** Which app or format the data came from, when recognised. */
   source?: string;
+  /** Source to record imported health values under (default: manual). */
+  healthSource?: 'garmin' | 'oura' | 'manual';
 }
 
 /**

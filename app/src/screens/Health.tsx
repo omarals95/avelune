@@ -104,10 +104,12 @@ export function Health() {
     heart: [
       { metric: 'restingHr', title: 'Resting heart rate', unit: 'bpm', kind: 'line', color: colors.chartHi },
       { metric: 'spo2', title: 'Blood oxygen', unit: '%', kind: 'line', color: colors.water, yMin: 85, yMax: 100 },
+      { metric: 'hrv', title: 'Heart-rate variability', unit: 'ms', kind: 'line', color: colors.ovulation },
     ],
     body: [
       { metric: 'weightKg', title: 'Weight', unit: d.wUnit, kind: 'line', color: colors.primary, display: (v) => kgToDisplay(v, d.wUnit), decimals: 1 },
       { metric: 'temperatureC', title: 'Temperature', unit: `°${d.unit}`, kind: 'line', color: colors.chartHi, display: (v) => cToDisplay(v, d.unit), decimals: 2 },
+      { metric: 'tempDeviationC', title: 'Temperature vs your baseline', unit: `°${d.unit}`, kind: 'line', color: colors.period, display: (v) => (d.unit === 'F' ? v * 1.8 : v), decimals: 2 },
     ],
     water: [{ metric: 'waterMl', title: 'Water', unit: 'L', kind: 'bar', color: colors.water, display: (v) => v / 1000, decimals: 2, target: d.settings.waterTarget ?? 2250, yMin: 0 }],
   };
@@ -122,6 +124,8 @@ export function Health() {
     { metric: 'weightKg', title: 'Weight', icon: 'scale-bathroom', kind: 'line', color: colors.primary, fmt: (v) => `${kgToDisplay(v, d.wUnit).toFixed(1)} ${d.wUnit}`, opens: 'body' },
     { metric: 'temperatureC', title: 'Temperature', icon: 'thermometer', kind: 'line', color: colors.chartHi, fmt: (v) => `${cToDisplay(v, d.unit).toFixed(2)} °${d.unit}`, opens: 'body' },
     { metric: 'spo2', title: 'Blood oxygen', icon: 'water-percent', kind: 'line', color: colors.water, fmt: (v) => `${Math.round(v)}%`, opens: 'heart' },
+    { metric: 'hrv', title: 'Heart-rate variability', icon: 'heart-pulse', kind: 'line', color: colors.ovulation, fmt: (v) => `${Math.round(v)} ms`, opens: 'heart', optional: true },
+    { metric: 'tempDeviationC', title: 'Temperature vs baseline', icon: 'thermometer', kind: 'line', color: colors.period, fmt: (v) => `${v >= 0 ? '+' : '−'}${Math.abs(d.unit === 'F' ? v * 1.8 : v).toFixed(2)} °${d.unit}`, opens: 'body', optional: true },
   ];
   return (
     <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 140, maxWidth: 640, width: '100%', alignSelf: 'center' }} stickyHeaderIndices={[1]}>
@@ -145,7 +149,7 @@ export function Health() {
               <Btn icon="link-variant" title="Connect a tracker" onPress={() => nav.openConnections()} />
             </Reanimated.View>
           )}
-          {cards.map((c, i) => <OverviewCard key={c.metric} def={c} delay={i * STAGGER} onPress={() => setTab(c.opens)} />)}
+          {cards.filter((c) => !c.optional || Object.values(d.days).some((x) => x[c.metric] != null)).map((c, i) => <OverviewCard key={c.metric} def={c} delay={i * STAGGER} onPress={() => setTab(c.opens)} />)}
         </Reanimated.View>
       ) : (
         <Reanimated.View key={tab} entering={FadeIn.duration(220)}>
@@ -154,7 +158,7 @@ export function Health() {
             <View style={h.dayPill}><Text style={{ fontSize: 18, fontWeight: '600', color: colors.heading }}>{date === d.today ? 'Today' : fmtDay(date)}</Text></View>
             <PressScale accessibilityLabel="Next day" disabled={date >= d.today} onPress={() => setDate(addDays(date, 1))} style={[h.iconBtn, date >= d.today && { opacity: 0.3 }]}><Icon name="chevron-right" size={24} color={colors.heading} /></PressScale>
           </View>
-          {cfg[tab].map((c, i) => <MetricBlock key={c.metric} cfg={c} date={date} delay={i * STAGGER * 2} />)}
+          {cfg[tab].filter((c) => !['hrv', 'tempDeviationC'].includes(c.metric) || Object.values(d.days).some((x) => x[c.metric] != null)).map((c, i) => <MetricBlock key={c.metric} cfg={c} date={date} delay={i * STAGGER * 2} />)}
         </Reanimated.View>
       )}
     </ScrollView>
@@ -164,6 +168,8 @@ export function Health() {
 interface OverviewDef {
   metric: HealthMetric; title: string; icon: IconName; kind: 'bar' | 'line'; color: string; target?: number; goal?: string;
   fmt: (v: number) => string; opens: Exclude<HealthTab, 'overview'>;
+  /** Only shown when there is data (wearable-only metrics). */
+  optional?: boolean;
 }
 const DAY1 = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 

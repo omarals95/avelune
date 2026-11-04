@@ -9,6 +9,7 @@ import { Icon } from '../icons';
 import { cToDisplay, displayToC, displayToKg, emptyLog, kgToDisplay, selectLogs, selectSettings, useStore } from '../store';
 import { colors, scheme, themed } from '../theme';
 import { Chip, Muted } from '../ui';
+import { useNav } from '../nav';
 
 const DEFAULT_QUICK = ['cramps', 'fatigue', 'headache', 'bloating'];
 const GLASS = 250;
@@ -21,6 +22,7 @@ export function LogSheet({ date: initial, onClose }: { date: DateStr; onClose: (
   const unit = useStore((s) => s.unit);
   const wUnit = useStore((s) => s.weightUnit);
   const server = useStore((s) => s.server);
+  const nav = useNav();
   const logs = useMemo(() => selectLogs(records), [records]);
   const settings = selectSettings(records);
   const log: DayLog = logs.find((l) => l.date === date) ?? emptyLog(date);
@@ -63,6 +65,7 @@ export function LogSheet({ date: initial, onClose }: { date: DateStr; onClose: (
     const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
     return [...new Set([...top, 'calm', 'happy', 'energetic'])].slice(0, 3);
   });
+  const meds = (settings.medications ?? []).filter((m) => m.active || (log.meds?.[m.id] ?? 0) > 0);
   const cats = CATEGORIES.filter((c) => !(hideSex && c.sensitive) && !(settings.pregnancyLmp && (c.id === 'flow' || c.id === 'tests' || c.id === 'pill')));
   const ql = q.trim().toLowerCase();
   const target = settings.waterTarget ?? 2250;
@@ -162,6 +165,53 @@ export function LogSheet({ date: initial, onClose }: { date: DateStr; onClose: (
             </FadeIn>
           );
         })}
+
+        {(!ql || 'medication medicine pill painkiller'.includes(ql) || meds.some((m) => m.name.toLowerCase().includes(ql))) && (
+          <FadeIn delay={220}>
+            <View style={ls.rule} />
+            <Text style={ls.h}>Medication</Text>
+            {meds.length ? (
+              <View style={ls.card}>
+                {meds.map((m, i) => {
+                  const n = log.meds?.[m.id] ?? 0;
+                  const over = !!m.maxPerDay && n > m.maxPerDay;
+                  const setN = (v: number) => {
+                    const next = { ...(log.meds ?? {}) };
+                    if (v > 0) next[m.id] = v; else delete next[m.id];
+                    update({ meds: Object.keys(next).length ? next : undefined });
+                  };
+                  return (
+                    <View key={m.id} style={[ls.mRow, i < meds.length - 1 && ls.mDivider, { flexWrap: 'wrap' }]}>
+                      <View style={ls.mIcon}><Icon name="pill" size={22} color={colors.heading} /></View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 16, color: colors.heading }}>{m.name}</Text>
+                        {m.dose || m.maxPerDay ? <Text style={{ fontSize: 13, color: colors.muted }}>{[m.dose, m.maxPerDay ? `max ${m.maxPerDay} a day` : null].filter(Boolean).join(' · ')}</Text> : null}
+                      </View>
+                      {n === 0 ? (
+                        <PressScale accessibilityLabel={`Log a dose of ${m.name}`} onPress={() => setN(1)} style={ls.addBtn}><Text style={{ color: colors.heading, fontWeight: '700' }}>Took it</Text></PressScale>
+                      ) : (
+                        <>
+                          <PressScale accessibilityLabel={`One fewer dose of ${m.name}`} onPress={() => setN(n - 1)} style={ls.step}><Icon name="minus" size={18} color={colors.heading} /></PressScale>
+                          <Text style={[ls.mVal, { minWidth: 70 }]} accessibilityLiveRegion="polite">{n} dose{n === 1 ? '' : 's'}</Text>
+                          <PressScale accessibilityLabel={`One more dose of ${m.name}`} onPress={() => setN(n + 1)} style={ls.step}><Icon name="plus" size={18} color={colors.heading} /></PressScale>
+                        </>
+                      )}
+                      {over ? (
+                        <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', marginTop: 8 }} accessibilityLiveRegion="polite">
+                          <Icon name="alert-outline" size={18} color={colors.danger} />
+                          <Text style={{ flex: 1, marginLeft: 6, fontSize: 14, color: colors.danger }}>That is more than your daily limit of {m.maxPerDay}. Check the leaflet or ask a pharmacist before taking more.</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
+            <PressScale accessibilityRole="button" onPress={() => nav.openSettings('meds')} style={{ paddingVertical: 10 }}>
+              <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 15 }}>{meds.length ? 'Manage medication' : 'Add medication to track doses'}</Text>
+            </PressScale>
+          </FadeIn>
+        )}
 
         {(!ql || 'temperature weight sleep distance'.includes(ql)) && (
           <FadeIn delay={240}>

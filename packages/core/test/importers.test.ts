@@ -130,3 +130,18 @@ describe('zip with CSVs (e.g. Natural Cycles)', () => {
     expect(by['2026-10-14'].tags).toEqual(expect.arrayContaining(['tests:ovu-pos', 'discharge:egg-white', 'sex:protected']));
   });
 });
+
+describe('Garmin Connect export', () => {
+  it('reads daily summaries and sleep from the export zip', async () => {
+    const uds = [{ calendarDate: '2026-10-01', totalSteps: 9120, totalDistanceMeters: 6830, activeKilocalories: 412.5, restingHeartRate: 58, minHeartRate: 49, maxHeartRate: 151 }];
+    const sleep = [{ calendarDate: '2026-10-01', deepSleepSeconds: 5400, lightSleepSeconds: 14400, remSleepSeconds: 6000, awakeSleepSeconds: 600 }];
+    const zip = zipSync({
+      'DI_CONNECT/DI-Connect-Aggregator/UDSFile_2026-09-01_2026-12-10.json': strToU8(JSON.stringify(uds)),
+      'DI_CONNECT/DI-Connect-Wellness/2026-09-01_2026-12-10_123_sleepData.json': strToU8(JSON.stringify(sleep)),
+    });
+    const r = await importZip(zip.length, async (o, l) => zip.slice(o, o + l), opts);
+    expect(r.source).toBe('Garmin Connect export');
+    expect(r.healthSource).toBe('garmin');
+    expect(r.health[0]).toMatchObject({ date: '2026-10-01', steps: 9120, distanceKm: 6.83, activeKcal: 413, restingHr: 58, hrMin: 49, hrMax: 151, sleepMin: 430 });
+  });
+});

@@ -4,7 +4,7 @@ import { Text, TextInput } from '../text';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { buildSnapshot, cycleDayOf, encodeInvite, predict, snapshotKind, today as todayFn, type PartnerSnapshot } from '@cyclo/core';
+import { DEFAULT_SHARE_ITEMS, buildSnapshot, cycleDayOf, decodeInvite, encodeInvite, inviteLink, predict, snapshotKind, today as todayFn, type PartnerSnapshot, type Phase, type ShareItems } from '@cyclo/core';
 import { FadeIn, PressScale, useLoop } from '../anim';
 import { labelOf } from '../catalog';
 import { WeekStrip, ago, fmtDay, statusFor, useNow } from '../components';
@@ -15,6 +15,8 @@ import { selectLogs, selectSettings, useStore } from '../store';
 import { bloomFor, colors, flowers, shadow, themed } from '../theme';
 import { Btn, Card, Field, Muted, Row, Sheet } from '../ui';
 import { CalendarView } from './Calendar';
+import { QR } from '../qr';
+import { QRScanner, scanSupported } from '../scan';
 import { TabHeader, centre } from './Today';
 import { CornerBloom } from './Insights';
 
@@ -30,6 +32,24 @@ function Together() {
     </View>
   );
 }
+
+const SHARE_ROWS: [keyof ShareItems, string, string][] = [
+  ['period', 'Period dates', 'Logged and expected periods'],
+  ['fertile', 'Fertile window', 'Fertile days and estimated ovulation'],
+  ['phase', 'Cycle day and phase', 'For example “day 12, follicular”'],
+  ['pregnancy', 'Pregnancy week', 'Only while pregnancy mode is on'],
+  ['moods', 'Today’s mood', 'What you log today'],
+  ['symptoms', 'Today’s symptoms', 'What you log today'],
+  ['tips', 'Support tips', 'Gentle ideas for each phase'],
+];
+
+/** Supportive ideas a partner sees for each phase (general, not medical advice). */
+const SUPPORT: Record<Phase, { title: string; tips: string[] }> = {
+  menstrual: { title: 'Ways to help during a period', tips: ['Offer warmth: a hot-water bottle or a warm drink.', 'Take a chore off the list without being asked.', 'Plan something cosy and low-key.'] },
+  follicular: { title: 'Energy often rises now', tips: ['A good time to plan something active or new together.', 'Ask what they would like to do this week.'] },
+  ovulation: { title: 'Around ovulation', tips: ['Many people feel more social and confident now.', 'If you are trying for a baby (or avoiding one), these are the key days.'] },
+  luteal: { title: 'Before a period', tips: ['Energy can dip and patience run shorter: give a little extra slack.', 'Keep snacks, sleep and quiet time easy to come by.', 'Check in kindly rather than guessing.'] },
+};
 
 const ERR: Record<string, string> = {
   needs_server: 'Partner sharing goes through your own Avelune server. Set up sync first (Settings → Sync & encryption).',
@@ -48,6 +68,7 @@ export function PartnerTab() {
   const [msg, setMsg] = useState('');
   const [copied, setCopied] = useState(false);
   const [preview, setPreview] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const now = useNow();
   const code = share && server ? encodeInvite({ url: server.url, id: share.id, key: share.key }) : '';
 
@@ -65,6 +86,7 @@ export function PartnerTab() {
   const cd = cycleDayOf(todayFn(), logs);
   const next = p.daysUntilPeriod == null ? '—' : p.lateBy && !p.lateDismissed ? 'not started yet' : p.daysUntilPeriod <= 0 ? 'any day now' : `in ${p.daysUntilPeriod} day${p.daysUntilPeriod === 1 ? '' : 's'}`;
   const who = st.partnerName?.trim() || 'Your partner';
+  const items: ShareItems = { ...DEFAULT_SHARE_ITEMS, ...(share?.includeLog ? { moods: true, symptoms: true } : {}), ...share?.items };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -146,8 +168,12 @@ export function PartnerTab() {
             </PressScale>
 
             <View style={pt.card}>
-              <Row icon="chart-bar" title="Share mood and symptoms" subtitle={share.includeLog ? 'Your partner can see today’s mood and symptoms.' : 'Your mood and symptoms are not shared.'}
-                value={share.includeLog} onValueChange={(v) => st.setShareIncludeLog(v)} />
+              <Text style={pt.cardT}>What {who === 'Your partner' ? 'your partner' : who} sees</Text>
+              <Muted style={{ marginTop: 2, marginBottom: 4 }}>Changes update their view right away.</Muted>
+              {SHARE_ROWS.map(([k, title, sub]) => (
+                <Row key={k} title={title} subtitle={sub} value={items[k]} onValueChange={(v) => st.setShareItems({ [k]: v })} />
+              ))}
+              <Row icon="lock-outline" title="Notes and sex logs" subtitle="Never shared" />
             </View>
             <View style={pt.card}>
               <Row icon="eye-outline" title="Preview shared view" onPress={() => { void st.publishShare(); setPreview(true); }} />
@@ -156,7 +182,13 @@ export function PartnerTab() {
             <View style={pt.card}>
               <Text style={pt.cardT}>Invite code</Text>
               <Muted style={{ marginTop: 4 }}>Send this to your partner. They open Avelune, choose “My partner shared their cycle”, and paste it.</Muted>
-              <Text selectable style={pt.code} numberOfLines={3}>{code}</Text>
+              {showQR ? (
+                <View style={{ alignItems: 'center', marginVertical: 12 }}>
+                  <QR value={inviteLink(decodeInvite(code))} size={240} label="Partner invite QR code" />
+                  <Muted style={{ textAlign: 'center', marginTop: 8 }}>Your partner scans this with their phone camera, or in Avelune under “My partner shared their cycle”. Anyone with this code can view your shared cycle, so only show it to them.</Muted>
+                </View>
+              ) : <Text selectable style={pt.code} numberOfLines={3}>{code}</Text>}
+              <Btn kind="ghost" icon="qr" title={showQR ? 'Show code as text' : 'Show QR code'} onPress={() => setShowQR(!showQR)} />
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <Btn style={{ flex: 1 }} kind="ghost" icon={copied ? 'check' : 'copy'} title={copied ? 'Copied' : 'Copy'} onPress={() => void copy()} />
                 {Platform.OS !== 'web' && <Btn style={{ flex: 1 }} kind="ghost" icon="share-variant" title="Send" onPress={() => void send()} />}
@@ -184,7 +216,7 @@ function PreviewOwn({ onClose }: { onClose: () => void }) {
   const records = useStore((s) => s.records);
   const name = useStore((s) => s.name);
   const share = useStore((s) => s.share);
-  const snap = useMemo(() => buildSnapshot(selectLogs(records), selectSettings(records), todayFn(), { name, includeLog: share?.includeLog }), [records, name, share?.includeLog]);
+  const snap = useMemo(() => buildSnapshot(selectLogs(records), selectSettings(records), todayFn(), { name, includeLog: share?.includeLog, items: share?.items }), [records, name, share?.includeLog, share?.items]);
   return <PartnerView snapshot={snap} onClose={onClose} preview />;
 }
 
@@ -202,7 +234,7 @@ export function PartnerView({ snapshot, onClose, preview, onRefresh, fetchedAt, 
   const kind = snapshotKind(s, selected);
   const selCycleDay = s.cycleDay != null ? s.cycleDay + Math.round((Date.parse(selected) - Date.parse(s.today)) / 86400000) : null;
   const status = statusFor({
-    hasData: !!s.nextPeriodStart, today, date: selected, kind, cycleDay: s.cycleDay != null ? s.cycleDay + Math.round((Date.parse(selected) - Date.parse(s.today)) / 86400000) : null,
+    hasData: !!s.nextPeriodStart || s.cycleDay != null, today, date: selected, kind, cycleDay: s.cycleDay != null ? s.cycleDay + Math.round((Date.parse(selected) - Date.parse(s.today)) / 86400000) : null,
     phase: s.phase, daysUntilPeriod: daysUntil, fertileWindow: s.fertileWindow, ovulationDate: s.ovulationDate, inPeriod: snapshotKind(s, today) === 'period' && selected === today,
   });
   const who = s.name || 'Your partner';
@@ -232,6 +264,16 @@ export function PartnerView({ snapshot, onClose, preview, onRefresh, fetchedAt, 
             <Text style={{ fontSize: 16, color: colors.text }}>{[...(s.todayMoods ?? []), ...(s.todaySymptoms ?? [])].map(labelOf).join(' · ')}</Text>
           </FadeIn>
         ) : null}
+        {s.items?.tips !== false && s.phase && !s.pregnancy && s.today === today ? (
+          <FadeIn style={[pt.feel]}>
+            <Text style={{ fontWeight: '600', fontSize: 18, marginBottom: 8, color: colors.heading }}>{SUPPORT[s.phase].title}</Text>
+            {SUPPORT[s.phase].tips.map((t, i) => <Text key={i} style={{ fontSize: 15, color: colors.text, lineHeight: 22, marginTop: i ? 4 : 0 }}>• {t}</Text>)}
+            <Muted style={{ marginTop: 8 }}>Everyone is different: the best support is to ask what helps.</Muted>
+          </FadeIn>
+        ) : null}
+        {s.items && (!s.items.period || !s.items.fertile) ? (
+          <Muted style={{ textAlign: 'center', marginTop: 10, marginHorizontal: 20 }}>{who} has chosen not to share {[!s.items.period && 'period dates', !s.items.fertile && 'the fertile window'].filter(Boolean).join(' or ')}.</Muted>
+        ) : null}
         {error ? <Muted style={{ textAlign: 'center', color: colors.danger, marginTop: 10 }}>{ERR[error] ?? error}</Muted> : null}
         <View style={{ paddingHorizontal: 20, marginTop: 12 }}>
           {onRefresh && <Btn kind="ghost" icon="refresh" title="Refresh" onPress={onRefresh} />}
@@ -255,24 +297,28 @@ export function PartnerRoot() {
   return <PartnerView snapshot={partner.snapshot} fetchedAt={partner.fetchedAt} error={partner.error} onRefresh={() => void refresh()} onLeave={leave} />;
 }
 
-export function JoinPartner({ onCancel }: { onCancel: () => void }) {
+export function JoinPartner({ onCancel, initialCode }: { onCancel: () => void; initialCode?: string | null }) {
   const join = useStore((s) => s.joinAsPartner);
-  const [code, setCode] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState('');
-  const go = async () => {
+  const [code, setCode] = useState(initialCode ?? '');
+  const [scanning, setScanning] = useState(false);
+  const go = async (c = code) => {
     setBusy(true); setMsg('');
-    try { await join(code); } catch (e) { setMsg(ERR[(e as Error).message] ?? ERR.bad_invite); }
+    try { await join(c); } catch (e) { setMsg(ERR[(e as Error).message] ?? ERR.bad_invite); }
     setBusy(false);
   };
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
   return (
     <Card>
-      <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 6, color: colors.text }}>Paste your partner's invite code</Text>
-      <Muted>They can find it in Avelune under Partner → Link your partner.</Muted>
+      <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 6, color: colors.text }}>Connect to your partner</Text>
+      <Muted>Scan the QR code on their phone (Partner › Show QR code), or paste the invite code they sent you.</Muted>
+      {scanSupported ? (scanning
+        ? <QRScanner onCancel={() => setScanning(false)} onCode={(c) => { setScanning(false); setCode(c); void go(c); }} />
+        : <Btn icon="scan" title="Scan QR code" onPress={() => setScanning(true)} style={{ marginTop: 12 }} />) : null}
       <TextInput accessibilityLabel="Invite code" value={code} onChangeText={setCode} multiline autoCapitalize="none" autoCorrect={false}
         placeholder="avelune-partner:…" placeholderTextColor={colors.faint} style={pt.codeIn} />
       {msg ? <Muted style={{ color: colors.danger }}>{msg}</Muted> : null}
-      <Btn title={busy ? 'Connecting…' : 'Connect'} onPress={() => void go()} disabled={busy || !code.trim()} />
+      <Btn kind={scanSupported ? 'ghost' : 'primary'} title={busy ? 'Connecting…' : 'Connect with pasted code'} onPress={() => void go()} disabled={busy || !code.trim()} />
       <Btn kind="ghost" title="Back" onPress={onCancel} />
     </Card>
   );

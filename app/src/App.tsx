@@ -23,6 +23,8 @@ import { selectLogs, selectSettings, useStore } from './store';
 import { applyScheme, colors, scheme, themed } from './theme';
 import { Sheet } from './ui';
 import { SheetOutlet } from './sheet';
+import { LockLayer, useAppLock } from './lock';
+import { startLinkListener } from './links';
 import { maybeAutoBackup } from './backup';
 import { CalendarView } from './screens/Calendar';
 import { ChartScreen, Insights } from './screens/Insights';
@@ -42,6 +44,7 @@ const TABS: [Tab, string, IconName, IconName][] = [
 type Tab = 'today' | 'health' | 'insights' | 'partner';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
+startLinkListener();
 
 export default function App() {
   return <SafeAreaProvider><Root /></SafeAreaProvider>;
@@ -66,6 +69,7 @@ function Root() {
   const ready = hydrated && (fontsLoaded || !!fontError);
   useEffect(() => useStore.persist.onFinishHydration(() => setHydrated(true)), []);
   useEffect(() => { if (ready) SplashScreen.hideAsync().catch(() => undefined); }, [ready]);
+  useAppLock(hydrated);
   if (!ready) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
   return (
     <View key={eff} style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -73,6 +77,7 @@ function Root() {
       {partner && !onboarded ? <PartnerRoot /> : !onboarded ? <Onboarding /> : <Main />}
       <SystemBarBackdrop />
       <SheetOutlet />
+      <LockLayer />
     </View>
   );
 }
@@ -186,7 +191,7 @@ function Main() {
       <Sheet visible={!!article} onClose={() => setArticle(null)} >{article ? <ArticleSheet id={article} onClose={() => setArticle(null)} /> : null}</Sheet>
       <Sheet visible={week != null} onClose={() => setWeek(null)}>{week != null ? <WeekSheet week={week} onClose={() => setWeek(null)} /> : null}</Sheet>
       <Sheet visible={!!chart} onClose={() => setChart(null)}>{chart ? <ChartScreen kind={chart} onClose={() => setChart(null)} /> : null}</Sheet>
-      <Sheet visible={connections} onClose={() => setConnections(false)}>{connections ? <Connections onClose={() => setConnections(false)} /> : null}</Sheet>
+      <Sheet visible={connections} onClose={() => setConnections(false)}>{connections ? <Connections onClose={() => setConnections(false)} onImport={() => { setConnections(false); setSettings('import'); }} /> : null}</Sheet>
     </NavContext.Provider>
   );
 }

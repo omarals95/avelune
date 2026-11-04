@@ -4,7 +4,7 @@ import { b64decode, b64encode, utf8Decode, utf8Encode } from './e2ee';
 import { addDays, diffDays } from './dates';
 import { classifyDay, predict, type DayKind, type Phase } from './predict';
 import { pregnancyStatus } from './pregnancy';
-import type { DateStr, DayLog, Settings } from './types';
+import { DEFAULT_SHARE_ITEMS, type DateStr, type DayLog, type Settings, type ShareItems } from './types';
 
 /**
  * Partner sharing: the owner encrypts a small read-only snapshot with a random key and uploads it.
@@ -28,6 +28,8 @@ export interface PartnerSnapshot {
   /** Only present when the owner opted in. */
   todayMoods?: string[];
   todaySymptoms?: string[];
+  /** Which items the owner shares (absent in snapshots from older versions = everything except mood/symptoms). */
+  items?: ShareItems;
 }
 
 export interface ShareKey { id: string; key: string }
@@ -36,21 +38,35 @@ export interface Invite { url: string; id: string; key: string }
 const KIND_CHAR: Record<DayKind, string> = { period: 'p', 'predicted-period': 'q', fertile: 'f', ovulation: 'o', none: '.' };
 export const CHAR_KIND: Record<string, DayKind> = { p: 'period', q: 'predicted-period', f: 'fertile', o: 'ovulation', '.': 'none' };
 
-export function buildSnapshot(logs: DayLog[], settings: Settings, today: DateStr, opts: { name?: string; includeLog?: boolean } = {}): PartnerSnapshot {
+export function buildSnapshot(logs: DayLog[], settings: Settings, today: DateStr, opts: { name?: string; includeLog?: boolean; items?: Partial<ShareItems> } = {}): PartnerSnapshot {
+  // Older callers used `includeLog` for mood + symptoms together.
+  const items: ShareItems = { ...DEFAULT_SHARE_ITEMS, ...(opts.includeLog ? { moods: true, symptoms: true } : {}), ...opts.items };
   const p = predict(logs, settings, today);
   const map = new Map(logs.map((l) => [l.date, l]));
   const from = addDays(today, -14);
+  const fertileOn = items.fertile && settings.showFertileWindow !== false;
   let kinds = '';
-  for (let i = 0; i < 70; i++) kinds += KIND_CHAR[classifyDay(addDays(from, i), map, p, settings)];
+  for (let i = 0; i < 70; i++) {
+    let k = classifyDay(addDays(from, i), map, p, settings);
+    if (!items.period && (k === 'period' || k === 'predicted-period')) k = 'none';
+    if (!fertileOn && (k === 'fertile' || k === 'ovulation')) k = 'none';
+    kinds += KIND_CHAR[k];
+  }
   const t = map.get(today);
-  const preg = settings.pregnancyLmp ? pregnancyStatus(settings.pregnancyLmp, today) : null;
+  const preg = settings.pregnancyLmp && items.pregnancy ? pregnancyStatus(settings.pregnancyLmp, today) : null;
   return {
     v: 1, name: opts.name?.slice(0, 40) || undefined, generatedAt: Date.now(), today,
-    cycleDay: p.cycleDay, phase: p.phase, daysUntilPeriod: p.daysUntilPeriod, nextPeriodStart: p.nextPeriodStart,
-    ovulationDate: p.ovulationDate, fertileWindow: settings.showFertileWindow === false ? null : p.fertileWindow,
+    cycleDay: items.phase || items.period ? p.cycleDay : null,
+    phase: items.phase ? p.phase : null,
+    daysUntilPeriod: items.period ? p.daysUntilPeriod : null,
+    nextPeriodStart: items.period ? p.nextPeriodStart : null,
+    ovulationDate: fertileOn ? p.ovulationDate : null,
+    fertileWindow: fertileOn ? p.fertileWindow : null,
     days: { from, kinds },
     pregnancy: preg && { week: preg.week, day: preg.day, dueDate: preg.dueDate },
-    ...(opts.includeLog ? { todayMoods: t?.moods ?? [], todaySymptoms: t?.symptoms ?? [] } : {}),
+    ...(items.moods ? { todayMoods: t?.moods ?? [] } : {}),
+    ...(items.symptoms ? { todaySymptoms: t?.symptoms ?? [] } : {}),
+    items,
   };
 }
 
@@ -83,8 +99,14 @@ const PREFIX = 'avelune-partner:';
 const LEGACY_PREFIXES = ['cyclo-partner:'];
 export const encodeInvite = (i: Invite) => PREFIX + b64encode(utf8Encode(JSON.stringify({ u: i.url, i: i.id, k: i.key })));
 
+/** Link form of an invite, for QR codes: phone cameras open Avelune directly. */
+export const inviteLink = (i: Invite) => `avelune://partner?code=${encodeURIComponent(encodeInvite(i))}`;
+
 export function decodeInvite(code: string): Invite {
-  const raw = code.trim().replace(/\s+/g, '');
+  let raw = code.trim().replace(/\s+/g, '');
+  // Accept the QR link form (avelune://partner?code=…) as well as the bare code.
+  const q = /[?&]code=([^&#]+)/.exec(raw);
+  if (q) raw = decodeURIComponent(q[1]);
   const prefix = [PREFIX, ...LEGACY_PREFIXES].find((p) => raw.startsWith(p));
   if (!prefix) throw new Error('bad_invite');
   const o = JSON.parse(utf8Decode(b64decode(raw.slice(prefix.length))));

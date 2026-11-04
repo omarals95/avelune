@@ -23,7 +23,40 @@ export interface DayLog {
   /** Distance walked/run in km. */
   distance?: number;
   notes?: string;
+  /** Medication doses taken that day, by medication id. */
+  meds?: Record<string, number>;
 }
+
+export type MedKind = 'pain' | 'hrt' | 'supplement' | 'fertility' | 'thyroid' | 'other';
+
+/** A medication or supplement the user takes. Stored in synced settings. */
+export interface Medication {
+  id: string;
+  name: string;
+  kind: MedKind;
+  /** e.g. "400 mg". */
+  dose?: string;
+  /** Maximum doses in a day; logging more shows a warning. */
+  maxPerDay?: number;
+  /** Daily reminder time, if any. */
+  reminder?: { hour: number; minute: number } | null;
+  active: boolean;
+}
+
+/** Pack layouts for the combined pill: active days + break days. */
+export type PillPack = '21+7' | '24+4' | '28' | 'continuous';
+
+/** What a partner may see. Notes and sex logs are never shared. */
+export interface ShareItems {
+  period: boolean;
+  fertile: boolean;
+  phase: boolean;
+  pregnancy: boolean;
+  moods: boolean;
+  symptoms: boolean;
+  tips: boolean;
+}
+export const DEFAULT_SHARE_ITEMS: ShareItems = { period: true, fertile: true, phase: true, pregnancy: true, moods: false, symptoms: false, tips: true };
 
 /** Health conditions that change how cycles behave. "no-uterus" covers hysterectomy and endometrial ablation. */
 export type Condition = 'pcos' | 'endometriosis' | 'thyroid' | 'perimenopause' | 'no-uterus';
@@ -44,6 +77,11 @@ export interface CycleProfile {
   hrt?: boolean;
   /** In fertility treatment (IVF/IUI): cycles follow the clinic's plan. */
   fertilityTreatment?: boolean;
+  /** Combined pill / ring / patch: first day of the current pack and its layout. */
+  packStart?: DateStr | null;
+  pillPack?: PillPack;
+  /** Contraception reminders (new pack, ring/patch change, injection, IUD/implant replacement). */
+  contraReminders?: boolean;
 }
 
 /** Life stage outside of ordinary cycling. Pregnancy itself is `pregnancyLmp`. */
@@ -77,6 +115,7 @@ export interface Settings {
   forecastMode?: 'auto' | 'off';
   /** Expected period date whose "late" notice the user dismissed. */
   lateDismissedFor?: DateStr | null;
+  medications?: Medication[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {

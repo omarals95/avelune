@@ -15,6 +15,7 @@ import { selectLogs, selectSettings, useStore } from '../store';
 import { colors, type ThemePref } from '../theme';
 import { Btn, Card, Chip, Field, Muted, Page, Row, Section, Stepper, TopBar } from '../ui';
 import { BackupSettings } from './Backup';
+import { DoctorReport, MedsSettings, SecuritySettings } from './SettingsExtra';
 
 async function shareText(filename: string, text: string, mime: string) {
   if (Platform.OS === 'web') {
@@ -39,7 +40,7 @@ export function Settings({ page: initial, onClose }: { page: SettingsPage; onClo
   const [page, setPage] = useState<SettingsPage>(initial);
   const back = () => (page === 'main' || initial !== 'main' ? onClose() : setPage('main'));
   const titles: Record<SettingsPage, string> = {
-    main: 'Settings', appearance: 'Appearance', profile: 'Health profile', backup: 'Backups', health: 'Health connections', import: 'Import data', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy & after', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units',
+    main: 'Settings', appearance: 'Appearance', profile: 'Health profile', backup: 'Backups', security: 'Privacy & security', meds: 'Contraception & meds', report: 'Doctor report', health: 'Health connections', import: 'Import data', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy & after', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units',
   };
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -48,13 +49,16 @@ export function Settings({ page: initial, onClose }: { page: SettingsPage; onClo
       {page === 'appearance' && <Appearance />}
       {page === 'profile' && <Profile />}
       {page === 'backup' && <BackupSettings />}
+      {page === 'security' && <SecuritySettings />}
+      {page === 'meds' && <MedsSettings openProfile={() => setPage('profile')} />}
+      {page === 'report' && <DoctorReport />}
       {page === 'cycle' && <CycleSettings />}
       {page === 'reminders' && <Reminders />}
       {page === 'pregnancy' && <Pregnancy />}
       {page === 'content' && <HideContent />}
       {page === 'units' && <Units />}
       {page === 'sync' && <Sync />}
-      {page === 'health' && <Connections onClose={back} embedded />}
+      {page === 'health' && <Connections onClose={back} embedded onImport={() => setPage('import')} />}
       {page === 'data' && <Data go={setPage} />}
       {page === 'import' && <ImportCSV />}
     </View>
@@ -72,6 +76,7 @@ function Main({ go }: { go: (p: SettingsPage) => void }) {
       <Card>
         <Row icon="palette" title="Appearance" subtitle={({ system: 'Match phone', light: 'Light', dark: 'Dark' } as const)[st.theme ?? 'system']} onPress={() => go('appearance')} />
         <Row icon="stethoscope" title="Health profile" subtitle={profileSummary(settings)} onPress={() => go('profile')} />
+        <Row icon="pill" title="Contraception & medication" subtitle={(settings.medications ?? []).filter((m) => m.active).length ? `${(settings.medications ?? []).filter((m) => m.active).length} medication${(settings.medications ?? []).filter((m) => m.active).length === 1 ? '' : 's'}` : undefined} onPress={() => go('meds')} />
         <Row icon="refresh" title="Cycle and ovulation" subtitle={settings.stage?.kind === 'paused' ? 'Tracking paused' : settings.forecastMode === 'off' ? 'Forecast off' : undefined} onPress={() => go('cycle')} />
         <Row icon="bell-outline" title="Reminders" onPress={() => go('reminders')} />
         <Row icon="human-pregnant" title="Pregnancy & after" subtitle={settings.pregnancyLmp ? 'Pregnant' : settings.stage?.kind === 'postpartum' ? 'After birth' : settings.stage?.kind === 'loss' ? 'After a loss' : 'Off'} onPress={() => go('pregnancy')} />
@@ -80,6 +85,7 @@ function Main({ go }: { go: (p: SettingsPage) => void }) {
       </Card>
       <Card>
         <Row icon="heart-pulse" title="Health connections" subtitle="Apple Health, Health Connect, Fitbit" onPress={() => go('health')} />
+        <Row icon="lock-outline" title="Privacy & security" subtitle={[st.security.lock ? 'App lock on' : null, st.security.blockScreenshots ? 'screenshots blocked' : null].filter(Boolean).join(' · ') || 'App lock, screenshots'} onPress={() => go('security')} />
         <Row icon="shield-lock-outline" title="Backups" subtitle={st.backup.enabled && st.backup.lastAt ? `On · last ${new Date(st.backup.lastAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : st.backup.lastAt ? 'Manual' : 'Off'} onPress={() => go('backup')} />
         <Row icon="cloud-lock-outline" title="Sync & encryption" subtitle={st.server ? `Connected · ${st.server.email}` : 'Off: data stays on this device'} onPress={() => go('sync')} />
         <Row icon="database-export-outline" title="Your data" subtitle="Export, doctor summary, delete" onPress={() => go('data')} />
@@ -463,7 +469,7 @@ function Data({ go }: { go: (p: SettingsPage) => void }) {
         <Row icon="file-upload-outline" title="Import from file" subtitle="Excel (.xlsx) or CSV · example template included" onPress={() => go('import')} />
         <Row icon="file-delimited-outline" title="Export as CSV" onPress={() => void shareText('avelune-export.csv', exportCSV(selectLogs(st.records), labelOf), 'text/csv')} />
         <Row icon="code-json" title="Export all data (JSON)" onPress={() => void shareText('avelune-export.json', JSON.stringify({ version: 2, records: Object.values(st.records) }, null, 2), 'application/json')} />
-        <Row icon="stethoscope" title="Summary for my doctor" onPress={() => void shareText('avelune-summary.txt', summary(), 'text/plain')} />
+        <Row icon="file-pdf" title="Report for my doctor (PDF)" subtitle="Cycles, symptoms, medication, temperatures" onPress={() => go('report')} />
       </Card>
       <Card>
         <Row icon="delete-outline" danger title="Delete data on this device" onPress={() => confirm('Delete data on this device?', 'This cannot be undone. Data already synced stays on your server.', () => void st.wipe(false))} />

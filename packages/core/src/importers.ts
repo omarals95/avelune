@@ -17,9 +17,9 @@ import type { DateStr, DayLog, Flow, SyncRecord } from './types';
  *  - Natural Cycles and spreadsheets  CSV (inside a .zip or on its own) through the column-synonym CSV importer.
  */
 
-export type ImportSource = 'avelune' | 'drip' | 'apple-health' | 'clue' | 'flo' | 'natural-cycles' | 'json' | 'csv';
+export type ImportSource = 'avelune' | 'drip' | 'apple-health' | 'clue' | 'flo' | 'natural-cycles' | 'garmin' | 'json' | 'csv';
 export const SOURCE_LABEL: Record<ImportSource, string> = {
-  avelune: 'Avelune export', drip: 'drip.', 'apple-health': 'Apple Health', clue: 'Clue', flo: 'Flo', 'natural-cycles': 'Natural Cycles', json: 'JSON file', csv: 'Spreadsheet (CSV)',
+  avelune: 'Avelune export', garmin: 'Garmin Connect export', drip: 'drip.', 'apple-health': 'Apple Health', clue: 'Clue', flo: 'Flo', 'natural-cycles': 'Natural Cycles', json: 'JSON file', csv: 'Spreadsheet (CSV)',
 };
 
 /** Accumulates day logs and builds an ImportResult. */
@@ -346,6 +346,14 @@ export function mergeResults(parts: ImportResult[]): ImportResult {
   };
 }
 
+function textOf(chunks: Uint8Array[]) {
+  let text = '';
+  const dec = new DecodeUTF8((s) => { text += s; });
+  chunks.forEach((ch, i) => dec.push(ch, i === chunks.length - 1));
+  if (!chunks.length) dec.push(new Uint8Array(0), true);
+  return text;
+}
+
 /**
  * Stream a .zip: Apple Health's export.xml is parsed chunk by chunk; small CSV/JSON files inside are read whole.
  * `read(offset, length)` returns the next bytes of the file; `onProgress` gets 0..1.
@@ -379,6 +387,17 @@ export async function importZip(
     onProgress?.(Math.min(1, (off + len) / size));
   }
   if (sawApple) return apple.finish();
+  const garmin = small.filter((e) => /\.json$/i.test(e.name) && isGarminFile(e.name));
+  if (garmin.length && garmin.length >= small.filter((e) => /\.json$/i.test(e.name)).length / 2) {
+    const days = new Map<DateStr, HealthDay>();
+    for (const e of garmin) {
+      try { importGarminJson(JSON.parse(textOf(e.chunks)), days); } catch { /* skip unreadable file */ }
+    }
+    const c = new Collector(opts);
+    c.rows = days.size;
+    for (const h of days.values()) if (Object.keys(h).length > 1) c.health.set(h.date, h);
+    return { ...c.result('garmin'), healthSource: 'garmin' };
+  }
   const parts = small.map((e) => {
     const total = e.chunks.reduce((a, b) => a + b.length, 0);
     const buf = new Uint8Array(total);
@@ -406,4 +425,47 @@ export async function importXmlStream(
     onProgress?.(Math.min(1, (off + len) / size));
   }
   return apple.finish();
+}
+
+// ---------------------------------------------------------------- Garmin Connect data export
+
+/**
+ * Garmin's "Export your data" archive (DI_CONNECT/…) holds daily summaries as JSON arrays keyed by
+ * `calendarDate`. Field names are matched loosely because Garmin does not document them.
+ */
+const G: [RegExp, keyof HealthDay, (v: number) => number][] = [
+  [/^(total)?steps$/i, 'steps', (v) => v],
+  [/^(total)?distance(in)?meters$/i, 'distanceKm', (v) => Math.round(v / 10) / 100],
+  [/^active(kilo)?calories$/i, 'activeKcal', (v) => Math.round(v)],
+  [/^(current|wellness)?restingheartrate$/i, 'restingHr', (v) => v],
+  [/^(min|lowest)heartrate$/i, 'hrMin', (v) => v],
+  [/^(max|highest)heartrate$/i, 'hrMax', (v) => v],
+  [/^(avg|average)(spo2|pulseox|oxygensaturation)/i, 'spo2', (v) => v],
+  [/^(last)?(night)?(avg|average)?(overnight)?hrv(value)?$|^(weekly|lastnight)avg$/i, 'hrv', (v) => v],
+  [/skin.*temp.*dev|temp.*deviation/i, 'tempDeviationC', (v) => v],
+];
+
+export function isGarminFile(name: string) { return /di[-_]connect|udsfile|sleepdata|garmin/i.test(name); }
+
+export function importGarminJson(value: unknown, into: Map<DateStr, HealthDay> = new Map()): Map<DateStr, HealthDay> {
+  const walk = (node: unknown, depth: number) => {
+    if (depth > 6 || !node || typeof node !== 'object') return;
+    if (Array.isArray(node)) { for (const x of node) walk(x, depth + 1); return; }
+    const o = node as Record<string, unknown>;
+    const d = isoDay(o.calendarDate ?? o.summaryDate ?? (typeof o.date === 'string' ? o.date : undefined));
+    if (d) {
+      const h = into.get(d) ?? into.set(d, { date: d }).get(d)!;
+      for (const [k, v] of Object.entries(o)) {
+        if (typeof v !== 'number' || !Number.isFinite(v)) continue;
+        for (const [re, field, conv] of G) if (re.test(k) && (h as unknown as Record<string, unknown>)[field] == null) (h as unknown as Record<string, number>)[field] = conv(v);
+      }
+      const sec = ['deepSleepSeconds', 'lightSleepSeconds', 'remSleepSeconds'].map((k) => o[k]).filter((v): v is number => typeof v === 'number');
+      const total = typeof o.sleepTimeSeconds === 'number' ? o.sleepTimeSeconds : sec.length ? sec.reduce((a, b) => a + b, 0) : null;
+      if (total && total > 3600 && h.sleepMin == null) h.sleepMin = Math.round(total / 60);
+      if (typeof o.weight === 'number' && o.weight > 20000 && h.weightKg == null) h.weightKg = Math.round(o.weight / 100) / 10; // grams
+    }
+    for (const v of Object.values(o)) if (v && typeof v === 'object') walk(v, depth + 1);
+  };
+  walk(value, 0);
+  return into;
 }

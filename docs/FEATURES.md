@@ -429,3 +429,52 @@ Cycle reminders pause in pregnancy mode. On the web, reminders are set up from t
   - There are no emoji icons.
   - Font scaling is limited so layouts don't break.
   - Reduced-motion settings stop the flower animation.
+
+---
+
+## 11. Privacy, health and partner tools
+
+- **App lock** (Settings › Privacy & security):
+  - A 4-digit PIN, with Face ID, Touch ID or fingerprint unlock.
+  - It locks on launch and when you return to the app (at once, after 1 minute or after 5 minutes).
+  - Five wrong tries trigger a 30-second wait.
+  - The PIN is stored only as a salted PBKDF2 hash in secure storage.
+- **Screenshot blocking**:
+  - Android: blocks screenshots and screen recording, and blanks the recent-apps preview.
+  - iPhone: blanks screen recordings and mirroring. iOS doesn't let apps fully block screenshots.
+  - A privacy cover hides the app whenever it goes to the background.
+- **Report for your doctor (PDF)**:
+  - Covers 3, 6 or 12 months.
+  - Includes a summary, health profile, cycle-length chart, a table of cycles (with ovulation day and pain days), a heat map of symptoms by cycle day, medication use, a temperature chart with cover line, and recent notes.
+  - On the phone you can share or print it; in the browser, use "Save as PDF".
+- **Contraception & medication** (Settings):
+  - **Pill packs:** 21+7, 24+4, 28 or no breaks, with a "Pill pack day 12 of 21" status on Today.
+  - **Ring and patch schedules.**
+  - **Injection reminders.**
+  - **IUD and implant replacement reminders:** typical durations are 8, 10 and 3 years.
+  - **Medications:** each has a name, dose, type, daily limit and an optional daily reminder.
+  - **Dose logging:** in the daily log, with a warning when you go over your daily limit.
+- **One ovulation estimate from your body's signals**:
+  - **Temperature:** the "three over six" rule, with a cover line.
+  - **LH tests:** the first positive test of the cycle, plus one day.
+  - **Cervical mucus:** the peak day.
+  - **How they're combined:** when the signals agree they're merged into one date. A temperature rise confirms it.
+  - **What it changes:**
+    - It moves the fertile window and the next-period forecast, and tightens the range.
+    - It learns your luteal phase from past cycles.
+    - The temperature chart marks periods, positive LH tests, fertile mucus and ovulation.
+- **Oura**:
+  - Direct sign-in: sleep, resting heart rate, HRV, temperature deviation, SpO₂ and activity.
+  - Connections offers it everywhere except Apple Health.
+- **Garmin**:
+  - Automatic through Apple Health or Health Connect.
+  - Full history by importing Garmin's data-export zip: steps, distance, calories, resting and min/max heart rate, sleep and HRV.
+- **Health tab:** shows HRV and temperature-vs-baseline cards when a wearable provides them.
+- **Partner sharing, item by item**:
+  - Choose whether to share period dates, fertile window, cycle day and phase, pregnancy week, today's mood, today's symptoms, and support tips.
+  - Notes and sex logs are never shared.
+  - Your partner sees phase-based "ways to help" tips, and a note about anything you've chosen not to share.
+- **QR code for partner sharing**:
+  - Show the invite as a QR code.
+  - Your partner scans it with the phone camera (it opens Avelune straight to joining) or with the scanner built into Avelune.
+  - Pasting the code still works too.

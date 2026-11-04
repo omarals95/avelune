@@ -27,7 +27,7 @@ export async function ensurePermission(): Promise<boolean> {
 export async function scheduleReminders(p: Prediction, settings: Settings, prefs: ReminderPrefs): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
   const dated = planReminders(p, settings, prefs, new Date());
-  const daily = dailyReminders(prefs);
+  const daily = dailyReminders(prefs, settings.medications ?? []);
   if ((!dated.length && !daily.length) || !(await Notifications.getPermissionsAsync()).granted) return;
   for (const r of dated) {
     await Notifications.scheduleNotificationAsync({

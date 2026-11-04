@@ -1,6 +1,6 @@
 import type { HealthDay, HealthSource } from '@cyclo/core';
 
-export type ProviderId = 'appleHealth' | 'healthConnect' | 'fitbit';
+export type ProviderId = 'appleHealth' | 'healthConnect' | 'fitbit' | 'oura';
 
 export interface Provider {
   id: ProviderId & HealthSource;

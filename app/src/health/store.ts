@@ -1,8 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { dropSource, mergeHealthDays, sampleHealth, today, type DateStr, type DayLog, type HealthDay } from '@cyclo/core';
+import { dropSource, mergeHealthDays, sampleHealth, today, type DateStr, type DayLog, type HealthDay, type HealthSource } from '@cyclo/core';
 import { makeFitbit } from './fitbit';
+import { makeOura } from './oura';
 import { healthConnect } from './healthconnect';
 import { healthKit } from './healthkit';
 import type { Provider, ProviderId } from './types';
@@ -19,6 +20,8 @@ interface HealthState {
   connections: Partial<Record<ProviderId, Connection>>;
   sample: boolean;
   fitbitClientId: string;
+  ouraClientId: string;
+  setOuraClientId: (id: string) => void;
   widgets: WidgetId[];
   syncing: boolean;
   connect: (id: ProviderId) => Promise<{ ok: boolean; reason?: string; days?: number }>;
@@ -27,19 +30,21 @@ interface HealthState {
   setSample: (on: boolean) => void;
   setFitbitClientId: (id: string) => void;
   setWidgets: (w: WidgetId[]) => void;
-  /** Health values from an imported file (steps, resting HR) count as manual entries. */
-  importManual: (days: HealthDay[]) => void;
+  /** Health values from an imported file (steps, resting HR) count as manual entries unless a source is given. */
+  importManual: (days: HealthDay[], source?: HealthSource) => void;
 }
 
 const fitbit = makeFitbit(() => useHealth.getState().fitbitClientId.trim());
-export const PROVIDERS: Record<ProviderId, Provider> = { appleHealth: healthKit, healthConnect, fitbit };
+const oura = makeOura(() => useHealth.getState().ouraClientId.trim());
+export const PROVIDERS: Record<ProviderId, Provider> = { appleHealth: healthKit, healthConnect, fitbit, oura };
 
 const daysAgo = (n: number) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - n); return d; };
 
 export const useHealth = create<HealthState>()(
   persist(
     (set, get) => ({
-      days: {}, connections: {}, sample: false, fitbitClientId: '', widgets: DEFAULT_WIDGETS, syncing: false,
+      days: {}, connections: {}, sample: false, fitbitClientId: '', ouraClientId: '', widgets: DEFAULT_WIDGETS, syncing: false,
+      setOuraClientId: (ouraClientId) => set({ ouraClientId }),
 
       connect: async (id) => {
         const p = PROVIDERS[id];
@@ -84,12 +89,12 @@ export const useHealth = create<HealthState>()(
       setSample: (on) => set((s) => ({ sample: on, days: on ? mergeHealthDays(dropSource(s.days, 'sample'), sampleHealth(today()), 'sample') : dropSource(s.days, 'sample') })),
       setFitbitClientId: (fitbitClientId) => set({ fitbitClientId }),
       setWidgets: (widgets) => set({ widgets }),
-      importManual: (rows) => set((s) => ({ days: mergeHealthDays(s.days, rows, 'manual') })),
+      importManual: (rows, source = 'manual') => set((s) => ({ days: mergeHealthDays(s.days, rows, source) })),
     }),
     {
       name: 'avelune-health-v1',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (s) => ({ days: s.days, connections: s.connections, sample: s.sample, fitbitClientId: s.fitbitClientId, widgets: s.widgets }),
+      partialize: (s) => ({ days: s.days, connections: s.connections, sample: s.sample, fitbitClientId: s.fitbitClientId, ouraClientId: s.ouraClientId, widgets: s.widgets }),
     },
   ),
 );
@@ -104,7 +109,8 @@ export function withManual(days: Record<DateStr, HealthDay>, logs: DayLog[]): Re
   return mergeHealthDays(days, manual, 'manual');
 }
 
-export const PROVIDER_INFO: Record<ProviderId, { name: string; detail: string; icon: 'apple' | 'android' | 'watch-variant' }> = {
+export const PROVIDER_INFO: Record<ProviderId, { name: string; detail: string; icon: 'apple' | 'android' | 'watch-variant' | 'ring' }> = {
+  oura: { name: 'Oura ring', detail: 'Sign in to Oura directly: sleep, resting heart rate, HRV, temperature deviation, SpO₂ and activity.', icon: 'ring' },
   appleHealth: { name: 'Apple Health', detail: 'iPhone and Apple Watch: steps, sleep, heart, weight, temperature, water.', icon: 'apple' },
   healthConnect: { name: 'Health Connect', detail: 'Android: also brings in Samsung Health, Fitbit, Google and most wearables that sync to Health Connect.', icon: 'android' },
   fitbit: { name: 'Fitbit account', detail: 'Sign in to Fitbit directly (any platform, including web).', icon: 'watch-variant' },

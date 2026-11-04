@@ -1,4 +1,5 @@
 import { addDays, diffDays } from './dates';
+import { describeSources, detectOvulation, type DetectedOvulation } from './ovulation';
 import type { Condition, Contraception, DateStr, DayLog, Settings } from './types';
 
 export interface Period {
@@ -164,6 +165,12 @@ export interface Prediction {
   lateDismissed: boolean;
   /** The fertile window is hidden because the contraception in use normally prevents ovulation. */
   fertileHidden: boolean;
+  /** Ovulation detected from body signals in the current cycle (temperature, LH test, mucus). */
+  ovulation: DetectedOvulation | null;
+  /** Luteal length used: learned from your own detected ovulations when possible. */
+  lutealLength: number;
+  /** How many past cycles taught the luteal length (0 = from settings). */
+  lutealLearned: number;
 }
 
 const has = (s: Settings, c: Condition) => !!s.profile?.conditions?.includes(c);
@@ -209,9 +216,11 @@ export function predict(logs: DayLog[], settings: Settings, now: DateStr): Predi
   const stats = computeStats(periods, settings);
   const last = periods.length ? periods[periods.length - 1] : null;
   const ctx = contextEffects(settings, now);
+  const logMap = new Map(logs.map((l) => [l.date, l]));
+  const luteal = learnLuteal(logMap, periods, stats, settings);
   const base = {
     stats, nextPeriodStart: null, nextPeriodRange: null, ovulationDate: null, fertileWindow: null, daysUntilPeriod: null,
-    lateBy: null, lateDismissed: false, fertileHidden: ctx.fertileHidden,
+    lateBy: null, lateDismissed: false, fertileHidden: ctx.fertileHidden, ovulation: null, lutealLength: luteal.length, lutealLearned: luteal.n,
   } as const;
   const cycleDay = last ? diffDays(last.start, now) + 1 : null;
   const inPeriod = !!last && diffDays(last.start, now) >= 0 && diffDays(last.end, now) <= 1;
@@ -247,18 +256,33 @@ export function predict(logs: DayLog[], settings: Settings, now: DateStr): Predi
     anchor = next;
     next = addDays(next, cycleLen);
   }
-  const lutealLen = clamp(settings.lutealLength, 10, 16);
-  const ovulation = addDays(next, -lutealLen);
+  const lutealLen = luteal.length;
+  // Body signals in the current cycle override the calendar estimate.
+  const detected = ctx.fertileHidden ? null : detectOvulation(logMap, last.start, now);
+  let ovulation = addDays(next, -lutealLen);
+  if (detected) {
+    ovulation = detected.date;
+    next = addDays(detected.date, lutealLen);
+  }
   const fertile: [DateStr, DateStr] = [addDays(ovulation, -5), addDays(ovulation, 1)];
 
   const n = stats.cycleLengths.length;
   let confidence: Confidence = n >= 6 && stats.variability <= 2 ? 'high' : n >= 3 && stats.variability <= 5 ? 'medium' : 'low';
+  if (detected?.confirmed) confidence = luteal.n >= 2 ? 'high' : RANK[confidence] < RANK.medium ? 'medium' : confidence;
   if (RANK[ctx.cap] < RANK[confidence]) confidence = ctx.cap;
   let spread = Math.max(1, Math.round(stats.variability)) + ctx.widen;
   if (n < 3) spread = Math.max(spread, 3);
+  // After a confirmed ovulation the luteal phase is very consistent, so the window tightens.
+  if (detected?.confirmed) spread = Math.max(1, Math.min(spread, luteal.spread + Math.ceil(ctx.widen / 2)));
   const range: [DateStr, DateStr] = [addDays(next, -spread), addDays(next, spread)];
 
   const notes: string[] = [];
+  if (detected) {
+    notes.push(detected.confirmed
+      ? `Ovulation confirmed by your ${describeSources(detected.sources)} around ${short(detected.date)}, so your period is expected about ${lutealLen} days later.`
+      : `Your ${describeSources(detected.sources)} suggests ovulation around ${short(detected.date)}. A temperature rise over the next days would confirm it.`);
+  }
+  if (luteal.n >= 2) notes.push(`Your luteal phase is about ${lutealLen} days, learned from ${luteal.n} cycles with detected ovulation.`);
   if (n === 0) notes.push(`Based on your settings (${cycleLen}-day cycle) until you have logged two or more periods.`);
   else notes.push(`Based on your last ${Math.min(n, 6)} cycle${n === 1 ? '' : 's'} (typical length ${cycleLen} days).`);
   if (stats.variability > 2) notes.push(`Your cycles vary by about ${Math.round(stats.variability)} days, so the window is ±${spread} days.`);
@@ -275,6 +299,7 @@ export function predict(logs: DayLog[], settings: Settings, now: DateStr): Predi
   const day = cycleDay ?? 0;
   let phase: Phase;
   if (day >= 1 && inPeriod) phase = 'menstrual';
+  else if (detected && !ctx.fertileHidden && diffDays(addDays(detected.date, 1), now) > 0) phase = 'luteal';
   else if (ctx.fertileHidden || diffDays(fertile[0], now) < 0) phase = 'follicular';
   else if (diffDays(fertile[1], now) <= 0) phase = 'ovulation';
   else phase = 'luteal';
@@ -294,7 +319,31 @@ export function predict(logs: DayLog[], settings: Settings, now: DateStr): Predi
     lateBy,
     lateDismissed,
     fertileHidden: ctx.fertileHidden,
+    ovulation: detected,
+    lutealLength: lutealLen,
+    lutealLearned: luteal.n,
   };
+}
+
+/**
+ * Learn the luteal phase (ovulation → next period) from past cycles where body signals confirmed ovulation
+ * (temperature shift, or a positive LH test). Falls back to the setting.
+ */
+function learnLuteal(logs: Map<DateStr, DayLog>, periods: Period[], stats: CycleStats, settings: Settings) {
+  const fallback = clamp(settings.lutealLength, 10, 16);
+  const counted = new Set(stats.cycles.filter((c) => !c.excluded).map((c) => c.start));
+  const lens: number[] = [];
+  for (let i = 1; i < periods.length; i++) {
+    const start = periods[i - 1].start;
+    if (!counted.has(start)) continue;
+    const ov = detectOvulation(logs, start, addDays(periods[i].start, -1));
+    if (!ov || (!ov.confirmed && !ov.lhDate)) continue;
+    const l = diffDays(ov.date, periods[i].start);
+    if (l >= 8 && l <= 18) lens.push(l);
+  }
+  const recent = lens.slice(-6);
+  if (recent.length < 2) return { length: fallback, n: recent.length, spread: 2 };
+  return { length: Math.round(median(recent)), n: recent.length, spread: Math.max(1, Math.round(stdev(recent))) };
 }
 
 export type DayKind = 'period' | 'predicted-period' | 'fertile' | 'ovulation' | 'none';
@@ -319,14 +368,14 @@ function classifyRaw(date: DateStr, logs: Map<DateStr, DayLog>, p: Prediction, s
   if (diffDays(p.lastPeriodStart, date) <= 0) return 'none';
   const cycleLen = p.stats.avgCycle;
   const periodLen = p.stats.avgPeriod;
-  const luteal = clamp(settings.lutealLength, 10, 16);
+  const luteal = p.lutealLength;
   // Project six cycles ahead so scrolling the calendar forward stays useful.
   for (let i = 0; i < 6; i++) {
     const start = addDays(p.nextPeriodStart, i * cycleLen);
     const off = diffDays(start, date);
     if (off >= 0 && off < periodLen) return 'predicted-period';
     if (p.fertileHidden) continue;
-    const ov = addDays(start, -luteal);
+    const ov = i === 0 && p.ovulationDate ? p.ovulationDate : addDays(start, -luteal);
     if (date === ov) return 'ovulation';
     if (diffDays(addDays(ov, -5), date) >= 0 && diffDays(date, addDays(ov, 1)) >= 0) return 'fertile';
   }

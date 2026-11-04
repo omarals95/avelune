@@ -2,7 +2,7 @@ import type { ThemePref } from './theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { type BackupPayload,
+import { DEFAULT_SHARE_ITEMS, type ShareItems, type BackupPayload,
   DEFAULT_REMINDERS, DEFAULT_SETTINGS, MIN_PASSPHRASE, SETTINGS_ID, buildSnapshot, createKeyInfo, dayId, decodeInvite, decryptRecord,
   encryptRecord, mergeLogs, newShareKey, normalizeReminders, openSnapshot, sealSnapshot, shouldApply, today as todayFn, unlockKeys,
   type DateStr, type DayLog, type Invite, type KeyInfo, type PartnerSnapshot, type ReminderPrefs, type Settings, type SyncRecord, type SyncResponse,
@@ -29,6 +29,17 @@ export interface BackupState {
   verifiedAt: number | null;
   keep: number;
 }
+export interface SecurityPrefs {
+  /** PIN lock on launch/resume (PIN hash lives in secure storage). */
+  lock: boolean;
+  biometrics: boolean;
+  /** Seconds in the background before locking again. */
+  lockAfter: number;
+  /** OS secure flag: no screenshots/recordings, blank app-switcher thumbnail on Android. */
+  blockScreenshots: boolean;
+}
+export const DEFAULT_SECURITY: SecurityPrefs = { lock: false, biometrics: true, lockAfter: 0, blockScreenshots: false };
+
 export const DEFAULT_BACKUP: BackupState = { enabled: false, dirUri: null, dirLabel: null, lastAt: null, lastFile: null, lastDays: null, lastError: null, verifiedAt: null, keep: 10 };
 
 interface State {
@@ -58,11 +69,12 @@ interface State {
   /** Toggle period days in bulk (calendar "Edit period dates"). */
   setPeriodDays: (on: DateStr[], off: DateStr[]) => void;
   /** Owner side of partner sharing. */
-  share: { id: string; key: string; includeLog: boolean; publishedAt: number | null; error: string | null } | null;
+  share: { id: string; key: string; includeLog: boolean; items?: ShareItems; publishedAt: number | null; error: string | null } | null;
   startShare: () => Promise<void>;
   stopShare: () => Promise<void>;
   publishShare: () => Promise<void>;
   setShareIncludeLog: (v: boolean) => void;
+  setShareItems: (p: Partial<ShareItems>) => void;
   /** Partner side: this device only views someone else's shared cycle. */
   partner: { invite: Invite; snapshot: PartnerSnapshot | null; fetchedAt: number | null; error: string | null } | null;
   joinAsPartner: (code: string) => Promise<void>;
@@ -77,6 +89,8 @@ interface State {
   /** Encrypted local backups (see backup.ts). */
   backup: BackupState;
   setBackup: (b: Partial<BackupState>) => void;
+  security: SecurityPrefs;
+  setSecurity: (p: Partial<SecurityPrefs>) => void;
   /** Apply a decrypted backup: merge (newer edits win) or replace everything. Returns records written. */
   restoreBackup: (payload: BackupPayload, mode: 'merge' | 'replace') => number;
   /** Device preferences included in backups. */
@@ -181,7 +195,7 @@ export const useStore = create<State>()(
         publishShare: async () => {
           const { share, server, records, name } = get();
           if (!share || !server) return;
-          const snap = buildSnapshot(selectLogs(records), selectSettings(records), todayFn(), { name, includeLog: share.includeLog });
+          const snap = buildSnapshot(selectLogs(records), selectSettings(records), todayFn(), { name, items: { ...DEFAULT_SHARE_ITEMS, ...(share.includeLog ? { moods: true, symptoms: true } : {}), ...share.items } });
           try {
             await api(server.url, `/api/shares/${share.id}`, { method: 'PUT', token: server.token, body: { blob: sealSnapshot(share, snap) } });
             set((s) => ({ share: s.share && { ...s.share, publishedAt: Date.now(), error: null } }));
@@ -190,6 +204,10 @@ export const useStore = create<State>()(
           }
         },
 
+        setShareItems: (p) => {
+          set((s) => ({ share: s.share && { ...s.share, items: { ...DEFAULT_SHARE_ITEMS, ...(s.share.includeLog ? { moods: true, symptoms: true } : {}), ...s.share.items, ...p } } }));
+          void get().publishShare();
+        },
         setShareIncludeLog: (v) => {
           set((s) => ({ share: s.share && { ...s.share, includeLog: v } }));
           void get().publishShare();
@@ -237,6 +255,8 @@ export const useStore = create<State>()(
           });
         },
 
+        security: DEFAULT_SECURITY,
+        setSecurity: (p) => set((s) => ({ security: { ...s.security, ...p } })),
         backup: DEFAULT_BACKUP,
         setBackup: (b) => set((s) => ({ backup: { ...s.backup, ...b } })),
         backupPrefs: () => {
@@ -385,12 +405,12 @@ export const useStore = create<State>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({
         records: s.records, dirty: s.dirty, onboarded: s.onboarded, unit: s.unit, server: s.server, reminders: s.reminders,
-        name: s.name, hideSex: s.hideSex, theme: s.theme, partnerName: s.partnerName, seenForecast: s.seenForecast, weightUnit: s.weightUnit, share: s.share, partner: s.partner, backup: s.backup,
+        name: s.name, hideSex: s.hideSex, theme: s.theme, partnerName: s.partnerName, seenForecast: s.seenForecast, weightUnit: s.weightUnit, share: s.share, partner: s.partner, backup: s.backup, security: s.security,
       }),
       // Older installs stored a flatter reminders shape; fill in anything missing.
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<State>;
-        return { ...current, ...p, reminders: normalizeReminders(p.reminders), backup: { ...DEFAULT_BACKUP, ...(p.backup ?? {}) } };
+        return { ...current, ...p, reminders: normalizeReminders(p.reminders), backup: { ...DEFAULT_BACKUP, ...(p.backup ?? {}) }, security: { ...DEFAULT_SECURITY, ...(p.security ?? {}) } };
       },
     },
   ),

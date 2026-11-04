@@ -11,3 +11,6 @@ export * from './csv';
 export * from './xlsx';
 export * from './backup';
 export * from './importers';
+export * from './ovulation';
+export * from './contraception';
+export * from './report';
