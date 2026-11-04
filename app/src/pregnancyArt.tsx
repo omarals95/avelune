@@ -20,17 +20,17 @@ export const PREGNANCY_ART: Record<PregnancyStage, ImageSourcePropType | null> =
   6: require('../assets/pregnancy/emb-06.webp'),
   7: require('../assets/pregnancy/emb-07.webp'),
   8: require('../assets/pregnancy/emb-08.webp'),
-  9: null,
+  9: require('../assets/pregnancy/emb-09.webp'),
 };
 
 /** Screen-reader descriptions (no medical measurements). */
 const ALT: Record<PregnancyStage, string> = {
-  1: 'Month 1 illustration: a tiny early embryo in a soft sac, cradled inside a pink flower and joined to the placenta.',
-  2: 'Month 2 illustration: a small embryo with a large head, curled inside a flower and joined to the placenta.',
-  3: 'Month 3 illustration: a small baby with arms and legs, curled inside a flower and joined to the placenta.',
-  4: 'Month 4 illustration: a growing baby curled inside a flower, joined to the placenta.',
-  5: 'Month 5 illustration: a growing baby with hands near the face, curled inside a flower.',
-  6: 'Month 6 illustration: a larger baby curled inside a flower, joined to the placenta.',
+  1: 'Month 1 illustration: a tiny early form in a small sac, cradled inside a pink flower and joined to the placenta.',
+  2: 'Month 2 illustration: a small curled embryo in its sac, inside a pink flower and joined to the placenta.',
+  3: 'Month 3 illustration: a small baby with a large head, arms and legs, curled inside the flower.',
+  4: 'Month 4 illustration: a growing baby with hands near the face, curled inside the flower.',
+  5: 'Month 5 illustration: a growing baby curled inside the flower, joined to the placenta.',
+  6: 'Month 6 illustration: a larger baby with hands near the face, curled inside the flower.',
   7: 'Month 7 illustration: a baby filling more of the sac inside the flower.',
   8: 'Month 8 illustration: a well-rounded baby curled inside the flower.',
   9: 'Month 9 illustration: a fully grown baby curled up, ready to be born, inside the flower.',

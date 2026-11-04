@@ -505,7 +505,7 @@ Cycle reminders pause in pregnancy mode. On the web, reminders are set up from t
   - when the app returns to the foreground;
   - when the pregnancy date is edited.
 - **Stage changes:** the old image fades out while the new one fades in (about 0.5 s). Reduced-motion settings skip the animation.
-- **Missing artwork or dating:** a missing image falls back to the flower artwork. A missing or invalid pregnancy date shows a "Set pregnancy dates" prompt.
+- **Missing artwork or dating:** all nine images are present (from the named originals in Google Drive). If an image were ever missing it would fall back to the flower artwork. A missing or invalid pregnancy date shows a "Set pregnancy dates" prompt.
 - **Also used in:** the week-by-week sheet and the partner's view of a pregnancy.
 - **Assets:** originals are in `design/pregnancy/emb-0x.png`; the app bundles optimised copies from `app/assets/pregnancy/emb-0x.webp`. The single stage→image map is `PREGNANCY_ART` in `app/src/pregnancyArt.tsx`.
 
