@@ -15,6 +15,7 @@ import { selectLogs, selectSettings, useStore } from '../store';
 import { bloomFor, colors, shadow, themed } from '../theme';
 import { Btn, Card, Field, Muted, Row, Sheet } from '../ui';
 import { CalendarView } from './Calendar';
+import { PetalBackdrop } from '../petals';
 import { QR } from '../qr';
 import { PregnancyCaption, PregnancyIllustration } from '../pregnancyArt';
 import { QRScanner, scanSupported } from '../scan';
@@ -89,6 +90,7 @@ export function PartnerTab() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <PetalBackdrop />
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 140, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
         <TabHeader title="Partner" onAvatar={() => nav.openSettings()} />
         <View style={{ paddingHorizontal: 16 }}>
@@ -238,6 +240,7 @@ export function PartnerView({ snapshot, onClose, preview, onRefresh, fetchedAt, 
   const who = s.name || 'Your partner';
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      {preview ? null : <PetalBackdrop />}
       <ScrollView contentContainerStyle={{ paddingTop: (preview ? 0 : insets.top) + 8, paddingBottom: 40, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
         <View style={pt.head}>
           {onClose ? <PressScale accessibilityLabel="Close" onPress={onClose} style={{ padding: 8 }}><Icon name="close" size={28} color={colors.heading} /></PressScale> : <View style={{ width: 44 }} />}

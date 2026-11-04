@@ -526,10 +526,9 @@ Cycle reminders pause in pregnancy mode. On the web, reminders are set up from t
 
 ## 14. Petal artwork
 
-- **Corner petals:** Today, Health and Insights show petals in the screen corners behind the content. Light theme uses "Light Corner Petals" (top-left and bottom-right); dark theme uses "Dark Corner Petals" (top-right and bottom-left).
+- **Corner petals:** Today, Health, Insights and Partner (and the partner's own view) show petals in the screen corners behind the content. Light theme uses "Light Corner Petals" (top-left and bottom-right); dark theme uses "Dark Corner Petals" (top-right and bottom-left).
   - They stay in place while you scroll and are skipped by screen readers.
   - Each image is split into a top and a bottom piece, pinned to its corners, so it fits any phone, tablet or desktop without cropping.
   - On Health, the tab row is see-through at the top and turns solid once it sticks.
-  - The Partner page has no corner petals.
 - **Card petals:** the large "Daily insight" card on Today uses "Light Card Petals" or "Dark Card Petals", matching the theme, along its right edge.
 - **Files:** originals are in `design/petals/`; the app uses optimised copies in `app/assets/petals/`. All of it is in `app/src/petals.tsx`.
