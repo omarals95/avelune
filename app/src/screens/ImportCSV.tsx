@@ -150,8 +150,14 @@ export function ImportCSV() {
     if (/\.avelune$/.test(lower)) return setErr('This is an Avelune backup. Restore it from Settings › Backups.');
     if (/\.(xls|numbers|ods)$/.test(lower)) return setErr('Save the spreadsheet as .xlsx or .csv first, then choose it again.');
     try {
+      // Spreadsheets first: an .xlsx is a zip of XML files, and Android reports its type as
+      // "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", which must not be mistaken for an export archive.
+      if (isXlsx(a)) {
+        if ((a.size ?? 0) > 20 * 1024 * 1024) return setErr('That file is larger than 20 MB.');
+        const r = await readPicked(a); setRows(r.rows); setSheet(r.sheet); return;
+      }
       // Large exports (Apple Health) are streamed in chunks with a progress bar.
-      if (/\.(zip|xml)$/.test(lower) || /zip|xml/.test(a.mimeType ?? '')) {
+      if (/\.(zip|xml)$/.test(lower) || /zip|^(application|text)\/xml$/.test(a.mimeType ?? '')) {
         setProgress(0);
         const r = await chunkReader(a);
         const isZip = /\.zip$/.test(lower) || /zip/.test(a.mimeType ?? '');
@@ -159,7 +165,6 @@ export function ImportCSV() {
         return;
       }
       if ((a.size ?? 0) > 20 * 1024 * 1024) return setErr('That file is larger than 20 MB.');
-      if (isXlsx(a)) { const r = await readPicked(a); setRows(r.rows); setSheet(r.sheet); return; }
       const web = Platform.OS === 'web' ? (a as unknown as { file?: File }).file : undefined;
       const text = Platform.OS === 'web' ? await (web ? web.text() : (await fetch(a.uri)).text()) : await FileSystem.readAsStringAsync(a.uri);
       if (/\.(json|cluedata|txt)$/.test(lower) || /^\s*[[{]/.test(text)) setResult(importText(a.name, text, opts));

@@ -211,8 +211,8 @@ A coloured header with a gently floating illustration, the article text fading i
   - **Unlock** with your passphrase on a new device.
 - **Your data**:
   - **Import from file**: Excel or CSV, with a downloadable template (§6).
-  - **Export as CSV**.
-  - **Export all data (JSON)**.
+  - **Export to Excel (.xlsx)**: saves a real Excel file (Android: into a folder you choose, such as Downloads; iPhone: the share sheet, including Save to Files; web: a download).
+  - **Export all data (JSON)**: saved as a .json file the same way.
   - **Summary for my doctor**: a text summary with average cycle and period and the last 12 periods.
   - **Delete data on this device**.
   - **Delete my account and server data**, shown when connected. This also removes partner shares.
@@ -303,7 +303,7 @@ Cycle reminders pause in pregnancy mode. On the web, reminders are set up from t
   - It accepts one row per day *or* one row per period (start/end).
   - Labels are matched to Avelune's categories, including synonyms such as "back pain" → Backache.
   - Impossible dates (for example 31 February) are rejected.
-- **Export as CSV** writes one row per day with readable labels.
+- **Export to Excel** writes one row per day with readable labels, in the same columns as the import template (Date, Flow, Symptoms, Mood, Other, BBT, Weight, Water, Sleep, Distance, Steps, Resting HR, Notes). It has a frozen header row, real Excel dates and an "About" sheet. The file can be imported again unchanged.
 - **Export as JSON** writes a full backup of every record.
 
 ---

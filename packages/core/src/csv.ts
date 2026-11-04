@@ -285,3 +285,26 @@ export function exportCSV(logs: DayLog[], label: (id: string) => string): string
   ].map(esc).join(','));
   return [head.join(','), ...lines].join('\n') + '\n';
 }
+
+/** Columns of the Avelune spreadsheet (same as the import template, so an export can be imported again). */
+export const SHEET_COLUMNS = ['Date', 'Flow', 'Symptoms', 'Mood', 'Other', 'BBT (°C)', 'Weight (kg)', 'Water (ml)', 'Sleep (hours)', 'Distance (km)', 'Steps', 'Resting HR', 'Notes'] as const;
+
+/** One row per day for the spreadsheet export: day logs plus steps and resting heart rate from health data. */
+export function exportRows(logs: DayLog[], label: (id: string) => string, health: { date: DateStr; steps?: number; restingHr?: number }[] = []):
+  (string | number | { date: string } | null)[][] {
+  const flowName = ['', 'Spotting', 'Light', 'Medium', 'Heavy'];
+  const byDate = new Map<DateStr, { log?: DayLog; steps?: number; hr?: number }>();
+  for (const l of logs) byDate.set(l.date, { ...byDate.get(l.date), log: l });
+  for (const h of health) if (h.steps != null || h.restingHr != null) byDate.set(h.date, { ...byDate.get(h.date), steps: h.steps, hr: h.restingHr });
+  const rows = [...byDate.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([date, { log: l, steps, hr }]) => [
+    { date },
+    l && l.flow ? flowName[l.flow] : null,
+    l?.symptoms.length ? l.symptoms.map(label).join(', ') : null,
+    l?.moods.length ? l.moods.map(label).join(', ') : null,
+    l?.tags.length ? l.tags.map(label).join(', ') : null,
+    l?.bbt ?? null, l?.weight ?? null, l?.water ?? null, l?.sleep ?? null, l?.distance ?? null,
+    steps != null ? Math.round(steps) : null, hr != null ? Math.round(hr) : null,
+    l?.notes || null,
+  ]);
+  return [[...SHEET_COLUMNS], ...rows];
+}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Alert, Platform, Share, View } from 'react-native';
+import { Alert, Platform, View } from 'react-native';
 import { Text } from '../text';
-import { addDays, derivePeriods, exportCSV, lmpFromDueDate, predict, pregnancyStatus, today as todayFn, type Condition, type Contraception, type CycleProfile, type ReminderPrefs, type TimeOfDay } from '@avelune/core';
+import { addDays, derivePeriods, dropSource, exportRows, lmpFromDueDate, predict, pregnancyStatus, today as todayFn, writeXlsx, type Condition, type Contraception, type CycleProfile, type ReminderPrefs, type TimeOfDay } from '@avelune/core';
 import { FadeIn, PressScale } from '../anim';
 import { fmtDay } from '../components';
 import { Icon, type IconName } from '../icons';
@@ -12,20 +12,13 @@ import { Connections } from './Connections';
 import { ImportCSV } from './ImportCSV';
 import { labelOf } from '../catalog';
 import { selectLogs, selectSettings, useStore } from '../store';
+import { saveFile, XLSX_MIME } from '../files';
+import { useHealth } from '../health/store';
 import { colors, type ThemePref } from '../theme';
 import { Btn, Card, Chip, Field, Muted, Page, Row, Section, Stepper, TopBar } from '../ui';
 import { BackupSettings } from './Backup';
 import { AboutPage, DonateBox } from './About';
 import { DoctorReport, MedsSettings, SecuritySettings } from './SettingsExtra';
-
-async function shareText(filename: string, text: string, mime: string) {
-  if (Platform.OS === 'web') {
-    const url = URL.createObjectURL(new Blob([text], { type: mime }));
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
-  } else await Share.share({ message: text, title: filename });
-}
 
 const confirm = (title: string, msg: string, ok: () => void) => {
   if (Platform.OS === 'web') { if (window.confirm(`${title}\n\n${msg}`)) ok(); }
@@ -458,6 +451,27 @@ function Sync() {
 function Data({ go }: { go: (p: SettingsPage) => void }) {
   const st = useStore();
   const [msg, setMsg] = useState('');
+  const [note, setNote] = useState('');
+  const run = async (f: () => Promise<string>) => {
+    setNote('');
+    try { setNote(await f()); } catch (e) { setNote(`Could not export (${(e as Error).message}).`); }
+  };
+  /** Real .xlsx with the template's columns ("Your data") plus an About sheet; re-imports as is. */
+  const exportExcel = () => {
+    const health = Object.values(dropSource(useHealth.getState().days, 'sample'));
+    const rows = exportRows(selectLogs(st.records), labelOf, health);
+    const about = [
+      ['Avelune export'], [''],
+      ['Exported', `${todayFn()}`], ['Days', `${rows.length - 1}`],
+      ['Units', 'Temperature in °C, weight in kg, water in ml, sleep in hours, distance in km'],
+      ['Import it again', 'Settings → Your data → Import from file. The "Your data" sheet is read; this sheet is ignored.'],
+    ];
+    const bytes = writeXlsx([
+      { name: 'Your data', rows, widths: [12, 10, 30, 22, 26, 9, 11, 11, 12, 13, 9, 11, 40] },
+      { name: 'About', rows: about, widths: [18, 90], header: false },
+    ]);
+    return saveFile(`Avelune export ${todayFn()}.xlsx`, XLSX_MIME, bytes);
+  };
   const summary = () => {
     const logs = selectLogs(st.records);
     const settings = selectSettings(st.records);
@@ -473,8 +487,8 @@ function Data({ go }: { go: (p: SettingsPage) => void }) {
     <Page>
       <Card>
         <Row icon="file-upload-outline" title="Import from file" subtitle="Excel (.xlsx) or CSV · example template included" onPress={() => go('import')} />
-        <Row icon="file-delimited-outline" title="Export as CSV" onPress={() => void shareText('avelune-export.csv', exportCSV(selectLogs(st.records), labelOf), 'text/csv')} />
-        <Row icon="code-json" title="Export all data (JSON)" onPress={() => void shareText('avelune-export.json', JSON.stringify({ version: 2, records: Object.values(st.records) }, null, 2), 'application/json')} />
+        <Row icon="file-xls" title="Export to Excel (.xlsx)" subtitle="Every logged day, in the same columns as the import template" onPress={() => void run(exportExcel)} />
+        <Row icon="code-json" title="Export all data (JSON)" subtitle="Full copy for developers or other apps" onPress={() => void run(() => saveFile(`Avelune data ${todayFn()}.json`, 'application/json', JSON.stringify({ version: 2, records: Object.values(st.records) }, null, 2)))} />
         <Row icon="file-pdf" title="Report for my doctor (PDF)" subtitle="Cycles, symptoms, medication, temperatures" onPress={() => go('report')} />
       </Card>
       <Card>
@@ -482,6 +496,7 @@ function Data({ go }: { go: (p: SettingsPage) => void }) {
         {st.server && <Row icon="account-remove-outline" danger title="Delete my account and server data" onPress={() => confirm('Delete account?', 'This permanently deletes your server account, every synced record and any partner share.', () => void st.wipe(true).catch((e) => setMsg(String(e.message))))} />}
         {msg ? <Muted style={{ color: colors.danger }}>{msg}</Muted> : null}
       </Card>
+      {note ? <Muted style={{ textAlign: 'center' }}>{note}</Muted> : null}
     </Page>
   );
 }

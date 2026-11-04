@@ -44,10 +44,10 @@ Headers are matched without regard to case, spaces, `_ - ( ) . ° /`. The first 
 
 ## 3. Avelune exports
 
-- **CSV** (Settings › Your data › Export as CSV): one row per day.
-  - Columns: `date, flow, symptoms, moods, tags, bbt_c, weight_kg, water_ml, sleep_hours, distance_km, notes`.
-  - Labels are human-readable.
-  - The file can be imported again.
+- **Excel** (Settings › Your data › Export to Excel): a real `.xlsx` file, one row per day.
+  - Sheet "Your data" uses the import template's columns: `Date, Flow, Symptoms, Mood, Other, BBT (°C), Weight (kg), Water (ml), Sleep (hours), Distance (km), Steps, Resting HR, Notes`.
+  - Dates are real Excel dates; labels are human-readable; an "About" sheet notes the export date and units.
+  - The file can be imported again unchanged.
 - **JSON** (Export all data): `{ "version": 2, "records": SyncRecord[] }`.
   - Each record is `{ id: "day:YYYY-MM-DD" | "settings", data, updatedAt, deleted }`.
   - A day record's `data` is a `DayLog`:
