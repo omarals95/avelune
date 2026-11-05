@@ -68,7 +68,9 @@ export function statusFor(i: StatusInput): Status {
   }
   const d = i.daysUntilPeriod;
   // Today's flower follows today's own phase (the engine keeps 'menstrual' for a grace day after a logged period).
-  const ph = i.dayPhase !== undefined ? i.dayPhase : i.phase;
+  // The 'ovulation' phase spans the whole fertile window; only the ovulation day itself gets the ovulation mood.
+  const phase = i.dayPhase !== undefined ? i.dayPhase : i.phase;
+  const ph: Mood | null = phase === 'ovulation' ? (i.ovulationDate === i.date ? 'ovulation' : 'fertile') : phase;
   if (i.lateBy && !i.lateDismissed) return { mood: 'late', kicker: 'Period not started', big: cd, sub: `${plural(i.lateBy, 'day')} past your likely window` };
   if (d != null && d < 0 && i.lateDismissed) return { mood: ph ?? 'none', kicker: 'Cycle', big: cd, sub: 'No period logged yet' };
   if (d != null && d < 0) return { mood: 'menstrual', kicker: 'Period', big: 'Due any day', sub: 'Within your likely window' };
@@ -81,6 +83,8 @@ export function statusFor(i: StatusInput): Status {
       sub: 'Higher chance of getting pregnant',
     };
   }
+  // Fertile window hidden in settings: the ovulation day is still marked.
+  if (i.kind === 'ovulation') return { mood: 'ovulation', kicker: 'Ovulation', big: 'Ovulation today', sub: 'Estimated ovulation day' };
   if (d == null) return { mood: ph ?? 'none', kicker: 'Cycle', big: cd, sub: 'No forecast' };
   return { mood: ph ?? 'none', kicker: 'Period in', big: plural(d, 'day'), sub: i.fertileWindow ? 'Lower chance of getting pregnant' : 'Based on your recent cycles' };
 }

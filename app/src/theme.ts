@@ -228,14 +228,14 @@ const flowerFiles = {
 export type Bloom = keyof typeof flowerFiles.light;
 export const flowers: Record<Bloom, number> = { ...flowerFiles.light };
 /**
- * Which flower represents each phase:
- *   1 burgundy rose: period (logged or predicted)
- *   2 peach blush:   follicular phase (after the period), pregnancy and anything without a phase
- *   3 cream & sage:  ovulation phase (fertile window and ovulation day)
- *   4 lavender:      luteal phase (after ovulation until the period), including a late period
+ * Which flower represents each day:
+ *   1 burgundy rose: period days, logged or predicted
+ *   2 peach blush:   every other day (follicular, luteal, a late period) and pregnancy
+ *   3 cream & sage:  the fertile window, except the ovulation day
+ *   4 lavender:      the ovulation day only
  */
 export const bloomFor = (m: Mood): Bloom =>
-  m === 'menstrual' ? 'rose' : m === 'fertile' || m === 'ovulation' ? 'sage' : m === 'luteal' || m === 'late' ? 'lavender' : 'peach';
+  m === 'menstrual' ? 'rose' : m === 'fertile' ? 'sage' : m === 'ovulation' ? 'lavender' : 'peach';
 /** Glow/orbit colour per bloom. */
 export const bloomTint = (b: Bloom) => (b === 'rose' ? colors.period : b === 'sage' ? colors.fertile : b === 'lavender' ? colors.ovulation : colors.accent);
 

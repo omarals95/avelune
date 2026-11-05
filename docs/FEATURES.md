@@ -402,10 +402,10 @@ Cycle reminders pause in pregnancy mode. On the web, reminders are set up from t
 
   | Flower | Shown for |
   |---|---|
-  | Burgundy rose | Menstrual phase: logged and predicted period days |
-  | Peach blush | Follicular phase (after your period until the fertile window), and pregnancy |
-  | Cream and sage | Ovulation phase: the fertile window and ovulation day |
-  | Lavender | Luteal phase: after ovulation until your next period, including a late period |
+  | Burgundy rose | Period days, logged or predicted |
+  | Peach blush | Every other day (before and after the fertile window, a late period), and pregnancy |
+  | Cream and sage | The fertile window, except the ovulation day |
+  | Lavender | The ovulation day only |
 
 - **Icons**: every icon comes from the Phosphor icon set, filled for active tabs and selected items.
 - **Fonts**: Playfair Display for light-theme headings and Nunito Sans for everything else.
