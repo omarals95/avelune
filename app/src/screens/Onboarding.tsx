@@ -4,7 +4,7 @@ import { Text } from '../text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DEFAULT_SETTINGS, addDays, today as todayFn, toDateStr, type DateStr } from '@avelune/core';
 import { FadeIn, PressScale, useLoop } from '../anim';
-import { DOW, MONTHS, MoodBackground, fmtDay, mondayIndex } from '../components';
+import { MoodBackground, fmtDay, mondayIndex } from '../components';
 import { Icon } from '../icons';
 import { ServerForm } from '../ServerForm';
 import { useStore } from '../store';
@@ -14,6 +14,7 @@ import { JoinPartner } from './Partner';
 import { useLinks } from '../links';
 import { RestoreBackup } from './Backup';
 import { Animated, Image } from 'react-native';
+import { dayMonth, dowInitials, lang, monthName, t, tn } from '../i18n';
 
 /** Official Avelune lockup (symbol + wordmark), used unaltered with clear space around it. */
 export function Logo() {
@@ -35,16 +36,16 @@ function PickDate({ value, onChange, today }: { value: DateStr; onChange: (d: Da
   return (
     <View>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <PressScale accessibilityLabel="Previous month" onPress={() => shift(-1)} style={{ padding: 10 }}><Icon name="chevron-left" size={28} color={colors.text} /></PressScale>
-        <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>{MONTHS[ym.m]} {ym.y}</Text>
-        <PressScale accessibilityLabel="Next month" onPress={() => shift(1)} style={{ padding: 10 }}><Icon name="chevron-right" size={28} color={colors.text} /></PressScale>
+        <PressScale accessibilityLabel={t('Previous month')} onPress={() => shift(-1)} style={{ padding: 10 }}><Icon name="chevron-left" size={28} color={colors.text} /></PressScale>
+        <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>{t('{month} {year}', { month: monthName(ym.m), year: ym.y })}</Text>
+        <PressScale accessibilityLabel={t('Next month')} onPress={() => shift(1)} style={{ padding: 10 }}><Icon name="chevron-right" size={28} color={colors.text} /></PressScale>
       </View>
-      <View style={{ flexDirection: 'row' }}>{DOW.map((d, i) => <Text key={i} style={{ flex: 1, textAlign: 'center', color: colors.muted }}>{d}</Text>)}</View>
+      <View style={{ flexDirection: 'row' }}>{dowInitials().map((d, i) => <Text key={i} style={{ flex: 1, textAlign: 'center', color: colors.muted }}>{d}</Text>)}</View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
         {cells.map((d, i) => (
           <View key={i} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 3 }}>
             {d ? (
-              <PressScale accessibilityLabel={d} disabled={d > today} onPress={() => onChange(d)}
+              <PressScale accessibilityLabel={lang === 'en' ? d : `${dayMonth(d)} ${d.slice(0, 4)}`} disabled={d > today} onPress={() => onChange(d)}
                 style={[{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }, d === value && { backgroundColor: colors.period }]}>
                 <Text style={{ fontSize: 17, color: d === value ? '#fff' : d > today ? colors.faint : colors.text }}>{+d.slice(8)}</Text>
               </PressScale>
@@ -75,28 +76,28 @@ export function Onboarding() {
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: insets.top + 30, maxWidth: 560, width: '100%', alignSelf: 'center' }} keyboardShouldPersistTaps="handled">
         <FadeIn style={{ alignItems: 'center', marginBottom: 20 }}>
           <Logo />
-          <Text style={ob.tag} accessibilityRole="header">Your rhythm. Your space.</Text>
-          <Text style={ob.sub}>Period, fertility and pregnancy tracking that stays private, shared only with the one you choose.</Text>
+          <Text style={ob.tag} accessibilityRole="header">{t('Your rhythm. Your space.')}</Text>
+          <Text style={ob.sub}>{t('Period, fertility and pregnancy tracking that stays private, shared only with the one you choose.')}</Text>
         </FadeIn>
 
         {step === 'welcome' && (
           <FadeIn delay={120}>
-            <Btn title="Start tracking" onPress={() => setStep('date')} />
-            <Btn kind="ghost" title="Restore from a backup file" onPress={() => setStep('backup')} />
-            <Btn kind="ghost" title="I already use an Avelune server" onPress={() => setStep('restore')} />
-            <Btn kind="ghost" title="My partner shared their cycle" onPress={() => setStep('partner')} />
-            <Muted style={{ textAlign: 'center', marginTop: 16 }}>No account needed. Your data stays on this device unless you connect your own encrypted server.</Muted>
+            <Btn title={t('Start tracking')} onPress={() => setStep('date')} />
+            <Btn kind="ghost" title={t('Restore from a backup file')} onPress={() => setStep('backup')} />
+            <Btn kind="ghost" title={t('I already use an Avelune server')} onPress={() => setStep('restore')} />
+            <Btn kind="ghost" title={t('My partner shared their cycle')} onPress={() => setStep('partner')} />
+            <Muted style={{ textAlign: 'center', marginTop: 16 }}>{t('No account needed. Your data stays on this device unless you connect your own encrypted server.')}</Muted>
           </FadeIn>
         )}
 
         {step === 'date' && (
           <FadeIn key="date">
             <Card>
-              <Text style={ob.q}>When did your last period start?</Text>
+              <Text style={ob.q}>{t('When did your last period start?')}</Text>
               <PickDate value={start} onChange={setStart} today={today} />
               <Muted style={{ marginTop: 8, textAlign: 'center' }}>{fmtDay(start)}</Muted>
-              <Btn title="Next" onPress={() => setStep('lengths')} />
-              <Btn kind="ghost" title="Back" onPress={() => setStep('welcome')} />
+              <Btn title={t('Next')} onPress={() => setStep('lengths')} />
+              <Btn kind="ghost" title={t('Back')} onPress={() => setStep('welcome')} />
             </Card>
           </FadeIn>
         )}
@@ -104,12 +105,12 @@ export function Onboarding() {
         {step === 'lengths' && (
           <FadeIn key="lengths">
             <Card>
-              <Text style={ob.q}>Your usual cycle</Text>
-              <Muted>Estimates are fine. Predictions improve automatically as you log.</Muted>
-              <Stepper label="Cycle length" value={cycle} min={21} max={45} suffix=" days" onChange={setCycle} />
-              <Stepper label="Period length" value={period} min={2} max={10} suffix=" days" onChange={setPeriod} />
-              <Btn title="Start tracking" onPress={() => complete(start, { ...DEFAULT_SETTINGS, cycleLength: cycle, periodLength: period })} />
-              <Btn kind="ghost" title="Back" onPress={() => setStep('date')} />
+              <Text style={ob.q}>{t('Your usual cycle')}</Text>
+              <Muted>{t('Estimates are fine. Predictions improve automatically as you log.')}</Muted>
+              <Stepper label={t('Cycle length')} value={cycle} min={21} max={45} format={(n) => tn(n, '{n} day|{n} days')} onChange={setCycle} />
+              <Stepper label={t('Period length')} value={period} min={2} max={10} format={(n) => tn(n, '{n} day|{n} days')} onChange={setPeriod} />
+              <Btn title={t('Start tracking')} onPress={() => complete(start, { ...DEFAULT_SETTINGS, cycleLength: cycle, periodLength: period })} />
+              <Btn kind="ghost" title={t('Back')} onPress={() => setStep('date')} />
             </Card>
           </FadeIn>
         )}
@@ -117,9 +118,9 @@ export function Onboarding() {
         {step === 'restore' && (
           <FadeIn key="restore">
             <Card>
-              <Text style={ob.q}>Sign in to your server</Text>
+              <Text style={ob.q}>{t('Sign in to your server')}</Text>
               <ServerForm allowRegister={false} />
-              <Btn kind="ghost" title="Back" onPress={() => setStep('welcome')} />
+              <Btn kind="ghost" title={t('Back')} onPress={() => setStep('welcome')} />
             </Card>
           </FadeIn>
         )}
@@ -127,16 +128,16 @@ export function Onboarding() {
         {step === 'backup' && (
           <FadeIn key="backup">
             <Card>
-              <Text style={ob.q}>Restore your data</Text>
+              <Text style={ob.q}>{t('Restore your data')}</Text>
               <RestoreBackup onboarding />
-              <Btn kind="ghost" title="Back" onPress={() => setStep('welcome')} />
+              <Btn kind="ghost" title={t('Back')} onPress={() => setStep('welcome')} />
             </Card>
           </FadeIn>
         )}
 
         {step === 'partner' && <FadeIn key="partner"><JoinPartner initialCode={invite} onCancel={() => setStep('welcome')} /></FadeIn>}
 
-        <Muted style={{ textAlign: 'center', marginTop: 20 }}>Avelune gives estimates for personal awareness. It is not a medical device and must not be used for contraception.</Muted>
+        <Muted style={{ textAlign: 'center', marginTop: 20 }}>{t('Avelune gives estimates for personal awareness. It is not a medical device and must not be used for contraception.')}</Muted>
       </ScrollView>
     </View>
   );

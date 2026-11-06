@@ -15,11 +15,11 @@ import { cToDisplay, kgToDisplay, selectLogs, selectSettings, useStore } from '.
 import { colors, scheme, shadow, themed } from '../theme';
 import { Btn, Muted, PillTabs, TopBar } from '../ui';
 import { TabHeader } from './Today';
+import { monthShort, rtl, t } from '../i18n';
 
 const REG = { unknown: 'Log 3+ cycles', regular: 'Regular', 'somewhat-irregular': 'Somewhat irregular', irregular: 'Irregular' } as const;
 
 type InsTab = 'cycle' | 'trends' | 'patterns';
-const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export function Insights() {
   const nav = useNav();
@@ -49,54 +49,54 @@ export function Insights() {
   const bbtNums = bbtPts.map((x) => x.y).filter((v): v is number => v != null);
   const ovIdx = cycleStart && p.ovulationDate ? diffDays(cycleStart, p.ovulationDate) : -1;
   const tiles: { k: ChartKind; title: string; icon: IconName }[] = [
-    { k: 'bbt', title: 'BBT and ovulation', icon: 'thermometer' },
-    { k: 'weight', title: 'Weight', icon: 'scale-bathroom' },
-    { k: 'activity', title: 'Activity', icon: 'shoe-sneaker' },
-    { k: 'water', title: 'Water', icon: 'water-outline' },
-    { k: 'sleep', title: 'Sleep', icon: 'sleep' },
-    { k: 'cycles', title: 'Cycle history', icon: 'chart-bar' },
+    { k: 'bbt', title: t('BBT and ovulation'), icon: 'thermometer' },
+    { k: 'weight', title: t('Weight'), icon: 'scale-bathroom' },
+    { k: 'activity', title: t('Activity'), icon: 'shoe-sneaker' },
+    { k: 'water', title: t('Water'), icon: 'water-outline' },
+    { k: 'sleep', title: t('Sleep'), icon: 'sleep' },
+    { k: 'cycles', title: t('Cycle history'), icon: 'chart-bar' },
   ];
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <PetalBackdrop />
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 140, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
-        <TabHeader title="Insights" onAvatar={() => nav.openSettings()} />
-        <View style={{ marginTop: 6, marginBottom: 6, paddingRight: 64 }}>
-          <PillTabs fill options={[['cycle', 'Cycle'], ['trends', 'Trends'], ['patterns', 'Patterns']]} value={tab} onChange={setTab} />
+        <TabHeader title={t('Insights')} onAvatar={() => nav.openSettings()} />
+        <View style={{ marginTop: 6, marginBottom: 6, paddingEnd: 64 }}>
+          <PillTabs fill options={[['cycle', t('Cycle')], ['trends', t('Trends')], ['patterns', t('Patterns')]]} value={tab} onChange={setTab} />
         </View>
 
         {tab === 'cycle' && (
           <FadeIn key="cycle" style={{ paddingHorizontal: 16 }}>
-            <Text style={is.section}>Your cycle</Text>
+            <Text style={is.section}>{t('Your cycle')}</Text>
             <View style={is.statRow}>
-              <Stat label="Average cycle" value={`${p.stats.avgCycle}`} unit="days" />
-              <Stat label="Average period" value={`${p.stats.avgPeriod}`} unit="days" />
+              <Stat label={t('Average cycle')} value={`${p.stats.avgCycle}`} unit={t('days')} />
+              <Stat label={t('Average period')} value={`${p.stats.avgPeriod}`} unit={t('days')} />
             </View>
 
-            <PressScale accessibilityRole="button" accessibilityLabel="Recent cycle length" onPress={() => nav.openChart('cycles')} scaleTo={0.98} style={is.card}>
-              <View style={is.cardHead}><Text style={is.cardT}>Recent cycle length</Text><Icon name="chevron-right" size={18} color={colors.muted} /></View>
+            <PressScale accessibilityRole="button" accessibilityLabel={t('Recent cycle length')} onPress={() => nav.openChart('cycles')} scaleTo={0.98} style={is.card}>
+              <View style={is.cardHead}><Text style={is.cardT}>{t('Recent cycle length')}</Text><Icon name="chevron-right" size={18} color={colors.muted} /></View>
               {recent.length ? (
                 <>
-                  <Text style={is.axis}>Days</Text>
-                  <Chart kind="bar" valueLabels points={recent.map((r, i) => ({ i, y: r.len }))} xLabels={recent.map((r) => MON[+r.start.slice(5, 7) - 1])}
+                  <Text style={is.axis}>{t('Days')}</Text>
+                  <Chart kind="bar" valueLabels points={recent.map((r, i) => ({ i, y: r.len }))} xLabels={recent.map((r) => monthShort(+r.start.slice(5, 7) - 1))}
                     yMin={0} yMax={40} ticks={4} height={220} color={colors.chart} />
                 </>
-              ) : <Muted style={{ marginTop: 6 }}>Log at least two periods to see your cycle lengths.</Muted>}
+              ) : <Muted style={{ marginTop: 6 }}>{t('Log at least two periods to see your cycle lengths.')}</Muted>}
             </PressScale>
 
-            <PressScale accessibilityRole="button" accessibilityLabel="Basal temperature" onPress={() => nav.openChart('bbt')} scaleTo={0.98} style={is.card}>
-              <View style={is.cardHead}><Text style={is.cardT}>Basal temperature</Text><Text style={is.axis}>°{unit}</Text><Icon name="chevron-right" size={18} color={colors.muted} /></View>
+            <PressScale accessibilityRole="button" accessibilityLabel={t('Basal temperature')} onPress={() => nav.openChart('bbt')} scaleTo={0.98} style={is.card}>
+              <View style={is.cardHead}><Text style={is.cardT}>{t('Basal temperature')}</Text><Text style={is.axis}>°{unit}</Text><Icon name="chevron-right" size={18} color={colors.muted} /></View>
               {bbtNums.length ? (
                 <Chart kind="line" points={bbtPts} xLabels={bbtPts.map((x) => `${x.i + 1}`)} digits={1} ticks={3} height={200} color={colors.chartHi}
                   yMin={Math.floor((Math.min(...bbtNums) - 0.2) * 2) / 2} yMax={Math.ceil((Math.max(...bbtNums) + 0.2) * 2) / 2}
-                  markers={ovIdx >= 0 && ovIdx < cycleLen ? [{ i: ovIdx, label: 'Ov', color: colors.ovulation }] : []} />
-              ) : <Muted style={{ marginTop: 6 }}>Log your basal temperature each morning to spot the rise after ovulation.</Muted>}
-              {bbtNums.length ? <Text style={[is.axis, { textAlign: 'center', marginTop: 2 }]}>Cycle day</Text> : null}
+                  markers={ovIdx >= 0 && ovIdx < cycleLen ? [{ i: ovIdx, label: t('Ov'), color: colors.ovulation }] : []} />
+              ) : <Muted style={{ marginTop: 6 }}>{t('Log your basal temperature each morning to spot the rise after ovulation.')}</Muted>}
+              {bbtNums.length ? <Text style={[is.axis, { textAlign: 'center', marginTop: 2 }]}>{t('Cycle day')}</Text> : null}
             </PressScale>
 
             <View style={is.statRow}>
-              <Stat label="Regularity" value={REG[p.stats.regularity]} small />
-              <Stat label="Cycles logged" value={`${periods.length}`} />
+              <Stat label={t('Regularity')} value={t(REG[p.stats.regularity])} small />
+              <Stat label={t('Cycles logged')} value={`${periods.length}`} />
             </View>
           </FadeIn>
         )}
@@ -113,29 +113,29 @@ export function Insights() {
               const top = count(k);
               return (
                 <View key={k} style={is.card}>
-                  <Text style={[is.cardT, { marginBottom: 10 }]}>Most logged {k}</Text>
+                  <Text style={[is.cardT, { marginBottom: 10 }]}>{k === 'symptoms' ? t('Most logged symptoms') : t('Most logged moods')}</Text>
                   {top.length ? top.map(([id, c]) => (
                     <View key={id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7 }}>
-                      <Text style={{ flex: 1, fontSize: 16, color: colors.text }}>{labelOf(id)}</Text>
-                      <View style={{ height: 10, borderRadius: 5, backgroundColor: k === 'moods' ? colors.chart : colors.ovulation, width: Math.max(14, (c / top[0][1]) * 120), marginRight: 10 }} />
-                      <Text style={{ width: 34, color: colors.muted, textAlign: 'right' }}>{c}×</Text>
+                      <Text style={{ flex: 1, fontSize: 16, color: colors.text }}>{t(labelOf(id))}</Text>
+                      <View style={{ height: 10, borderRadius: 5, backgroundColor: k === 'moods' ? colors.chart : colors.ovulation, width: Math.max(14, (c / top[0][1]) * 120), marginEnd: 10 }} />
+                      <Text style={{ width: 34, color: colors.muted, textAlign: rtl ? 'left' : 'right' }}>{c}×</Text>
                     </View>
-                  )) : <Muted>Nothing logged yet.</Muted>}
+                  )) : <Muted>{t('Nothing logged yet.')}</Muted>}
                 </View>
               );
             })}
-            <Text style={is.section}>Learn</Text>
+            <Text style={is.section}>{t('Learn')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16 }}>
               {ARTICLES.filter((a) => !(hideSex && a.sensitive)).map((a) => (
-                <PressScale key={a.id} accessibilityLabel={a.title} onPress={() => nav.openArticle(a.id)} style={is.article}>
+                <PressScale key={a.id} accessibilityLabel={t(a.title)} onPress={() => nav.openArticle(a.id)} style={is.article}>
                   <View style={[is.articleDisc, { backgroundColor: scheme === 'dark' ? colors.tile : a.tint }]}>
                     <Icon name={a.icon} size={40} color={scheme === 'dark' ? colors.primary : a.ink} />
                   </View>
-                  <Text style={is.articleT} numberOfLines={3}>{a.title}</Text>
+                  <Text style={is.articleT} numberOfLines={3}>{t(a.title)}</Text>
                 </PressScale>
               ))}
             </ScrollView>
-            <Muted style={{ marginTop: 16 }}>{DISCLAIMER}</Muted>
+            <Muted style={{ marginTop: 16 }}>{t(DISCLAIMER)}</Muted>
           </FadeIn>
         )}
       </ScrollView>
@@ -200,18 +200,18 @@ export function ChartScreen({ kind, onClose }: { kind: ChartKind; onClose: () =>
     const max = Math.max(35, ...cycles.map((c) => diffDays(c.start, c.end) + 1));
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
-        <TopBar title={TITLES.cycles} onBack={onClose} />
+        <TopBar title={t(TITLES.cycles)} onBack={onClose} />
         <ScrollView contentContainerStyle={{ padding: 20, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
-          {cycles.length === 0 && <Muted>No cycles logged yet.</Muted>}
-          {cycles.length > 1 ? <Muted style={{ marginBottom: 16 }}>Cycles that look unusual, overlap a pregnancy or came before you stopped hormonal birth control are left out of your averages. Tap to change any of them.</Muted> : null}
+          {cycles.length === 0 && <Muted>{t('No cycles logged yet.')}</Muted>}
+          {cycles.length > 1 ? <Muted style={{ marginBottom: 16 }}>{t('Cycles that look unusual, overlap a pregnancy or came before you stopped hormonal birth control are left out of your averages. Tap to change any of them.')}</Muted> : null}
           {[...cycles].reverse().map((c, i) => (
             <FadeIn key={c.start} delay={i * 60}>
               <CycleBar current={c.current} label={`${fmtShort(c.start)} – ${fmtShort(c.end)}`} length={diffDays(c.start, c.end) + 1} periodDays={c.periodDays} max={max} />
               {!c.current ? <CountToggle start={c.start} /> : null}
             </FadeIn>
           ))}
-          <Btn kind="ghost" title="Add previous periods" onPress={() => { onClose(); nav.openCalendar(true); }} />
-          {p.stats.cycleLengths.length > 0 && <Muted style={{ marginTop: 10 }}>Average cycle {p.stats.avgCycle} days · average period {p.stats.avgPeriod} days.</Muted>}
+          <Btn kind="ghost" title={t('Add previous periods')} onPress={() => { onClose(); nav.openCalendar(true); }} />
+          {p.stats.cycleLengths.length > 0 && <Muted style={{ marginTop: 10 }}>{t('Average cycle {cycle} days · average period {period} days.', { cycle: p.stats.avgCycle, period: p.stats.avgPeriod })}</Muted>}
         </ScrollView>
       </View>
     );
@@ -236,20 +236,20 @@ export function ChartScreen({ kind, onClose }: { kind: ChartKind; onClose: () =>
       ...days.map((d, i) => ((by.get(d)?.flow ?? 0) >= 2 ? { i, label: '', color: colors.period } : null)).filter(Boolean) as { i: number; label: string; color: string }[],
       ...days.map((d, i) => (by.get(d)?.tags.includes('tests:ovu-pos') ? { i, label: '', color: colors.fertile } : null)).filter(Boolean) as { i: number; label: string; color: string }[],
       ...days.map((d, i) => (by.get(d)?.tags.some((t) => t === 'discharge:egg-white' || t === 'discharge:watery') && i !== idx(det?.lhDate) ? { i, label: '', color: colors.water } : null)).filter(Boolean) as { i: number; label: string; color: string }[],
-      ...(ov != null && ov >= 0 && ov < days.length ? [{ i: ov, label: det!.confirmed ? 'Ov' : 'Ov?', color: colors.ovulation }] : []),
+      ...(ov != null && ov >= 0 && ov < days.length ? [{ i: ov, label: det!.confirmed ? t('Ov') : t('Ov?'), color: colors.ovulation }] : []),
     ];
     const vals = pts.map((x) => x.y).filter((v): v is number => v != null);
     const [lo, hi] = vals.length ? [Math.floor((Math.min(...vals) - 0.3) * 10) / 10, Math.ceil((Math.max(...vals) + 0.3) * 10) / 10] : unit === 'C' ? [35.8, 37.4] : [96.4, 99.4];
     headline = det
-      ? det.confirmed ? `Ovulation confirmed ${fmtShort(det.date)} · by ${describeSources(det.sources)}` : `Ovulation likely ${fmtShort(det.date)} · from ${describeSources(det.sources)}`
+      ? det.confirmed ? t('Ovulation confirmed {date} · by {sources}', { date: fmtShort(det.date), sources: describeSources(det.sources) }) : t('Ovulation likely {date} · from {sources}', { date: fmtShort(det.date), sources: describeSources(det.sources) })
       : null;
     chart = (
       <>
         <Chart kind="line" points={pts} yMin={lo} yMax={hi} ticks={6} digits={unit === 'C' ? 2 : 1} xLabels={xLabels} markers={markers} color={colors.ovulation}
-          target={det?.coverline != null ? cToDisplay(det.coverline, unit) : undefined} targetLabel="Cover" empty={!pts.some((x) => x.y != null) && !det} height={420} />
+          target={det?.coverline != null ? cToDisplay(det.coverline, unit) : undefined} targetLabel={t('Cover')} empty={!pts.some((x) => x.y != null) && !det} height={420} />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: 10, paddingHorizontal: 4 }}>
           {[[colors.period, 'Period'], [colors.fertile, 'Positive LH test'], [colors.water, 'Fertile mucus'], [colors.ovulation, 'Ovulation']].map(([c, l]) => (
-            <View key={l} style={{ flexDirection: 'row', alignItems: 'center' }}><View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: c, opacity: 0.6, marginRight: 6 }} /><Text style={{ fontSize: 13, color: colors.text }}>{l}</Text></View>
+            <View key={l} style={{ flexDirection: 'row', alignItems: 'center' }}><View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: c, opacity: 0.6, marginEnd: 6 }} /><Text style={{ fontSize: 13, color: colors.text }}>{t(l)}</Text></View>
           ))}
         </View>
       </>
@@ -259,37 +259,37 @@ export function ChartScreen({ kind, onClose }: { kind: ChartKind; onClose: () =>
     const vals = pts.map((x) => x.y).filter((v): v is number => v != null);
     const lo = vals.length ? Math.floor(Math.min(...vals) - 5) : wUnit === 'kg' ? 25 : 55;
     const hi = vals.length ? Math.ceil(Math.max(...vals) + 5) : wUnit === 'kg' ? 95 : 210;
-    if (vals.length > 1) { const d = vals[vals.length - 1] - vals[0]; headline = `${d >= 0 ? '+' : ''}${d.toFixed(1)} ${wUnit} during the cycle`; }
+    if (vals.length > 1) { const d = vals[vals.length - 1] - vals[0]; headline = t('{change} during the cycle', { change: `${d >= 0 ? '+' : ''}${d.toFixed(1)} ${wUnit === 'kg' ? t('kg') : t('lb')}` }); }
     chart = <Chart kind="line" points={pts} yMin={lo} yMax={hi} ticks={7} digits={0} xLabels={xLabels} color={colors.period} empty={!vals.length} />;
   } else if (kind === 'water') {
     const pts = series((l) => (l.water ? l.water / 1000 : undefined));
     chart = <Chart kind="bar" points={pts} yMin={0} yMax={3.5} ticks={7} digits={1} target={(settings.waterTarget ?? 2250) / 1000} xLabels={xLabels} color={colors.water} empty={!pts.some((x) => x.y != null)} />;
-    headline = `Target ${((settings.waterTarget ?? 2250) / 1000).toFixed(2)} L a day`;
+    headline = t('Target {n} L a day', { n: ((settings.waterTarget ?? 2250) / 1000).toFixed(2) });
   } else if (kind === 'sleep') {
     const pts = series((l) => l.sleep);
     chart = <Chart kind="bar" points={pts} yMin={0} yMax={12} ticks={6} target={8} xLabels={xLabels} color={colors.pregnancy} empty={!pts.some((x) => x.y != null)} />;
   } else {
     const pts = series((l) => l.distance);
     const total = pts.reduce((a, b) => a + (b.y ?? 0), 0);
-    headline = `${total.toFixed(1)} km during the cycle`;
+    headline = t('{n} km during the cycle', { n: total.toFixed(1) });
     chart = <Chart kind="bar" points={pts} yMin={0} yMax={Math.max(10, Math.ceil(Math.max(0, ...pts.map((x) => x.y ?? 0)) / 2) * 2 + 2)} ticks={5} target={5} xLabels={xLabels} color={colors.fertile} empty={!total} />;
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <TopBar title={TITLES[kind]} onBack={onClose} right={<Text style={{ fontWeight: '700', color: colors.text, marginRight: 8 }}>{kind === 'bbt' ? `°${unit}` : kind === 'weight' ? wUnit : ''}</Text>} />
+      <TopBar title={t(TITLES[kind])} onBack={onClose} right={<Text style={{ fontWeight: '700', color: colors.text, marginEnd: 8 }}>{kind === 'bbt' ? `°${unit}` : kind === 'weight' ? (wUnit === 'kg' ? t('kg') : t('lb')) : ''}</Text>} />
       <ScrollView contentContainerStyle={{ paddingVertical: 12, maxWidth: 760, width: '100%', alignSelf: 'center' }}>
         <View style={is.cyclePick}>
-          <PressScale accessibilityLabel="Previous cycle" onPress={() => setCi(Math.max(0, ci - 1))} style={{ padding: 8, opacity: ci > 0 ? 1 : 0.2 }}><Icon name="chevron-left" size={28} color={colors.text} /></PressScale>
+          <PressScale accessibilityLabel={t('Previous cycle')} onPress={() => setCi(Math.max(0, ci - 1))} style={{ padding: 8, opacity: ci > 0 ? 1 : 0.2 }}><Icon name="chevron-left" size={28} color={colors.text} /></PressScale>
           <View style={{ alignItems: 'center', flex: 1 }}>
-            <Text style={{ color: colors.muted, fontSize: 15 }}>Chosen cycle</Text>
+            <Text style={{ color: colors.muted, fontSize: 15 }}>{t('Chosen cycle')}</Text>
             <Text style={{ fontSize: 26, fontWeight: '700', color: colors.text }}>{fmtShort(cyc.start)} — {fmtShort(addDays(cyc.start, len - 1))}</Text>
           </View>
-          <PressScale accessibilityLabel="Next cycle" onPress={() => setCi(Math.min(cycles.length - 1, ci + 1))} style={{ padding: 8, opacity: ci < cycles.length - 1 ? 1 : 0.2 }}><Icon name="chevron-right" size={28} color={colors.text} /></PressScale>
+          <PressScale accessibilityLabel={t('Next cycle')} onPress={() => setCi(Math.min(cycles.length - 1, ci + 1))} style={{ padding: 8, opacity: ci < cycles.length - 1 ? 1 : 0.2 }}><Icon name="chevron-right" size={28} color={colors.text} /></PressScale>
         </View>
         {headline ? <Text style={{ textAlign: 'center', color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: 10 }}>{headline}</Text> : null}
         <View style={{ paddingRight: 8 }}>{chart}</View>
-        {kind === 'bbt' && <Muted style={{ margin: 20 }}>A sustained rise of roughly 0.2–0.5 °C usually follows ovulation. Shaded pink columns are period days.</Muted>}
+        {kind === 'bbt' && <Muted style={{ margin: 20 }}>{t('A sustained rise of roughly 0.2–0.5 °C usually follows ovulation. Shaded pink columns are period days.')}</Muted>}
       </ScrollView>
     </View>
   );
@@ -312,13 +312,13 @@ function CountToggle({ start }: { start: string }) {
     updateSettings({ cycleOverrides: o });
   };
   return (
-    <PressScale accessibilityRole="switch" accessibilityState={{ checked: !info.excluded }} accessibilityLabel={`Count the cycle from ${fmtShort(start)} in averages`} onPress={toggle}
+    <PressScale accessibilityRole="switch" accessibilityState={{ checked: !info.excluded }} accessibilityLabel={t('Count the cycle from {date} in averages', { date: fmtShort(start) })} onPress={toggle}
       style={{ flexDirection: 'row', alignItems: 'center', marginTop: -14, marginBottom: 18, minHeight: 40 }}>
       <Icon name={info.excluded ? 'eye-off-outline' : 'check-circle'} size={18} color={info.excluded ? colors.muted : colors.fertile} />
-      <Text style={{ flex: 1, marginLeft: 8, fontSize: 14, color: colors.text }}>
-        {info.excluded ? `Not counted · ${WHY[info.reason ?? 'manual']}` : info.reason ? `Counted (you included it; it ${WHY[info.reason]})` : 'Counted in averages'}
+      <Text style={{ flex: 1, marginStart: 8, fontSize: 14, color: colors.text }}>
+        {info.excluded ? t('Not counted · {why}', { why: t(WHY[info.reason ?? 'manual']) }) : info.reason ? t('Counted (you included it; it {why})', { why: t(WHY[info.reason]) }) : t('Counted in averages')}
       </Text>
-      <Text style={{ fontSize: 14, color: colors.primary, fontWeight: '700' }}>{info.excluded ? 'Count it' : 'Leave out'}</Text>
+      <Text style={{ fontSize: 14, color: colors.primary, fontWeight: '700' }}>{info.excluded ? t('Count it') : t('Leave out')}</Text>
     </PressScale>
   );
 }
@@ -338,7 +338,7 @@ const is = themed(() => StyleSheet.create({
   tile: { width: '47%', margin: '1.5%', backgroundColor: colors.card, borderRadius: 22, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: colors.border, ...shadow },
   tileT: { fontSize: 16, color: colors.heading, marginTop: 12, textAlign: 'center', fontWeight: '600' },
   tileArt: { width: 96, height: 84, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.tile },
-  article: { width: 168, minHeight: 190, borderRadius: 22, padding: 14, marginRight: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+  article: { width: 168, minHeight: 190, borderRadius: 22, padding: 14, marginEnd: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
   articleDisc: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center', marginBottom: 14, alignSelf: 'center', marginTop: 6 },
   articleT: { fontSize: 16, fontWeight: '700', color: colors.heading, lineHeight: 21 },
   cyclePick: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, marginBottom: 12 },

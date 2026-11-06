@@ -20,6 +20,7 @@ import { QR } from '../qr';
 import { PregnancyCaption, PregnancyIllustration } from '../pregnancyArt';
 import { QRScanner, scanSupported } from '../scan';
 import { TabHeader, centre } from './Today';
+import { t, tn } from '../i18n';
 
 /** Two figures and a child held together inside a heart of petals, gently breathing. */
 function Together() {
@@ -27,7 +28,7 @@ function Together() {
   return (
     <View style={{ alignItems: 'center', marginVertical: 6 }}>
       <Animated.Image source={require('../../assets/partner-together.webp')} resizeMode="contain" testID="partner-art"
-        accessible accessibilityRole="image" accessibilityLabel="Illustration: two people made of petals, holding a child between them inside a heart of flowers."
+        accessible accessibilityRole="image" accessibilityLabel={t('Illustration: two people made of petals, holding a child between them inside a heart of flowers.')}
         style={{ width: 210, height: 210, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.98, 1.02] }) }] }} />
     </View>
   );
@@ -42,6 +43,8 @@ const SHARE_ROWS: [keyof ShareItems, string, string][] = [
   ['symptoms', 'Today’s symptoms', 'What you log today'],
   ['tips', 'Support tips', 'Gentle ideas for each phase'],
 ];
+
+/** Labels above stay in English here and are translated where they are shown. */
 
 /** Supportive ideas a partner sees for each phase (general, not medical advice). */
 const SUPPORT: Record<Phase, { title: string; tips: string[] }> = {
@@ -74,39 +77,40 @@ export function PartnerTab() {
 
   const link = async () => {
     setBusy(true); setMsg('');
-    try { await st.startShare(); } catch (e) { setMsg(ERR[(e as Error).message] ?? `Could not create the link (${(e as Error).message}).`); }
+    try { await st.startShare(); } catch (e) { setMsg(ERR[(e as Error).message] ? t(ERR[(e as Error).message]) : t('Could not create the link ({error}).', { error: (e as Error).message })); }
     setBusy(false);
   };
   const copy = async () => { await Clipboard.setStringAsync(code); setCopied(true); setTimeout(() => setCopied(false), 1500); };
-  const send = () => (Platform.OS === 'web' ? copy() : Share.share({ message: `Open Avelune, choose "My partner shared their cycle", and paste this code:\n\n${code}` }));
+  const send = () => (Platform.OS === 'web' ? copy() : Share.share({ message: t('Open Avelune, choose "My partner shared their cycle", and paste this code:\n\n{code}', { code }) }));
 
   const logs = useMemo(() => selectLogs(st.records), [st.records]);
   const settings = selectSettings(st.records);
   const p = useMemo(() => predict(logs, settings, todayFn()), [logs, settings]);
   const cd = cycleDayOf(todayFn(), logs);
-  const next = p.daysUntilPeriod == null ? '—' : p.lateBy && !p.lateDismissed ? 'not started yet' : p.daysUntilPeriod <= 0 ? 'any day now' : `in ${p.daysUntilPeriod} day${p.daysUntilPeriod === 1 ? '' : 's'}`;
-  const who = st.partnerName?.trim() || 'Your partner';
+  const next = p.daysUntilPeriod == null ? '—' : p.lateBy && !p.lateDismissed ? t('not started yet') : p.daysUntilPeriod <= 0 ? t('any day now') : tn(p.daysUntilPeriod, 'in {n} day|in {n} days');
+  const named = st.partnerName?.trim();
+  const who = named || t('Your partner');
   const items: ShareItems = { ...DEFAULT_SHARE_ITEMS, ...(share?.includeLog ? { moods: true, symptoms: true } : {}), ...share?.items };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <PetalBackdrop />
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 140, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
-        <TabHeader title="Partner" onAvatar={() => nav.openSettings()} />
+        <TabHeader title={t('Partner')} onAvatar={() => nav.openSettings()} />
         <View style={{ paddingHorizontal: 16 }}>
         {!share ? (
           <>
             <FadeIn style={pt.hero}>
               <Together />
-              <Text style={pt.heroT}>Keep your partner in the loop</Text>
-              <Text style={pt.heroS}>Share a private, view-only version of your cycle. Only the two of you can read it.</Text>
+              <Text style={pt.heroT}>{t('Keep your partner in the loop')}</Text>
+              <Text style={pt.heroS}>{t('Share a private, view-only version of your cycle. Only the two of you can read it.')}</Text>
             </FadeIn>
-            <Text style={pt.section}>What your partner sees</Text>
+            <Text style={pt.section}>{t('What your partner sees')}</Text>
             {[
-              { t: 'Your daily cycle', s: 'Cycle day and phase predictions, view-only.', c: colors.ovulation, i: 'chart-donut' as const },
-              { t: 'Your fertile days', s: 'Fertile window and estimated ovulation.', c: colors.fertile, i: 'sprout' as const },
-              { t: 'Your next period', s: 'When it is expected, and if it is late.', c: colors.period, i: 'water-outline' as const },
-              { t: 'How you feel', s: 'Optional: today’s mood and symptoms.', c: colors.pregnancy, i: 'emoticon-outline' as const },
+              { t: t('Your daily cycle'), s: t('Cycle day and phase predictions, view-only.'), c: colors.ovulation, i: 'chart-donut' as const },
+              { t: t('Your fertile days'), s: t('Fertile window and estimated ovulation.'), c: colors.fertile, i: 'sprout' as const },
+              { t: t('Your next period'), s: t('When it is expected, and if it is late.'), c: colors.period, i: 'water-outline' as const },
+              { t: t('How you feel'), s: t('Optional: today’s mood and symptoms.'), c: colors.pregnancy, i: 'emoticon-outline' as const },
             ].map((x, i) => (
               <FadeIn key={x.t} delay={i * 70} style={pt.feature}>
                 <View style={[pt.featureDisc, { borderColor: x.c }]}><Icon name={x.i} size={22} color={x.c} /></View>
@@ -117,18 +121,18 @@ export function PartnerTab() {
               </FadeIn>
             ))}
             <Card style={{ marginTop: 6 }}>
-              <Row icon="shield-lock-outline" title="End-to-end encrypted" subtitle="Your server stores only ciphertext. The invite code holds the key." />
-              <Row icon="eye-outline" title="Never your notes or sex logs" subtitle="Your partner sees predictions, plus mood and symptoms only if you allow it." />
-              <Row icon="link-variant-off" title="Revoke any time" subtitle="Turning sharing off stops your partner's view immediately." />
+              <Row icon="shield-lock-outline" title={t('End-to-end encrypted')} subtitle={t('Your server stores only ciphertext. The invite code holds the key.')} />
+              <Row icon="eye-outline" title={t('Never your notes or sex logs')} subtitle={t('Your partner sees predictions, plus mood and symptoms only if you allow it.')} />
+              <Row icon="link-variant-off" title={t('Revoke any time')} subtitle={t("Turning sharing off stops your partner's view immediately.")} />
             </Card>
             {msg ? <Muted style={{ color: colors.danger, marginTop: 8 }}>{msg}</Muted> : null}
             {server ? (
-              <Btn title={busy ? 'Linking…' : 'Link your partner'} icon="link-variant" onPress={() => void link()} disabled={busy} style={{ marginTop: 8 }} />
+              <Btn title={busy ? t('Linking…') : t('Link your partner')} icon="link-variant" onPress={() => void link()} disabled={busy} style={{ marginTop: 8 }} />
             ) : (
               <Card style={{ marginTop: 8, backgroundColor: colors.primarySoft }}>
-                <Text style={{ fontSize: 18, fontWeight: '600', color: colors.heading }}>One step first</Text>
-                <Text style={{ fontSize: 15, color: colors.text, marginTop: 4, lineHeight: 21 }}>Partner sharing travels through your own encrypted Avelune server. Set up sync, then come back to link your partner.</Text>
-                <Btn icon="cloud-lock-outline" title="Set up sync" onPress={() => nav.openSettings('sync')} style={{ marginTop: 10 }} />
+                <Text style={{ fontSize: 18, fontWeight: '600', color: colors.heading }}>{t('One step first')}</Text>
+                <Text style={{ fontSize: 15, color: colors.text, marginTop: 4, lineHeight: 21 }}>{t('Partner sharing travels through your own encrypted Avelune server. Set up sync, then come back to link your partner.')}</Text>
+                <Btn icon="cloud-lock-outline" title={t('Set up sync')} onPress={() => nav.openSettings('sync')} style={{ marginTop: 10 }} />
               </Card>
             )}
           </>
@@ -138,68 +142,68 @@ export function PartnerTab() {
               <View style={pt.pAvatar}>
                 {st.partnerName?.trim() ? <Text style={pt.pInitial}>{st.partnerName.trim()[0].toUpperCase()}</Text> : <Icon name="users" size={38} weight="light" color={colors.heading} />}
               </View>
-              <View style={{ flex: 1, marginLeft: 16 }}>
-                <Text style={pt.pLabel}>Paired with</Text>
+              <View style={{ flex: 1, marginStart: 16 }}>
+                <Text style={pt.pLabel}>{t('Paired with')}</Text>
                 <Text style={pt.pName} numberOfLines={1}>{who}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                   <View style={[pt.dot, share.error ? { backgroundColor: colors.danger } : null]} />
-                  <Text style={[pt.pActive, share.error ? { color: colors.danger } : null]}>{share.error ? 'Sync problem' : 'Sharing is active'}</Text>
+                  <Text style={[pt.pActive, share.error ? { color: colors.danger } : null]}>{share.error ? t('Sync problem') : t('Sharing is active')}</Text>
                 </View>
-                <Text style={pt.pMeta}>View only · {share.publishedAt ? `updated ${ago(share.publishedAt, now)}` : 'not published yet'}</Text>
+                <Text style={pt.pMeta}>{share.publishedAt ? t('View only · updated {ago}', { ago: ago(share.publishedAt, now) }) : t('View only · not published yet')}</Text>
               </View>
             </FadeIn>
 
-            <PressScale accessibilityRole="button" accessibilityLabel="Cycle day and predictions" onPress={() => { void st.publishShare(); setPreview(true); }} scaleTo={0.98} style={pt.card}>
+            <PressScale accessibilityRole="button" accessibilityLabel={t('Cycle day and predictions')} onPress={() => { void st.publishShare(); setPreview(true); }} scaleTo={0.98} style={pt.card}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={pt.cardT}>Cycle day and predictions</Text>
+                <Text style={pt.cardT}>{t('Cycle day and predictions')}</Text>
                 <Icon name="chevron-right" size={18} color={colors.muted} />
               </View>
               <View style={{ flexDirection: 'row', marginTop: 14 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={pt.kLabel}>Cycle day</Text>
+                  <Text style={pt.kLabel}>{t('Cycle day')}</Text>
                   <Text style={pt.kValue}>{cd ?? '—'}</Text>
                 </View>
                 <View style={pt.vRule} />
-                <View style={{ flex: 1, paddingLeft: 18 }}>
-                  <Text style={pt.kLabel}>Next period</Text>
+                <View style={{ flex: 1, paddingStart: 18 }}>
+                  <Text style={pt.kLabel}>{t('Next period')}</Text>
                   <Text style={[pt.kValue, { fontSize: 22, marginTop: 8 }]}>{next}</Text>
                 </View>
               </View>
             </PressScale>
 
             <View style={pt.card}>
-              <Text style={pt.cardT}>What {who === 'Your partner' ? 'your partner' : who} sees</Text>
-              <Muted style={{ marginTop: 2, marginBottom: 4 }}>Changes update their view right away.</Muted>
+              <Text style={pt.cardT}>{named && named !== 'Your partner' ? t('What {name} sees', { name: named }) : t('What your partner sees')}</Text>
+              <Muted style={{ marginTop: 2, marginBottom: 4 }}>{t('Changes update their view right away.')}</Muted>
               {SHARE_ROWS.map(([k, title, sub]) => (
-                <Row key={k} title={title} subtitle={sub} value={items[k]} onValueChange={(v) => st.setShareItems({ [k]: v })} />
+                <Row key={k} title={t(title)} subtitle={t(sub)} value={items[k]} onValueChange={(v) => st.setShareItems({ [k]: v })} />
               ))}
-              <Row icon="lock-outline" title="Notes and sex logs" subtitle="Never shared" />
+              <Row icon="lock-outline" title={t('Notes and sex logs')} subtitle={t('Never shared')} />
             </View>
             <View style={pt.card}>
-              <Row icon="eye-outline" title="Preview shared view" onPress={() => { void st.publishShare(); setPreview(true); }} />
+              <Row icon="eye-outline" title={t('Preview shared view')} onPress={() => { void st.publishShare(); setPreview(true); }} />
             </View>
 
             <View style={pt.card}>
-              <Text style={pt.cardT}>Invite code</Text>
-              <Muted style={{ marginTop: 4 }}>Send this to your partner. They open Avelune, choose “My partner shared their cycle”, and paste it.</Muted>
+              <Text style={pt.cardT}>{t('Invite code')}</Text>
+              <Muted style={{ marginTop: 4 }}>{t('Send this to your partner. They open Avelune, choose “My partner shared their cycle”, and paste it.')}</Muted>
               {showQR ? (
                 <View style={{ alignItems: 'center', marginVertical: 12 }}>
-                  <QR value={inviteLink(decodeInvite(code))} size={240} label="Partner invite QR code" />
-                  <Muted style={{ textAlign: 'center', marginTop: 8 }}>Your partner scans this with their phone camera, or in Avelune under “My partner shared their cycle”. Anyone with this code can view your shared cycle, so only show it to them.</Muted>
+                  <QR value={inviteLink(decodeInvite(code))} size={240} label={t('Partner invite QR code')} />
+                  <Muted style={{ textAlign: 'center', marginTop: 8 }}>{t('Your partner scans this with their phone camera, or in Avelune under “My partner shared their cycle”. Anyone with this code can view your shared cycle, so only show it to them.')}</Muted>
                 </View>
               ) : <Text selectable style={pt.code} numberOfLines={3}>{code}</Text>}
-              <Btn kind="ghost" icon="qr" title={showQR ? 'Show code as text' : 'Show QR code'} onPress={() => setShowQR(!showQR)} />
+              <Btn kind="ghost" icon="qr" title={showQR ? t('Show code as text') : t('Show QR code')} onPress={() => setShowQR(!showQR)} />
               <View style={{ flexDirection: 'row', gap: 10 }}>
-                <Btn style={{ flex: 1 }} kind="ghost" icon={copied ? 'check' : 'copy'} title={copied ? 'Copied' : 'Copy'} onPress={() => void copy()} />
-                {Platform.OS !== 'web' && <Btn style={{ flex: 1 }} kind="ghost" icon="share-variant" title="Send" onPress={() => void send()} />}
+                <Btn style={{ flex: 1 }} kind="ghost" icon={copied ? 'check' : 'copy'} title={copied ? t('Copied') : t('Copy')} onPress={() => void copy()} />
+                {Platform.OS !== 'web' && <Btn style={{ flex: 1 }} kind="ghost" icon="share-variant" title={t('Send')} onPress={() => void send()} />}
               </View>
-              <Field label="Partner's name (only on this device)" value={st.partnerName ?? ''} onChangeText={(partnerName) => st.setPrefs({ partnerName })} autoCapitalize="words" placeholder="Optional" />
+              <Field label={t("Partner's name (only on this device)")} value={st.partnerName ?? ''} onChangeText={(partnerName) => st.setPrefs({ partnerName })} autoCapitalize="words" placeholder={t('Optional')} />
             </View>
 
-            <Btn kind="danger" icon="cancel" title="Stop sharing" onPress={() => void st.stopShare()} style={{ marginTop: 4 }} />
+            <Btn kind="danger" icon="cancel" title={t('Stop sharing')} onPress={() => void st.stopShare()} style={{ marginTop: 4 }} />
             <View style={pt.private}>
               <Icon name="lock-outline" size={16} color={colors.muted} />
-              <Text style={pt.privateT}>Notes and sex logs stay private.</Text>
+              <Text style={pt.privateT}>{t('Notes and sex logs stay private.')}</Text>
             </View>
           </>
         )}
@@ -237,18 +241,19 @@ export function PartnerView({ snapshot, onClose, preview, onRefresh, fetchedAt, 
     hasData: !!s.nextPeriodStart || s.cycleDay != null, today, date: selected, kind, cycleDay: s.cycleDay != null ? s.cycleDay + Math.round((Date.parse(selected) - Date.parse(s.today)) / 86400000) : null,
     phase: s.phase, dayPhase: snapshotPhase(s, selected), daysUntilPeriod: daysUntil, fertileWindow: s.fertileWindow, ovulationDate: s.ovulationDate, inPeriod: snapshotKind(s, today) === 'period' && selected === today,
   });
-  const who = s.name || 'Your partner';
+  // The cycle's owner is named in full sentences: without a name, Arabic needs its own wording (and gender) for "your partner".
+  const nm = s.name;
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       {preview ? null : <PetalBackdrop />}
       <ScrollView contentContainerStyle={{ paddingTop: (preview ? 0 : insets.top) + 8, paddingBottom: 40, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
         <View style={pt.head}>
-          {onClose ? <PressScale accessibilityLabel="Close" onPress={onClose} style={{ padding: 8 }}><Icon name="close" size={28} color={colors.heading} /></PressScale> : <View style={{ width: 44 }} />}
+          {onClose ? <PressScale accessibilityLabel={t('Close')} onPress={onClose} style={{ padding: 8 }}><Icon name="close" size={28} color={colors.heading} /></PressScale> : <View style={{ width: 44 }} />}
           <View style={{ alignItems: 'center' }}>
-            <Text style={{ fontSize: 22, fontWeight: '700', color: colors.heading }}>{who}'s cycle</Text>
-            <Text style={{ color: colors.muted }}>{preview ? 'Preview · view only' : fetchedAt ? `Updated ${ago(fetchedAt, now)}` : 'View only'}</Text>
+            <Text style={{ fontSize: 22, fontWeight: '700', color: colors.heading }}>{nm ? t("{name}'s cycle", { name: nm }) : t("Your partner's cycle")}</Text>
+            <Text style={{ color: colors.muted }}>{preview ? t('Preview · view only') : fetchedAt ? t('Updated {ago}', { ago: ago(fetchedAt, now) }) : t('View only')}</Text>
           </View>
-          <PressScale accessibilityLabel="Open calendar" onPress={() => setCal(true)} style={{ padding: 8 }}><Icon name="calendar-month-outline" size={28} color={colors.heading} /></PressScale>
+          <PressScale accessibilityLabel={t('Open calendar')} onPress={() => setCal(true)} style={{ padding: 8 }}><Icon name="calendar-month-outline" size={28} color={colors.heading} /></PressScale>
         </View>
         <WeekStrip today={today} selected={selected} onSelect={setSelected} kindOf={(d) => snapshotKind(s, d)} />
         {s.pregnancy ? (
@@ -264,31 +269,41 @@ export function PartnerView({ snapshot, onClose, preview, onRefresh, fetchedAt, 
         )}
         {(s.todayMoods?.length || s.todaySymptoms?.length) && s.today === today ? (
           <FadeIn style={[pt.feel]}>
-            <Text style={{ fontWeight: '600', fontSize: 18, marginBottom: 8, color: colors.heading }}>How {who} feels today</Text>
-            <Text style={{ fontSize: 16, color: colors.text }}>{[...(s.todayMoods ?? []), ...(s.todaySymptoms ?? [])].map(labelOf).join(' · ')}</Text>
+            <Text style={{ fontWeight: '600', fontSize: 18, marginBottom: 8, color: colors.heading }}>{nm ? t('How {name} feels today', { name: nm }) : t('How Your partner feels today')}</Text>
+            <Text style={{ fontSize: 16, color: colors.text }}>{[...(s.todayMoods ?? []), ...(s.todaySymptoms ?? [])].map((id) => t(labelOf(id))).join(' · ')}</Text>
           </FadeIn>
         ) : null}
         {s.items?.tips !== false && s.phase && !s.pregnancy && s.today === today ? (
           <FadeIn style={[pt.feel]}>
-            <Text style={{ fontWeight: '600', fontSize: 18, marginBottom: 8, color: colors.heading }}>{SUPPORT[s.phase].title}</Text>
-            {SUPPORT[s.phase].tips.map((t, i) => <Text key={i} style={{ fontSize: 15, color: colors.text, lineHeight: 22, marginTop: i ? 4 : 0 }}>• {t}</Text>)}
-            <Muted style={{ marginTop: 8 }}>Everyone is different: the best support is to ask what helps.</Muted>
+            <Text style={{ fontWeight: '600', fontSize: 18, marginBottom: 8, color: colors.heading }}>{t(SUPPORT[s.phase].title)}</Text>
+            {SUPPORT[s.phase].tips.map((tip, i) => <Text key={i} style={{ fontSize: 15, color: colors.text, lineHeight: 22, marginTop: i ? 4 : 0 }}>• {t(tip)}</Text>)}
+            <Muted style={{ marginTop: 8 }}>{t('Everyone is different: the best support is to ask what helps.')}</Muted>
           </FadeIn>
         ) : null}
         {s.items && (!s.items.period || !s.items.fertile) ? (
-          <Muted style={{ textAlign: 'center', marginTop: 10, marginHorizontal: 20 }}>{who} has chosen not to share {[!s.items.period && 'period dates', !s.items.fertile && 'the fertile window'].filter(Boolean).join(' or ')}.</Muted>
+          <Muted style={{ textAlign: 'center', marginTop: 10, marginHorizontal: 20 }}>{notShared(nm, !s.items.period, !s.items.fertile)}</Muted>
         ) : null}
-        {error ? <Muted style={{ textAlign: 'center', color: colors.danger, marginTop: 10 }}>{ERR[error] ?? error}</Muted> : null}
+        {error ? <Muted style={{ textAlign: 'center', color: colors.danger, marginTop: 10 }}>{ERR[error] ? t(ERR[error]) : error}</Muted> : null}
         <View style={{ paddingHorizontal: 20, marginTop: 12 }}>
-          {onRefresh && <Btn kind="ghost" icon="refresh" title="Refresh" onPress={onRefresh} />}
-          {onLeave && <Btn kind="ghost" icon="logout" title="Stop viewing" onPress={onLeave} />}
+          {onRefresh && <Btn kind="ghost" icon="refresh" title={t('Refresh')} onPress={onRefresh} />}
+          {onLeave && <Btn kind="ghost" icon="logout" title={t('Stop viewing')} onPress={onLeave} />}
         </View>
       </ScrollView>
       <Sheet visible={cal} onClose={() => setCal(false)}>
-        <CalendarView readOnly title={`${who}'s calendar`} onClose={() => setCal(false)} kindOf={(d) => snapshotKind(s, d)} />
+        <CalendarView readOnly title={nm ? t("{name}'s calendar", { name: nm }) : t("Your partner's calendar")} onClose={() => setCal(false)} kindOf={(d) => snapshotKind(s, d)} />
       </Sheet>
     </View>
   );
+}
+
+/** "{name} has chosen not to share …" as whole sentences (no name: "Your partner …"). */
+function notShared(name: string | undefined, period: boolean, fertile: boolean) {
+  if (name) {
+    return period && fertile ? t('{name} has chosen not to share period dates or the fertile window.', { name })
+      : period ? t('{name} has chosen not to share period dates.', { name }) : t('{name} has chosen not to share the fertile window.', { name });
+  }
+  return period && fertile ? t('Your partner has chosen not to share period dates or the fertile window.')
+    : period ? t('Your partner has chosen not to share period dates.') : t('Your partner has chosen not to share the fertile window.');
 }
 
 /** Root used when this device is set up only to view a partner's cycle. */
@@ -297,7 +312,7 @@ export function PartnerRoot() {
   const refresh = useStore((s) => s.refreshPartner);
   const leave = useStore((s) => s.leavePartner);
   useEffect(() => { void refresh(); const t = setInterval(() => void refresh(), 60000); return () => clearInterval(t); }, [refresh]);
-  if (!partner.snapshot) return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><Muted>{partner.error ? ERR[partner.error] ?? partner.error : 'Loading…'}</Muted><Btn kind="ghost" title="Stop viewing" onPress={leave} /></View>;
+  if (!partner.snapshot) return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><Muted>{partner.error ? (ERR[partner.error] ? t(ERR[partner.error]) : partner.error) : t('Loading…')}</Muted><Btn kind="ghost" title={t('Stop viewing')} onPress={leave} /></View>;
   return <PartnerView snapshot={partner.snapshot} fetchedAt={partner.fetchedAt} error={partner.error} onRefresh={() => void refresh()} onLeave={leave} />;
 }
 
@@ -307,23 +322,23 @@ export function JoinPartner({ onCancel, initialCode }: { onCancel: () => void; i
   const [scanning, setScanning] = useState(false);
   const go = async (c = code) => {
     setBusy(true); setMsg('');
-    try { await join(c); } catch (e) { setMsg(ERR[(e as Error).message] ?? ERR.bad_invite); }
+    try { await join(c); } catch (e) { setMsg(t(ERR[(e as Error).message] ?? ERR.bad_invite)); }
     setBusy(false);
   };
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   return (
     <Card>
-      <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 6, color: colors.text }}>Connect to your partner</Text>
-      <Muted>Scan the QR code on their phone (Partner › Show QR code), or paste the invite code they sent you.</Muted>
+      <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 6, color: colors.text }}>{t('Connect to your partner')}</Text>
+      <Muted>{t('Scan the QR code on their phone (Partner › Show QR code), or paste the invite code they sent you.')}</Muted>
       {scanSupported ? (scanning
         ? <QRScanner onCancel={() => setScanning(false)} onCode={(c) => { setScanning(false); setCode(c); void go(c); }} />
-        : <Btn icon="scan" title="Scan QR code" onPress={() => setScanning(true)} style={{ marginTop: 12 }} />) : null}
-      <TextInput accessibilityLabel="Invite code" value={code} onChangeText={setCode} multiline autoCapitalize="none" autoCorrect={false}
+        : <Btn icon="scan" title={t('Scan QR code')} onPress={() => setScanning(true)} style={{ marginTop: 12 }} />) : null}
+      <TextInput accessibilityLabel={t('Invite code')} value={code} onChangeText={setCode} multiline autoCapitalize="none" autoCorrect={false}
         placeholder="avelune-partner:…" placeholderTextColor={colors.faint} style={pt.codeIn} />
       {msg ? <Muted style={{ color: colors.danger }}>{msg}</Muted> : null}
-      <Btn kind={scanSupported ? 'ghost' : 'primary'} title={busy ? 'Connecting…' : 'Connect with pasted code'} onPress={() => void go()} disabled={busy || !code.trim()} />
-      <Btn kind="ghost" title="Back" onPress={onCancel} />
+      <Btn kind={scanSupported ? 'ghost' : 'primary'} title={busy ? t('Connecting…') : t('Connect with pasted code')} onPress={() => void go()} disabled={busy || !code.trim()} />
+      <Btn kind="ghost" title={t('Back')} onPress={onCancel} />
     </Card>
   );
 }
@@ -342,7 +357,7 @@ const pt = themed(() => StyleSheet.create({
   pInitial: { fontSize: 36, color: colors.heading, fontWeight: '700' },
   pLabel: { fontSize: 15, color: colors.text },
   pName: { fontSize: 28, fontWeight: '700', color: colors.heading, marginTop: 2 },
-  dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.success, marginRight: 8 },
+  dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.success, marginEnd: 8 },
   pActive: { fontSize: 16, color: colors.success, fontWeight: '600' },
   pMeta: { fontSize: 14, color: colors.muted, marginTop: 4 },
   card: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 22, paddingHorizontal: 18, paddingVertical: 14, marginBottom: 12, ...shadow },
