@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FadeIn, PressScale } from '../anim';
 import { MoodBackground } from '../components';
 import { Icon } from '../icons';
-import { CONTRIBUTE, DONATE, DONATE_URL, HIGHLIGHTS, PRIVACY, REPO_URL, TERMS, TERMS_DATE, WHY, type LegalSection } from '../legal';
+import { dayMonth, lang, t } from '../i18n';
+import { CONTRIBUTE, DONATE, DONATE_URL, HIGHLIGHTS, PRIVACY, REPO_URL, TERMS, TERMS_DATE, TERMS_VERSION, WHY, type LegalSection } from '../legal';
 import { useStore } from '../store';
 import { Text } from '../text';
 import { colors, themed } from '../theme';
@@ -12,6 +13,8 @@ import { Btn, Card, Muted, Page, Row } from '../ui';
 import { Logo } from './Onboarding';
 
 const openRepo = () => void Linking.openURL(REPO_URL).catch(() => undefined);
+/** TERMS_DATE in the active language (TERMS_VERSION holds the same date as YYYY-MM-DD). */
+const termsDate = () => (lang === 'en' ? TERMS_DATE : `${dayMonth(TERMS_VERSION)} ${TERMS_VERSION.slice(0, 4)}`);
 
 /**
  * Donations are switched off for now. To turn them back on, set DONATIONS_ENABLED to true
@@ -28,12 +31,12 @@ export function DonateBox({ compact }: { compact?: boolean }) {
   return (
     <View style={a.donate} testID="donate-box">
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={[a.pointIcon, { marginRight: 0, backgroundColor: colors.card }]}><Icon name="hand-heart" size={22} color={colors.primary} /></View>
-        <Text style={[a.secT, { flex: 1 }]} accessibilityRole="header">{DONATE.title}</Text>
+        <View style={[a.pointIcon, { marginEnd: 0, backgroundColor: colors.card }]}><Icon name="hand-heart" size={22} color={colors.primary} /></View>
+        <Text style={[a.secT, { flex: 1 }]} accessibilityRole="header">{t(DONATE.title)}</Text>
       </View>
-      <Text style={a.p}>{DONATE.body}</Text>
-      {compact ? null : <Text style={[a.p, { color: colors.muted }]}>{DONATE.note}</Text>}
-      <Btn icon="heart" title={DONATE.button} onPress={() => void Linking.openURL(DONATE_URL).catch(() => undefined)} />
+      <Text style={a.p}>{t(DONATE.body)}</Text>
+      {compact ? null : <Text style={[a.p, { color: colors.muted }]}>{t(DONATE.note)}</Text>}
+      <Btn icon="heart" title={t(DONATE.button)} onPress={() => void Linking.openURL(DONATE_URL).catch(() => undefined)} />
     </View>
   );
 }
@@ -44,8 +47,8 @@ function Point({ icon, title, body }: (typeof HIGHLIGHTS)[number]) {
     <View style={a.point}>
       <View style={a.pointIcon}><Icon name={icon} size={22} color={colors.primary} /></View>
       <View style={{ flex: 1 }}>
-        <Text style={a.pointT}>{title}</Text>
-        <Text style={a.pointB}>{body}</Text>
+        <Text style={a.pointT}>{t(title)}</Text>
+        <Text style={a.pointB}>{t(body)}</Text>
       </View>
     </View>
   );
@@ -67,11 +70,11 @@ function Doc({ title, sections, open: initial = false, testID }: { title: string
         <View style={{ paddingTop: 4 }}>
           {sections.map((s) => (
             <View key={s.title} style={{ marginTop: 12 }}>
-              <Text style={a.secT} accessibilityRole="header">{s.title}</Text>
-              {s.body.map((p, i) => <Text key={i} selectable style={a.p}>{p}</Text>)}
+              <Text style={a.secT} accessibilityRole="header">{t(s.title)}</Text>
+              {s.body.map((p, i) => <Text key={i} selectable style={a.p}>{t(p)}</Text>)}
             </View>
           ))}
-          <Muted style={{ marginTop: 12 }}>Last updated {TERMS_DATE}.</Muted>
+          <Muted style={{ marginTop: 12 }}>{t('Last updated {date}.', { date: termsDate() })}</Muted>
         </View>
       ) : null}
     </View>
@@ -91,26 +94,26 @@ export function Welcome() {
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: insets.top + 28, paddingBottom: insets.bottom + 28, maxWidth: 560, width: '100%', alignSelf: 'center' }}>
         <FadeIn style={{ alignItems: 'center', marginBottom: 18 }}>
           <Logo />
-          <Text style={a.h} accessibilityRole="header">Welcome to Avelune</Text>
-          <Text style={a.lead}>Before you start, here is what Avelune is and how it treats your data.</Text>
+          <Text style={a.h} accessibilityRole="header">{t('Welcome to Avelune')}</Text>
+          <Text style={a.lead}>{t('Before you start, here is what Avelune is and how it treats your data.')}</Text>
         </FadeIn>
         <FadeIn delay={80}>
           <Card>
             {HIGHLIGHTS.map((h) => <Point key={h.title} {...h} />)}
           </Card>
           <Card>
-            <Text style={a.secT}>Why it exists</Text>
-            <Text style={a.p}>{WHY}</Text>
-            <Text style={[a.p, { marginTop: 8 }]}>If you have the ability to contribute to Avelune and support it for the community, please go ahead. Every bug report, idea and improvement helps.</Text>
-            <Btn kind="ghost" icon="github" title="View the project on GitHub" onPress={openRepo} />
+            <Text style={a.secT}>{t('Why it exists')}</Text>
+            <Text style={a.p}>{t(WHY)}</Text>
+            <Text style={[a.p, { marginTop: 8 }]}>{t('If you have the ability to contribute to Avelune and support it for the community, please go ahead. Every bug report, idea and improvement helps.')}</Text>
+            <Btn kind="ghost" icon="github" title={t('View the project on GitHub')} onPress={openRepo} />
           </Card>
           <DonateBox />
           <Card>
-            <Doc title="Terms of use" sections={TERMS} testID="terms" />
-            <Doc title="Privacy policy" sections={PRIVACY} testID="privacy" />
+            <Doc title={t('Terms of use')} sections={TERMS} testID="terms" />
+            <Doc title={t('Privacy policy')} sections={PRIVACY} testID="privacy" />
           </Card>
-          <Btn title="I understand and agree" onPress={accept} />
-          <Muted style={{ textAlign: 'center', marginTop: 4 }}>By continuing you agree to the terms of use and privacy policy. You can read them again any time in Settings → About Avelune.</Muted>
+          <Btn title={t('I understand and agree')} onPress={accept} />
+          <Muted style={{ textAlign: 'center', marginTop: 4 }}>{t('By continuing you agree to the terms of use and privacy policy. You can read them again any time in Settings → About Avelune.')}</Muted>
         </FadeIn>
       </ScrollView>
     </View>
@@ -125,26 +128,26 @@ export function AboutPage() {
         {HIGHLIGHTS.slice(0, 3).map((h) => <Point key={h.title} {...h} />)}
       </Card>
       <Card>
-        <Text style={a.secT}>Why it exists</Text>
-        <Text style={a.p}>{WHY}</Text>
+        <Text style={a.secT}>{t('Why it exists')}</Text>
+        <Text style={a.p}>{t(WHY)}</Text>
       </Card>
       <Card>
-        <Text style={a.secT}>Support the project</Text>
-        <Text style={a.p}>If you have the ability to contribute and support Avelune for the community, please go ahead:</Text>
+        <Text style={a.secT}>{t('Support the project')}</Text>
+        <Text style={a.p}>{t('If you have the ability to contribute and support Avelune for the community, please go ahead:')}</Text>
         {CONTRIBUTE.map((c) => (
           <View key={c} style={{ flexDirection: 'row', marginTop: 6 }}>
             <Text style={[a.p, { marginTop: 0, width: 16 }]}>•</Text>
-            <Text style={[a.p, { marginTop: 0, flex: 1 }]}>{c}</Text>
+            <Text style={[a.p, { marginTop: 0, flex: 1 }]}>{t(c)}</Text>
           </View>
         ))}
-        <Row icon="github" title="Avelune on GitHub" subtitle="Source code, issues and how to contribute" onPress={openRepo} />
+        <Row icon="github" title={t('Avelune on GitHub')} subtitle={t('Source code, issues and how to contribute')} onPress={openRepo} />
       </Card>
       <DonateBox />
       <Card>
-        <Doc title="Terms of use" sections={TERMS} />
-        <Doc title="Privacy policy" sections={PRIVACY} />
+        <Doc title={t('Terms of use')} sections={TERMS} />
+        <Doc title={t('Privacy policy')} sections={PRIVACY} />
       </Card>
-      <Muted style={{ textAlign: 'center' }}>Free and open source under the MIT License. Not affiliated with any other tracking app.</Muted>
+      <Muted style={{ textAlign: 'center' }}>{t('Free and open source under the MIT License. Not affiliated with any other tracking app.')}</Muted>
     </Page>
   );
 }
@@ -153,7 +156,7 @@ const a = themed(() => StyleSheet.create({
   h: { fontSize: 24, fontWeight: '700', color: colors.heading, textAlign: 'center', marginTop: 16 },
   lead: { fontSize: 16, color: colors.muted, textAlign: 'center', marginTop: 8, lineHeight: 23, maxWidth: 360 },
   point: { flexDirection: 'row', paddingVertical: 10 },
-  pointIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.tile, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  pointIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.tile, alignItems: 'center', justifyContent: 'center', marginEnd: 14 },
   pointT: { fontSize: 16, fontWeight: '700', color: colors.heading },
   pointB: { fontSize: 15, color: colors.text, marginTop: 3, lineHeight: 21 },
   secT: { fontSize: 16, fontWeight: '700', color: colors.heading },
