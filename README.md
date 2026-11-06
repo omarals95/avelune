@@ -3,7 +3,7 @@
 *Your rhythm. Your space.*
 
 Avelune is a private, local-first period, ovulation, fertile-window and pregnancy tracker for **iPhone, Android and the web**,
-with an optional **self-hosted, end-to-end encrypted sync server**.
+with an optional **self-hosted, end-to-end encrypted sync server**. Available in **English and Arabic** (العربية), with a full right-to-left layout.
 
 > **A free, personal open-source project, not a paid product.**
 > Avelune is not a company. There are no subscriptions, ads, in-app purchases or premium features, and there never will be. Anyone is free to use it.
@@ -24,6 +24,13 @@ with an optional **self-hosted, end-to-end encrypted sync server**.
 | <img src="docs/screenshots/log.webp" width="200" alt="Daily log with quick picks, mood and water"><br>Daily log | <img src="docs/screenshots/insights.webp" width="200" alt="Insights with average cycle and cycle-length history"><br>Insights | <img src="docs/screenshots/temperature.webp" width="200" alt="Basal temperature chart with confirmed ovulation"><br>Temperature &amp; ovulation | <img src="docs/screenshots/health.webp" width="200" alt="Health page with steps and sleep"><br>Health |
 | <img src="docs/screenshots/pregnancy.webp" width="200" alt="Pregnancy mode with the month 5 illustration and caption below"><br>Pregnancy | <img src="docs/screenshots/partner.webp" width="200" alt="Partner sharing screen"><br>Partner sharing | <img src="docs/screenshots/settings.webp" width="200" alt="Settings"><br>Settings | |
 
+### العربية · Arabic (right to left)
+
+| | | | |
+|:-:|:-:|:-:|:-:|
+| <img src="docs/screenshots/ar-welcome.webp" width="200" alt="First-use notice in Arabic"><br>الترحيب · First-use notice | <img src="docs/screenshots/ar-today.webp" width="200" alt="Today screen in Arabic, laid out right to left"><br>اليوم · Today | <img src="docs/screenshots/ar-today-dark.webp" width="200" alt="Today screen in Arabic, dark mode"><br>الوضع الداكن · Dark mode | <img src="docs/screenshots/ar-calendar.webp" width="200" alt="Calendar in Arabic with Monday on the right"><br>التقويم · Calendar |
+| <img src="docs/screenshots/ar-log.webp" width="200" alt="Daily log in Arabic"><br>السجل اليومي · Daily log | <img src="docs/screenshots/ar-insights.webp" width="200" alt="Insights in Arabic"><br>رؤى · Insights | <img src="docs/screenshots/ar-pregnancy.webp" width="200" alt="Pregnancy mode in Arabic"><br>الحمل · Pregnancy | <img src="docs/screenshots/ar-language.webp" width="200" alt="Language setting: match phone, English or Arabic"><br>اللغة · Language |
+
 <sub>Screenshots from the web build with made-up demo data.</sub>
 
 ## Features
@@ -39,6 +46,7 @@ with an optional **self-hosted, end-to-end encrypted sync server**.
 - **Partner (view-only):** share a live, end-to-end encrypted view of your cycle with one person via an invite code; revoke any time. No chat, community or social features.
 - **Reminders (iOS/Android):** period soon/start/end, ovulation, fertile window, pill, water, weight, sleep, temperature, daily check-in; discreet wording by default.
 - **Import and export (Excel or CSV):** Settings → Your data. Export saves a real Excel (.xlsx) file in the same columns as the import template, so it can be imported again. Import accepts Excel (.xlsx) or CSV with one row per day (date, flow, symptoms, mood, BBT, weight, water, sleep, notes, steps) or one row per period (start, end). Delimiters `,` `;` tab; day-first or month-first dates detected (or chosen); °F and lb converted; common symptom names from other apps mapped; a preview shows what will change before anything is written, and existing entries are kept unless you choose to replace them.
+- **Languages:** English and Arabic. Settings → Language follows the phone or picks one. Arabic uses a full right-to-left layout (mirrored rows, arrows, week strip, calendar and petal art), Arabic typefaces (IBM Plex Sans Arabic and Noto Naskh Arabic), Arabic month names and plural forms, and translates everything, including notifications, health articles, the terms, the privacy policy and the doctor report. Exported files keep English column names so they import anywhere.
 - **Privacy:** no account, analytics or trackers; app lock and screenshot blocking; optional end-to-end encrypted sync to your own server; encrypted backups; hide sex content; JSON export and a PDF report for your doctor.
 
 The full list of screens and features is in [docs/FEATURES.md](docs/FEATURES.md).
@@ -89,6 +97,7 @@ A new device can restore by tapping **"I already use an Avelune server"** on the
 ```sh
 npm test            # core + server tests
 npm run typecheck
+npm run i18n:check  # every English string has an Arabic translation
 ```
 
 ## Encryption design

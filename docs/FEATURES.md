@@ -532,3 +532,25 @@ Cycle reminders pause in pregnancy mode. On the web, reminders are set up from t
   - On Health, the tab row is see-through at the top and turns solid once it sticks.
 - **Card petals:** the large "Daily insight" card on Today uses "Light Card Petals" or "Dark Card Petals", matching the theme, along its right edge.
 - **Files:** originals are in `design/petals/`; the app uses optimised copies in `app/assets/petals/`. All of it is in `app/src/petals.tsx`.
+
+## 15. Languages and right-to-left
+
+- **Languages:** English and Arabic. Settings → Language offers "Match phone" (Arabic when the phone is set to Arabic, English otherwise), English or العربية. The app switches at once, with no restart.
+- **Everything is translated**:
+  - every screen, button and accessibility label;
+  - notifications, forecast explanations and import messages;
+  - health articles, pregnancy week notes, the first-use notice, the terms of use and the privacy policy;
+  - the PDF report for your doctor.
+  
+  A note in Settings explains that the English text applies if a translation differs.
+- **Right-to-left layout** in Arabic:
+  - rows, cards and the tab bar mirror;
+  - back and forward arrows flip;
+  - the week strip shows Monday on the right and earlier weeks to the right;
+  - the calendar grid, sliding tabs and water glasses run right to left;
+  - the petal artwork is mirrored.
+  
+  Charts keep time running left to right, and the PIN keypad keeps the phone's usual layout.
+- **Arabic typography:** IBM Plex Sans Arabic for text, with Noto Naskh Arabic headings in the light theme (the counterpart of Playfair Display). Gregorian months have Arabic names (يناير…ديسمبر). Numbers use Western digits, and Arabic plural forms are used throughout.
+- **Exports stay portable:** Excel and CSV exports keep English column names and values, so a file exported in Arabic imports anywhere.
+

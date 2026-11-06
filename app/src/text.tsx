@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 import { StyleSheet, Text as RNText, TextInput as RNTextInput, type TextInputProps, type TextProps } from 'react-native';
 import { font } from './theme';
+import { rtl } from './i18n';
 
 /**
  * Brand text: maps fontWeight/fontSize onto the loaded font files (custom fonts ignore fontWeight on Android),
@@ -18,11 +19,18 @@ function familyFor(style: TextProps['style']) {
   return font.body;
 }
 
+/**
+ * In right-to-left layouts, text with no explicit alignment starts on the right, even when it holds only
+ * Latin text such as a brand or a name (the web otherwise aligns those by their own direction).
+ */
+const startAligned = (style: TextProps['style']) => rtl && !(StyleSheet.flatten(style) as { textAlign?: string } | undefined)?.textAlign;
+
 export const Text = forwardRef<RNText, TextProps>(function Text({ style, ...rest }, ref) {
   const fam = familyFor(style);
-  return <RNText ref={ref} maxFontSizeMultiplier={1.6} {...rest} style={fam ? [style, { fontFamily: fam, fontWeight: 'normal' }] : style} />;
+  const extra = { ...(fam ? { fontFamily: fam, fontWeight: 'normal' as const } : null), ...(startAligned(style) ? { textAlign: 'right' as const } : null) };
+  return <RNText ref={ref} maxFontSizeMultiplier={1.6} {...rest} style={Object.keys(extra).length ? [style, extra] : style} />;
 });
 
 export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextInput({ style, ...rest }, ref) {
-  return <RNTextInput ref={ref} maxFontSizeMultiplier={1.6} {...rest} style={[{ fontFamily: font.body, minWidth: 0 }, style]} />;
+  return <RNTextInput ref={ref} maxFontSizeMultiplier={1.6} {...rest} style={[{ fontFamily: font.body, minWidth: 0 }, rtl && { textAlign: 'right' }, style]} />;
 });

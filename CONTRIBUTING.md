@@ -10,7 +10,7 @@ paying a monthly or yearly subscription. If you have the ability to contribute a
 - **Suggest a feature.** Open an issue that explains the problem you want solved, not only the solution.
 - **Improve the code.** Fix a bug, add a feature from the roadmap, or improve accessibility and performance.
 - **Design and writing.** Improve screens, illustrations, icons, wording or help articles. Health content must be general information, not medical advice.
-- **Translate** the app into your language.
+- **Translate** the app into your language, or improve the Arabic. See [Translations](#translations).
 - **Test** new builds on your phone and share feedback.
 - **Spread the word.** Tell someone who could use a free, private tracker, or star the repository.
 
@@ -33,6 +33,18 @@ See the [README](README.md) for the layout of the repository, running the server
 - **Tests.** Add or update tests in `packages/core` for any change to predictions, dates, imports or encryption.
 - **Small, focused pull requests** with a clear description are easiest to review.
 - Be kind and respectful to everyone.
+
+## Translations
+
+Avelune is available in English and Arabic (right to left).
+
+- Text shown to people is written in English and wrapped where it is shown: `t('Log period')`, `t('Ovulation in {n} days', { n })`, plurals as `tn(n, '{n} day|{n} days')`. Inside `packages/core` use `tr()` and `trn()`. Keys must be string literals; never build a sentence from translated pieces.
+- Translations live in `app/src/i18n/<language>/`, keyed by the exact English text. An Arabic plural lists six forms: zero|one|two|few|many|other.
+- Use `marginStart`/`marginEnd`, `paddingStart`/`paddingEnd` and `start`/`end` instead of left and right, so layouts mirror in right-to-left languages.
+- Run `npm run i18n:check` before opening a pull request; it lists any string without a translation.
+- Do not translate data: export column names, stored values and ids stay in English.
+
+To add a language, copy `app/src/i18n/ar/` to a new folder, translate the values, add it to `LANGUAGES` and `applyLang()` in `app/src/i18n/index.ts`, and open a pull request.
 
 ## Terms and privacy text
 
