@@ -9,6 +9,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useFonts, VarelaRound_400Regular } from '@expo-google-fonts/varela-round';
 import { PlayfairDisplay_500Medium, PlayfairDisplay_600SemiBold } from '@expo-google-fonts/playfair-display';
 import { NunitoSans_400Regular, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold } from '@expo-google-fonts/nunito-sans';
+import { IBMPlexSansArabic_400Regular, IBMPlexSansArabic_500Medium, IBMPlexSansArabic_600SemiBold, IBMPlexSansArabic_700Bold } from '@expo-google-fonts/ibm-plex-sans-arabic';
+import { NotoNaskhArabic_600SemiBold } from '@expo-google-fonts/noto-naskh-arabic';
 import { predict, today as todayFn } from '@avelune/core';
 import { ND, PressScale } from './anim';
 import { Icon, type IconName } from './icons';
@@ -20,7 +22,8 @@ import { Connections } from './screens/Connections';
 import { todayISO } from './today';
 import { scheduleReminders } from './reminders';
 import { selectLogs, selectSettings, useStore } from './store';
-import { applyScheme, colors, scheme, themed } from './theme';
+import { applyScheme, applyScript, colors, scheme, themed } from './theme';
+import { applyLang, resolveLang, rtl, t } from './i18n';
 import { Sheet } from './ui';
 import { SheetOutlet } from './sheet';
 import { LockLayer, useAppLock } from './lock';
@@ -60,7 +63,10 @@ function Root() {
   const pref = useStore((s) => s.theme) ?? 'system';
   const system = useColorScheme();
   const eff = pref === 'system' ? (system === 'dark' ? 'dark' : 'light') : pref;
-  // Swap the live token objects before any child renders; the keyed view below remounts the tree.
+  const lang = resolveLang(useStore((s) => s.language));
+  // Swap the live token objects (and the language) before any child renders; the keyed view below remounts the tree.
+  applyLang(lang);
+  applyScript(lang === 'ar' ? 'arabic' : 'latin');
   applyScheme(eff);
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(colors.bg).catch(() => undefined);
@@ -68,14 +74,15 @@ function Root() {
       void NavigationBar.setButtonStyleAsync(eff === 'dark' ? 'light' : 'dark').catch(() => undefined);
     }
   }, [eff]);
-  const [fontsLoaded, fontError] = useFonts({ PlayfairDisplay_500Medium, PlayfairDisplay_600SemiBold, VarelaRound_400Regular, NunitoSans_400Regular, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold });
+  const [fontsLoaded, fontError] = useFonts({ PlayfairDisplay_500Medium, PlayfairDisplay_600SemiBold, VarelaRound_400Regular, NunitoSans_400Regular, NunitoSans_600SemiBold, NunitoSans_700Bold, NunitoSans_800ExtraBold,
+    IBMPlexSansArabic_400Regular, IBMPlexSansArabic_500Medium, IBMPlexSansArabic_600SemiBold, IBMPlexSansArabic_700Bold, NotoNaskhArabic_600SemiBold });
   const ready = hydrated && (fontsLoaded || !!fontError);
   useEffect(() => useStore.persist.onFinishHydration(() => setHydrated(true)), []);
   useEffect(() => { if (ready) SplashScreen.hideAsync().catch(() => undefined); }, [ready]);
   useAppLock(hydrated);
   if (!ready) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
   return (
-    <View key={eff} style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View key={`${eff}-${lang}`} style={{ flex: 1, backgroundColor: colors.bg, direction: rtl ? 'rtl' : 'ltr' }}>
       <StatusBar style={eff === 'dark' ? 'light' : 'dark'} />
       {!agreed ? <Welcome /> : partner && !onboarded ? <PartnerRoot /> : !onboarded ? <Onboarding /> : <Main />}
       <SystemBarBackdrop />

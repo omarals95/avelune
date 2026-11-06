@@ -1,9 +1,11 @@
+import { rtl } from './i18n';
 import React from 'react';
 import { View } from 'react-native';
 import type { IconProps as PhosphorProps, IconWeight } from 'phosphor-react-native';
 // Deep imports keep the bundle to the icons actually used (Metro does not tree-shake the barrel file).
 import { ArrowCounterClockwise } from 'phosphor-react-native/src/icons/ArrowCounterClockwise';
 import { AndroidLogo } from 'phosphor-react-native/src/icons/AndroidLogo';
+import { Translate } from 'phosphor-react-native/src/icons/Translate';
 import { AppleLogo } from 'phosphor-react-native/src/icons/AppleLogo';
 import { ArrowLeft } from 'phosphor-react-native/src/icons/ArrowLeft';
 import { ArrowRight } from 'phosphor-react-native/src/icons/ArrowRight';
@@ -151,6 +153,7 @@ const MAP = {
   'chart-bar': ChartBar, 'chart-bar-fill': [ChartBar, 'fill'],
   'calendar-month-outline': CalendarBlank, 'calendar-blank-outline': CalendarBlank,
   'calendar-clock': CalendarDots, 'calendar-heart': CalendarHeart,
+  translate: Translate,
   'chevron-left': CaretLeft, 'chevron-right': CaretRight,
   'arrow-left': ArrowLeft, 'arrow-right': ArrowRight,
   close: X, 'close-circle-outline': XCircle,
@@ -207,11 +210,15 @@ export interface IconPropsApp {
  * Icons are decorative: the control around them carries the accessible name,
  * so screen readers never announce them.
  */
+/** Arrows that point "forward" or "back" mirror in right-to-left layouts. */
+const DIRECTIONAL = new Set(['chevron-left', 'chevron-right', 'arrow-left', 'arrow-right']);
+
 export function Icon({ name, size = 24, color, weight, style }: IconPropsApp) {
   const e = (MAP as Record<string, Entry>)[name] ?? Question;
   const [Cmp, w] = Array.isArray(e) ? e : [e, undefined];
+  const mirror = rtl && DIRECTIONAL.has(name);
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ width: size, height: size }} pointerEvents="none">
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[{ width: size, height: size }, mirror && { transform: [{ scaleX: -1 }] }]} pointerEvents="none">
       <Cmp size={size} color={color} weight={weight ?? w ?? 'regular'} style={style} />
     </View>
   );

@@ -1,4 +1,5 @@
 import type { ThemePref } from './theme';
+import type { LangPref } from './i18n';
 import { TERMS_VERSION } from './legal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
@@ -62,12 +63,14 @@ interface State {
   hideSex: boolean;
   /** Appearance: follow the phone, or force light/dark. */
   theme: ThemePref;
+  /** Language: follow the phone, or force English/Arabic. */
+  language: LangPref;
   /** Last next-period date the user has seen, to explain when the estimate moves. */
   seenForecast?: DateStr | null;
   /** Partner's display name, kept only on this device. */
   partnerName?: string;
   weightUnit: 'kg' | 'lb';
-  setPrefs: (p: Partial<Pick<State, 'name' | 'hideSex' | 'weightUnit' | 'unit' | 'theme' | 'partnerName' | 'seenForecast'>>) => void;
+  setPrefs: (p: Partial<Pick<State, 'name' | 'hideSex' | 'weightUnit' | 'unit' | 'theme' | 'language' | 'partnerName' | 'seenForecast'>>) => void;
   /** Import many day logs at once (CSV). Returns how many days changed. */
   importLogs: (logs: DayLog[], overwrite: boolean) => number;
   /** Toggle period days in bulk (calendar "Edit period dates"). */
@@ -144,7 +147,7 @@ export const useStore = create<State>()(
       return {
         records: {}, dirty: {}, onboarded: false, termsAccepted: null, unit: 'C', server: null, syncing: false, syncError: null, reminders: DEFAULT_REMINDERS,
         setReminders: (r) => set((st) => ({ reminders: { ...st.reminders, ...r } })),
-        name: '', hideSex: false, theme: 'system', weightUnit: 'kg', share: null, partner: null,
+        name: '', hideSex: false, theme: 'system', language: 'system', weightUnit: 'kg', share: null, partner: null,
         setPrefs: (p) => set(p),
         acceptTerms: () => set({ termsAccepted: TERMS_VERSION }),
 
@@ -266,7 +269,7 @@ export const useStore = create<State>()(
         setBackup: (b) => set((s) => ({ backup: { ...s.backup, ...b } })),
         backupPrefs: () => {
           const s = get();
-          return { name: s.name, unit: s.unit, weightUnit: s.weightUnit, hideSex: s.hideSex, theme: s.theme, partnerName: s.partnerName, reminders: s.reminders };
+          return { name: s.name, unit: s.unit, weightUnit: s.weightUnit, hideSex: s.hideSex, theme: s.theme, language: s.language, partnerName: s.partnerName, reminders: s.reminders };
         },
         restoreBackup: (payload, mode) => {
           const now = Date.now();
@@ -285,7 +288,7 @@ export const useStore = create<State>()(
             }
             const p = (payload.prefs ?? {}) as Partial<State>;
             const prefs = mode === 'replace' || !s.onboarded
-              ? { name: p.name ?? s.name, unit: p.unit ?? s.unit, weightUnit: p.weightUnit ?? s.weightUnit, hideSex: p.hideSex ?? s.hideSex, theme: p.theme ?? s.theme, partnerName: p.partnerName ?? s.partnerName, reminders: normalizeReminders(p.reminders ?? s.reminders) }
+              ? { name: p.name ?? s.name, unit: p.unit ?? s.unit, weightUnit: p.weightUnit ?? s.weightUnit, hideSex: p.hideSex ?? s.hideSex, theme: p.theme ?? s.theme, language: p.language ?? s.language, partnerName: p.partnerName ?? s.partnerName, reminders: normalizeReminders(p.reminders ?? s.reminders) }
               : {};
             return { records, dirty, onboarded: true, ...prefs };
           });
@@ -410,7 +413,7 @@ export const useStore = create<State>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({
         records: s.records, dirty: s.dirty, onboarded: s.onboarded, termsAccepted: s.termsAccepted, unit: s.unit, server: s.server, reminders: s.reminders,
-        name: s.name, hideSex: s.hideSex, theme: s.theme, partnerName: s.partnerName, seenForecast: s.seenForecast, weightUnit: s.weightUnit, share: s.share, partner: s.partner, backup: s.backup, security: s.security,
+        name: s.name, hideSex: s.hideSex, theme: s.theme, language: s.language, partnerName: s.partnerName, seenForecast: s.seenForecast, weightUnit: s.weightUnit, share: s.share, partner: s.partner, backup: s.backup, security: s.security,
       }),
       // Older installs stored a flatter reminders shape; fill in anything missing.
       merge: (persisted, current) => {

@@ -191,18 +191,29 @@ export const shadow = { ...shadows.light };
 /**
  * Type families. Light: Playfair Display headings (editorial serif) with Nunito Sans.
  * Dark: Nunito Sans throughout, as in the dark reference screens.
+ * Arabic: Noto Naskh Arabic headings in light (the serif counterpart) with IBM Plex Sans Arabic.
  */
 const fonts = {
   light: { heading: 'PlayfairDisplay_500Medium', display: 'PlayfairDisplay_500Medium' },
   dark: { heading: 'NunitoSans_600SemiBold', display: 'NunitoSans_600SemiBold' },
 };
-export const font = {
-  ...fonts.light,
-  body: 'NunitoSans_400Regular',
-  medium: 'NunitoSans_600SemiBold',
-  bold: 'NunitoSans_700Bold',
-  black: 'NunitoSans_800ExtraBold',
+const latinText = { body: 'NunitoSans_400Regular', medium: 'NunitoSans_600SemiBold', bold: 'NunitoSans_700Bold', black: 'NunitoSans_800ExtraBold' };
+const arabicFonts = {
+  light: { heading: 'NotoNaskhArabic_600SemiBold', display: 'NotoNaskhArabic_600SemiBold' },
+  dark: { heading: 'IBMPlexSansArabic_600SemiBold', display: 'IBMPlexSansArabic_600SemiBold' },
 };
+const arabicText = { body: 'IBMPlexSansArabic_400Regular', medium: 'IBMPlexSansArabic_500Medium', bold: 'IBMPlexSansArabic_600SemiBold', black: 'IBMPlexSansArabic_700Bold' };
+export const font = { ...fonts.light, ...latinText };
+let script: 'latin' | 'arabic' = 'latin';
+const fontsFor = (s: Scheme) => (script === 'arabic' ? { ...arabicFonts[s], ...arabicText } : { ...fonts[s], ...latinText });
+
+/** Switch the type families to a script (Arabic text needs Arabic fonts). Call before applyScheme. */
+export function applyScript(next: 'latin' | 'arabic') {
+  if (next === script) return;
+  script = next;
+  version++;
+  Object.assign(font, fontsFor(scheme));
+}
 
 /** Motion tokens (ms). Exits are faster than entrances. */
 export const motion = { press: 120, fast: 180, base: 260, enter: 420, crossfade: 700 };
@@ -253,7 +264,7 @@ export function applyScheme(s: Scheme) {
   Object.assign(blobColor, blobs[s]);
   Object.assign(circleFill, { fertile: palettes[s].fertile, ovulation: palettes[s].ovulation });
   Object.assign(shadow, shadows[s]);
-  Object.assign(font, fonts[s]);
+  Object.assign(font, fontsFor(s));
   Object.assign(flowers, flowerFiles[s]);
 }
 

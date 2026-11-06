@@ -14,3 +14,4 @@ export * from './importers';
 export * from './ovulation';
 export * from './contraception';
 export * from './report';
+export * from './i18n';

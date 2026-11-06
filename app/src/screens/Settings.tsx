@@ -15,6 +15,7 @@ import { selectLogs, selectSettings, useStore } from '../store';
 import { saveFile, XLSX_MIME } from '../files';
 import { useHealth } from '../health/store';
 import { colors, type ThemePref } from '../theme';
+import { LANGUAGES, t, type LangPref } from '../i18n';
 import { Btn, Card, Chip, Field, Muted, Page, Row, Section, Stepper, TopBar } from '../ui';
 import { BackupSettings } from './Backup';
 import { AboutPage, DonateBox } from './About';
@@ -34,13 +35,14 @@ export function Settings({ page: initial, onClose }: { page: SettingsPage; onClo
   const [page, setPage] = useState<SettingsPage>(initial);
   const back = () => (page === 'main' || initial !== 'main' ? onClose() : setPage('main'));
   const titles: Record<SettingsPage, string> = {
-    main: 'Settings', appearance: 'Appearance', profile: 'Health profile', backup: 'Backups', security: 'Privacy & security', meds: 'Contraception & meds', report: 'Doctor report', health: 'Health connections', import: 'Import data', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy & after', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units', about: 'About Avelune',
+    main: 'Settings', appearance: 'Appearance', language: 'Language', profile: 'Health profile', backup: 'Backups', security: 'Privacy & security', meds: 'Contraception & meds', report: 'Doctor report', health: 'Health connections', import: 'Import data', cycle: 'Cycle and ovulation', reminders: 'Reminders', pregnancy: 'Pregnancy & after', content: 'Hide content', sync: 'Sync & encryption', data: 'Your data', units: 'Units', about: 'About Avelune',
   };
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <TopBar title={titles[page]} onBack={back} />
       {page === 'main' && <Main go={setPage} />}
       {page === 'appearance' && <Appearance />}
+      {page === 'language' && <LanguagePage />}
       {page === 'profile' && <Profile />}
       {page === 'backup' && <BackupSettings />}
       {page === 'security' && <SecuritySettings />}
@@ -69,6 +71,7 @@ function Main({ go }: { go: (p: SettingsPage) => void }) {
         <Field label="Your name (shown to your partner)" value={st.name} onChangeText={(name) => st.setPrefs({ name })} autoCapitalize="words" placeholder="Optional" />
       </Card>
       <Card>
+        <Row icon="translate" title={t('Language')} subtitle={st.language && st.language !== 'system' ? LANGUAGES.find((l) => l.code === st.language)?.name : t('Match phone')} onPress={() => go('language')} />
         <Row icon="palette" title="Appearance" subtitle={({ system: 'Match phone', light: 'Light', dark: 'Dark' } as const)[st.theme ?? 'system']} onPress={() => go('appearance')} />
         <Row icon="stethoscope" title="Health profile" subtitle={profileSummary(settings)} onPress={() => go('profile')} />
         <Row icon="pill" title="Contraception & medication" subtitle={(settings.medications ?? []).filter((m) => m.active).length ? `${(settings.medications ?? []).filter((m) => m.active).length} medication${(settings.medications ?? []).filter((m) => m.active).length === 1 ? '' : 's'}` : undefined} onPress={() => go('meds')} />
@@ -90,6 +93,37 @@ function Main({ go }: { go: (p: SettingsPage) => void }) {
       </Card>
       <DonateBox compact />
       <Muted style={{ textAlign: 'center' }}>Avelune is a free, independent, open-source tracker. Predictions are estimates and not a method of contraception.</Muted>
+    </Page>
+  );
+}
+
+function LanguagePage() {
+  const st = useStore();
+  const cur = st.language ?? 'system';
+  const opts: [LangPref, string, string][] = [
+    ['system', t('Match phone'), t('Uses your phone’s language when Avelune speaks it, otherwise English')],
+    ...LANGUAGES.map((l) => [l.code, l.name, l.code === 'ar' ? t('Arabic · right to left') : t('English · left to right')] as [LangPref, string, string]),
+  ];
+  return (
+    <Page>
+      <Card>
+        {opts.map(([k, name, sub]) => (
+          <PressScale key={k} accessibilityRole="radio" accessibilityState={{ checked: cur === k }} accessibilityLabel={name} testID={`lang-${k}`}
+            onPress={() => { if (k !== cur) { resume.settings = 'language'; st.setPrefs({ language: k }); } }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, minHeight: 64 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.tile, alignItems: 'center', justifyContent: 'center', marginEnd: 14 }}><Icon name="translate" size={22} color={colors.heading} /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 17, color: colors.heading }}>{name}</Text>
+                <Text style={{ fontSize: 14, color: colors.muted, marginTop: 2 }}>{sub}</Text>
+              </View>
+              <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: cur === k ? colors.primary : colors.faint, alignItems: 'center', justifyContent: 'center' }}>
+                {cur === k ? <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary }} /> : null}
+              </View>
+            </View>
+          </PressScale>
+        ))}
+      </Card>
+      <Text style={{ fontSize: 14, color: colors.muted, marginHorizontal: 4, lineHeight: 20 }}>{t('Health guidance, the terms and the privacy policy are translated for convenience. If anything differs, the English text applies.')}</Text>
     </Page>
   );
 }
