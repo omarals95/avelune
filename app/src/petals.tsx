@@ -37,7 +37,7 @@ export function PetalBackdrop() {
   const w = Math.min(width, 520);
   const { top, bottom } = CORNERS[themeKey()];
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" testID="petal-backdrop">
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" testID="petal-backdrop">
       <Image source={top.src} resizeMode="contain" fadeDuration={0}
         style={{ position: 'absolute', top: 0, [sideOf(top.side)]: 0, width: w, height: w / top.ratio, transform: mirror() }} />
       <Image source={bottom.src} resizeMode="contain" fadeDuration={0}

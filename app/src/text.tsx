@@ -24,5 +24,5 @@ export const Text = forwardRef<RNText, TextProps>(function Text({ style, ...rest
 });
 
 export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextInput({ style, ...rest }, ref) {
-  return <RNTextInput ref={ref} maxFontSizeMultiplier={1.6} {...rest} style={[{ fontFamily: font.body }, style]} />;
+  return <RNTextInput ref={ref} maxFontSizeMultiplier={1.6} {...rest} style={[{ fontFamily: font.body, minWidth: 0 }, style]} />;
 });

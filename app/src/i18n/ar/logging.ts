@@ -164,7 +164,7 @@ export const logging: Record<string, string> = {
   'Sample data is shown. Open connections': 'تُعرض بيانات تجريبية. فتح الاتصالات',
   'Sample data': 'بيانات تجريبية',
   'Connect your health data': 'اربطي بياناتكِ الصحية',
-  'Apple Health, Health Connect (Samsung Health, Fitbit, Google and more on Android) or your Fitbit account.': 'Apple Health أو Health Connect (Samsung Health وFitbit وGoogle وغيرها على Android) أو حسابكِ في Fitbit.',
+  'Apple Health, Health Connect (Samsung Health, Fitbit, Google and more on Android) or your Fitbit account.': 'من تطبيق Apple Health، أو من Health Connect على Android الذي يجمع بيانات Samsung Health وFitbit وGoogle وغيرها، أو من حسابكِ في Fitbit.',
   'Connect a tracker': 'ربط جهاز تتبّع',
   'Today': 'اليوم',
   'no data': 'لا توجد بيانات',

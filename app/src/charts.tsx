@@ -3,7 +3,7 @@ import { Animated, Easing, View } from 'react-native';
 import { Text } from './text';
 import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { ND, useReduceMotion } from './anim';
-import { colors } from './theme';
+import { colors, font } from './theme';
 import { flipX, rtl, t, tn } from './i18n';
 
 export interface Pt { i: number; y: number | null }
@@ -38,7 +38,9 @@ export function Chart({ points, kind, yMin, yMax, ticks = 6, target, markers = [
   const x = (i: number) => L + (n === 1 ? cw / 2 : (i + 0.5) * (cw / n));
   const y = (v: number) => T + ch - ((v - yMin) / (yMax - yMin || 1)) * ch;
   // Thin x labels by available width (≈38px per label) so they never collide.
-  const step = Math.max(1, Math.ceil((n * 38) / Math.max(1, cw)));
+  // Leave room for the longest label (Arabic month names have no short forms).
+  const labelW = Math.max(38, Math.max(0, ...xLabels.map((l) => l.length)) * 7 + 12);
+  const step = Math.max(1, Math.ceil((n * labelW) / Math.max(1, cw)));
   const pts = points.filter((p) => p.y != null) as { i: number; y: number }[];
   let path = '';
   for (const p of pts) path += `${path ? 'L' : 'M'}${x(p.i).toFixed(1)},${y(p.y).toFixed(1)}`;
@@ -67,7 +69,7 @@ export function Chart({ points, kind, yMin, yMax, ticks = 6, target, markers = [
               );
             })}
             <Line x1={L} x2={w - R} y1={T + ch} y2={T + ch} stroke={colors.faint} strokeWidth={1} />
-            {xLabels.map((l, i) => i % step === 0 ? <SvgText key={i} x={x(i)} y={height - 6} fontSize={12} fontFamily="NunitoSans_400Regular" fill={colors.muted} textAnchor="middle">{l}</SvgText> : null)}
+            {xLabels.map((l, i) => i % step === 0 ? <SvgText key={i} x={x(i)} y={height - 6} fontSize={12} fontFamily={font.body} fill={colors.muted} textAnchor="middle">{l}</SvgText> : null)}
             {markers.map((m, k) => (
               <G key={k}>
                 <Rect x={x(m.i) - cw / n / 2} y={T} width={Math.max(4, cw / n)} height={ch} fill={m.color} opacity={0.13} />

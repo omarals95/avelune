@@ -114,7 +114,8 @@ interface State {
 
 export const isEmptyLog = (l: DayLog) =>
   l.flow === 0 && !l.symptoms.length && !l.moods.length && !l.tags.length && !l.notes?.trim() &&
-  l.bbt == null && l.weight == null && !l.water && l.sleep == null && l.distance == null;
+  l.bbt == null && l.weight == null && !l.water && l.sleep == null && l.distance == null &&
+  !Object.values(l.meds ?? {}).some((n) => n > 0);
 
 export const emptyLog = (date: DateStr): DayLog => ({ date, flow: 0, symptoms: [], moods: [], tags: [] });
 
