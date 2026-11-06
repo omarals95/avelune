@@ -219,7 +219,7 @@ function ForecastCard({ p, today, showFertile, contra }: { p: ReturnType<typeof 
               <Text style={st.fcTitle}>{t('Your period hasn’t started yet')}</Text>
               <Text style={st.fcNote}>{tn(p.lateBy ?? 0, 'It is {n} day past your likely window. Cycles vary, and stress, travel, illness or changes in contraception can shift timing.|It is {n} days past your likely window. Cycles vary, and stress, travel, illness or changes in contraception can shift timing.')}</Text>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-                <Btn kind="ghost" title="Log period" onPress={() => nav.openCalendar(true)} style={{ flex: 1 }} />
+                <Btn kind="ghost" title={t('Log period')} onPress={() => nav.openCalendar(true)} style={{ flex: 1 }} />
                 <Btn kind="ghost" title={t('Hide for this cycle')} onPress={() => updateSettings({ lateDismissedFor: next })} style={{ flex: 1 }} />
               </View>
             </View>

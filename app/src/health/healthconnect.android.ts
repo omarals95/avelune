@@ -2,6 +2,7 @@ import {
   SdkAvailabilityStatus, aggregateGroupByPeriod, getSdkStatus, initialize, openHealthConnectSettings, readRecords, requestPermission, type Permission,
 } from 'react-native-health-connect';
 import type { HealthDay } from '@avelune/core';
+import { t } from '../i18n';
 import { averageByDay, localDate, sleepWindow, type Provider } from './types';
 
 /**
@@ -19,8 +20,8 @@ export const healthConnect: Provider = {
   available: async () => {
     const s = await getSdkStatus();
     if (s === SdkAvailabilityStatus.SDK_AVAILABLE) return { ok: true };
-    if (s === SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) return { ok: false, reason: 'Update Health Connect from the Play Store, then try again.' };
-    return { ok: false, reason: 'Health Connect is not installed on this phone.' };
+    if (s === SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) return { ok: false, reason: t('Update Health Connect from the Play Store, then try again.') };
+    return { ok: false, reason: t('Health Connect is not installed on this phone.') };
   },
   connect: async () => {
     if (!(await init())) return false;

@@ -6,8 +6,8 @@ import { Asset } from 'expo-asset';
 import Reanimated, { FadeInDown } from 'react-native-reanimated';
 import { importDripCsv, importRows, importText, importXmlStream, importZip, isDripCsv, parseCSV, pickSheet, readXlsx, type DateOrder, type ImportResult } from '@avelune/core';
 import { CATEGORIES, tagId } from '../catalog';
-import { fmtDay } from '../components';
 import { useHealth } from '../health/store';
+import { dayMonth, t, tn } from '../i18n';
 import { Icon } from '../icons';
 import { useStore } from '../store';
 import { Text } from '../text';
@@ -107,7 +107,7 @@ async function saveTemplate(): Promise<string> {
     const a = document.createElement('a');
     a.href = url; a.download = TEMPLATE_NAME; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    return 'Template downloaded.';
+    return t('Template downloaded.');
   }
   const data = await FileSystem.readAsStringAsync(src, { encoding: FileSystem.EncodingType.Base64 });
   if (Platform.OS === 'android') {
@@ -116,7 +116,7 @@ async function saveTemplate(): Promise<string> {
     if (!perm.granted) return '';
     const uri = await FileSystem.StorageAccessFramework.createFileAsync(perm.directoryUri, TEMPLATE_NAME.replace(/\.xlsx$/, ''), XLSX_MIME);
     await FileSystem.writeAsStringAsync(uri, data, { encoding: FileSystem.EncodingType.Base64 });
-    return 'Template saved. Open it in Excel or Google Sheets, fill it in, then import it here.';
+    return t('Template saved. Open it in Excel or Google Sheets, fill it in, then import it here.');
   }
   const dest = `${FileSystem.cacheDirectory}${encodeURIComponent(TEMPLATE_NAME)}`;
   await FileSystem.writeAsStringAsync(dest, data, { encoding: FileSystem.EncodingType.Base64 });
@@ -147,8 +147,8 @@ export function ImportCSV() {
     const lower = a.name.toLowerCase();
     const opts = { resolve, classify, weightUnit: st.weightUnit, periodLength: 5 };
     setRows(null); setResult(null); setSheet(undefined); setName(a.name);
-    if (/\.avelune$/.test(lower)) return setErr('This is an Avelune backup. Restore it from Settings › Backups.');
-    if (/\.(xls|numbers|ods)$/.test(lower)) return setErr('Save the spreadsheet as .xlsx or .csv first, then choose it again.');
+    if (/\.avelune$/.test(lower)) return setErr(t('This is an Avelune backup. Restore it from Settings › Backups.'));
+    if (/\.(xls|numbers|ods)$/.test(lower)) return setErr(t('Save the spreadsheet as .xlsx or .csv first, then choose it again.'));
     try {
       // Spreadsheets first: an .xlsx is a zip of XML files, and Android reports its type as
       // "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", which must not be mistaken for an export archive.
@@ -170,12 +170,12 @@ export function ImportCSV() {
       if (/\.(json|cluedata|txt)$/.test(lower) || /^\s*[[{]/.test(text)) setResult(importText(a.name, text, opts));
       else if (isDripCsv(text)) setResult(importDripCsv(text, opts));
       else setRows(parseCSV(text));
-    } catch (e) { setErr(`Could not read the file (${(e as Error).message}).`); } finally { setProgress(null); }
+    } catch (e) { setErr(t('Could not read the file ({error}).', { error: (e as Error).message })); } finally { setProgress(null); }
   };
 
   const download = async () => {
     setTplMsg('');
-    try { setTplMsg(await saveTemplate()); } catch (e) { setTplMsg(`Could not save the template (${(e as Error).message}).`); }
+    try { setTplMsg(await saveTemplate()); } catch (e) { setTplMsg(t('Could not save the template ({error}).', { error: (e as Error).message })); }
   };
 
   const preview: ImportResult | null = result ?? (rows ? importRows(rows, { resolve, classify, dateOrder: order, tempUnit, weightUnit: st.weightUnit, periodLength: 5 }) : null);
@@ -184,7 +184,9 @@ export function ImportCSV() {
     if (!preview) return;
     const n = st.importLogs(preview.logs, overwrite);
     if (preview.health.length) importManual(preview.health, preview.healthSource ?? 'manual');
-    setDone(`Imported ${n} day${n === 1 ? '' : 's'}${preview.health.length ? ` and ${preview.health.length} days of health data` : ''}.`);
+    setDone(preview.health.length
+      ? tn(n, 'Imported {n} day and {health}.|Imported {n} days and {health}.', { health: tn(preview.health.length, '{n} day of health data|{n} days of health data') })
+      : tn(n, 'Imported {n} day.|Imported {n} days.'));
     setRows(null); setResult(null);
   };
 
@@ -193,38 +195,38 @@ export function ImportCSV() {
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
       <Card>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.fertileSoft, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.fertileSoft, alignItems: 'center', justifyContent: 'center', marginEnd: 12 }}>
             <Icon name="file-xls" size={22} color={colors.fertile} />
           </View>
-          <Text style={{ flex: 1, fontSize: 18, fontWeight: '700', color: colors.heading }}>Start with the template</Text>
+          <Text style={{ flex: 1, fontSize: 18, fontWeight: '700', color: colors.heading }}>{t('Start with the template')}</Text>
         </View>
         <Text style={{ fontSize: 15, color: colors.text, lineHeight: 22 }}>
-          Download the example spreadsheet, fill in one row per day in Excel, Google Sheets or Numbers, then import it below. It includes a filled-in example sheet and a list of the words Avelune understands.
+          {t('Download the example spreadsheet, fill in one row per day in Excel, Google Sheets or Numbers, then import it below. It includes a filled-in example sheet and a list of the words Avelune understands.')}
         </Text>
-        <Btn kind="ghost" icon="download" title="Download example.xlsx" onPress={() => void download()} style={{ marginTop: 12 }} />
+        <Btn kind="ghost" icon="download" title={t('Download example.xlsx')} onPress={() => void download()} style={{ marginTop: 12 }} />
         {tplMsg ? <Muted style={{ marginTop: 4, color: colors.text }} >{tplMsg}</Muted> : null}
       </Card>
       <Card>
-        <Text style={{ fontSize: 18, fontWeight: '700', color: colors.heading, marginBottom: 6 }}>Import a file</Text>
+        <Text style={{ fontSize: 18, fontWeight: '700', color: colors.heading, marginBottom: 6 }}>{t('Import a file')}</Text>
         <Text style={{ fontSize: 15, color: colors.text, lineHeight: 22 }}>
-          Bring your history from another app or a spreadsheet. Everything is read on this device, and you see a preview before anything is saved.
+          {t('Bring your history from another app or a spreadsheet. Everything is read on this device, and you see a preview before anything is saved.')}
         </Text>
         <View style={{ marginTop: 10, gap: 6 }}>
           {[
-            ['Apple Health', 'export.zip from Health › profile › Export All Health Data'],
-            ['Flo, Clue', 'the data export file they email you (.json or .zip)'],
-            ['Natural Cycles', 'the .zip of CSV files from your data request'],
-            ['drip.', 'the CSV from Settings › Data › Export'],
-            ['Garmin', 'the .zip from garmin.com › Account › Data Management › Export your data'],
-            ['Spreadsheets', 'Excel (.xlsx) or CSV with a date column (use the template above)'],
+            ['Apple Health', t('export.zip from Health › profile › Export All Health Data')],
+            [t('Flo, Clue'), t('the data export file they email you (.json or .zip)')],
+            ['Natural Cycles', t('the .zip of CSV files from your data request')],
+            ['drip.', t('the CSV from Settings › Data › Export')],
+            ['Garmin', t('the .zip from garmin.com › Account › Data Management › Export your data')],
+            [t('Spreadsheets'), t('Excel (.xlsx) or CSV with a date column (use the template above)')],
           ].map(([a, b]) => (
             <Text key={a} style={{ fontSize: 14, color: colors.text, lineHeight: 20 }}><Text style={{ fontWeight: '700' }}>{a}: </Text>{b}</Text>
           ))}
         </View>
-        <Btn icon="file-upload-outline" title={rows || result ? 'Choose a different file' : 'Choose a file'} disabled={progress != null} onPress={() => void pick()} style={{ marginTop: 14 }} />
+        <Btn icon="file-upload-outline" title={rows || result ? t('Choose a different file') : t('Choose a file')} disabled={progress != null} onPress={() => void pick()} style={{ marginTop: 14 }} />
         {progress != null ? (
           <View style={{ marginTop: 8 }} accessibilityLiveRegion="polite">
-            <Text style={{ fontSize: 14, color: colors.text, marginBottom: 6 }}>Reading {name}… {Math.round(progress * 100)}%</Text>
+            <Text style={{ fontSize: 14, color: colors.text, marginBottom: 6 }}>{t('Reading {name}… {percent}%', { name, percent: Math.round(progress * 100) })}</Text>
             <View style={{ height: 8, borderRadius: 4, backgroundColor: colors.tile, overflow: 'hidden' }}><View style={{ height: 8, width: `${Math.round(progress * 100)}%`, backgroundColor: colors.primary }} /></View>
           </View>
         ) : null}
@@ -232,7 +234,7 @@ export function ImportCSV() {
         {done ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }} accessibilityLiveRegion="polite">
             <Icon name="check-circle" size={22} color={colors.fertile} />
-            <Text style={{ marginLeft: 8, fontSize: 15, color: colors.text }}>{done}</Text>
+            <Text style={{ marginStart: 8, fontSize: 15, color: colors.text }}>{done}</Text>
           </View>
         ) : null}
       </Card>
@@ -240,33 +242,33 @@ export function ImportCSV() {
       {preview && (
         <Reanimated.View entering={FadeInDown.springify().damping(18)}>
           <Card>
-            <Text style={{ fontSize: 17, fontWeight: '700', color: colors.heading }}>{name}{sheet ? ` · sheet “${sheet}”` : ''}</Text>
-            {preview.source ? <Text style={{ fontSize: 14, color: colors.muted, marginTop: 2 }}>Recognised as: {preview.source}</Text> : null}
+            <Text style={{ fontSize: 17, fontWeight: '700', color: colors.heading }}>{name}{sheet ? t(' · sheet “{sheet}”', { sheet }) : ''}</Text>
+            {preview.source ? <Text style={{ fontSize: 14, color: colors.muted, marginTop: 2 }}>{t('Recognised as: {source}', { source: preview.source })}</Text> : null}
             <Text style={{ fontSize: 15, color: colors.text, marginTop: 6, lineHeight: 22 }}>
-              {preview.rows} rows · {preview.logs.length} days found{preview.periodDays ? ` · ${preview.periodDays} period days` : ''}
-              {preview.range ? `\n${fmtDay(preview.range[0])} ${preview.range[0].slice(0, 4)} – ${fmtDay(preview.range[1])} ${preview.range[1].slice(0, 4)}` : ''}
+              {tn(preview.rows, '{n} row|{n} rows')} · {tn(preview.logs.length, '{n} day found|{n} days found')}{preview.periodDays ? ` · ${tn(preview.periodDays, '{n} period day|{n} period days')}` : ''}
+              {preview.range ? `\n${dayMonth(preview.range[0])} ${preview.range[0].slice(0, 4)} – ${dayMonth(preview.range[1])} ${preview.range[1].slice(0, 4)}` : ''}
             </Text>
-            {mapped.length ? <Muted style={{ marginTop: 8, color: colors.text }}>Columns: {mapped.join(', ')}</Muted> : null}
-            {preview.skipped.length ? <Muted style={{ marginTop: 8, color: colors.danger }}>{preview.skipped.length} row(s) skipped, e.g. row {preview.skipped[0].row}: {preview.skipped[0].reason}</Muted> : null}
-            {preview.unknownLabels.length ? <Muted style={{ marginTop: 8, color: colors.text }}>Not recognised (left out): {preview.unknownLabels.slice(0, 8).join(', ')}{preview.unknownLabels.length > 8 ? '…' : ''}</Muted> : null}
+            {mapped.length ? <Muted style={{ marginTop: 8, color: colors.text }}>{t('Columns: {list}', { list: mapped.join(t(', ')) })}</Muted> : null}
+            {preview.skipped.length ? <Muted style={{ marginTop: 8, color: colors.danger }}>{tn(preview.skipped.length, '{n} row(s) skipped, e.g. row {row}: {reason}|{n} row(s) skipped, e.g. row {row}: {reason}', { row: preview.skipped[0].row, reason: preview.skipped[0].reason })}</Muted> : null}
+            {preview.unknownLabels.length ? <Muted style={{ marginTop: 8, color: colors.text }}>{t('Not recognised (left out): {list}', { list: preview.unknownLabels.slice(0, 8).join(t(', ')) + (preview.unknownLabels.length > 8 ? '…' : '') })}</Muted> : null}
           </Card>
           <Card>
             {!result ? <>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text, marginBottom: 8 }}>Dates like 03/04/2026 mean</Text>
-            <Segmented options={[['auto', 'Auto'], ['dmy', '3 April'], ['mdy', 'March 4']]} value={order} onChange={setOrder} />
-            {order === 'auto' && preview.dateOrder !== 'ambiguous' ? <Muted style={{ marginTop: 6, color: colors.text }}>Detected: {preview.dateOrder === 'mdy' ? 'month first (US style)' : 'day first'}.</Muted> : null}
-            {preview.dateOrder === 'ambiguous' && order === 'auto' ? <Muted style={{ marginTop: 8, color: colors.danger }}>This file's dates could be read either way. Pick the right order.</Muted> : null}
+            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text, marginBottom: 8 }}>{t('Dates like 03/04/2026 mean')}</Text>
+            <Segmented options={[['auto', t('Auto')], ['dmy', t('3 April')], ['mdy', t('March 4')]]} value={order} onChange={setOrder} />
+            {order === 'auto' && preview.dateOrder !== 'ambiguous' ? <Muted style={{ marginTop: 6, color: colors.text }}>{preview.dateOrder === 'mdy' ? t('Detected: month first (US style).') : t('Detected: day first.')}</Muted> : null}
+            {preview.dateOrder === 'ambiguous' && order === 'auto' ? <Muted style={{ marginTop: 8, color: colors.danger }}>{t("This file's dates could be read either way. Pick the right order.")}</Muted> : null}
             {preview.columns.bbt != null && (
               <View style={{ marginTop: 14 }}>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text, marginBottom: 8 }}>Temperature unit</Text>
-                <Segmented options={[['auto', 'Auto'], ['C', '°C'], ['F', '°F']]} value={tempUnit} onChange={setTempUnit} />
+                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text, marginBottom: 8 }}>{t('Temperature unit')}</Text>
+                <Segmented options={[['auto', t('Auto')], ['C', '°C'], ['F', '°F']]} value={tempUnit} onChange={setTempUnit} />
               </View>
             )}
             </> : null}
-            <Row title="Replace my existing entries" subtitle={overwrite ? 'Imported values win on the same day' : 'Keep what I logged; fill gaps and add symptoms'} value={overwrite} onValueChange={setOverwrite} />
+            <Row title={t('Replace my existing entries')} subtitle={overwrite ? t('Imported values win on the same day') : t('Keep what I logged; fill gaps and add symptoms')} value={overwrite} onValueChange={setOverwrite} />
           </Card>
-          <Btn icon="database-import-outline" title={`Import ${preview.logs.length} days`} disabled={!preview.logs.length && !preview.health.length} onPress={run} />
-          <Btn kind="ghost" title="Cancel" onPress={() => { setRows(null); setResult(null); }} />
+          <Btn icon="database-import-outline" title={tn(preview.logs.length, 'Import {n} day|Import {n} days')} disabled={!preview.logs.length && !preview.health.length} onPress={run} />
+          <Btn kind="ghost" title={t('Cancel')} onPress={() => { setRows(null); setResult(null); }} />
         </Reanimated.View>
       )}
     </ScrollView>

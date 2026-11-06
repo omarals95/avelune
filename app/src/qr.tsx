@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
+import { t } from './i18n';
 // The package entry pulls in Node-only renderers; the core encoder is plain JS.
 import { create as createQR } from 'qrcode/lib/core/qrcode';
 
@@ -14,7 +15,7 @@ export function QR({ value, size = 240, label }: { value: string; size?: number;
     return { n: n + 8, d };
   }, [value]);
   return (
-    <View accessible accessibilityRole="image" accessibilityLabel={label ?? 'QR code'} style={{ width: size, height: size, borderRadius: 16, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
+    <View accessible accessibilityRole="image" accessibilityLabel={label ?? t('QR code')} style={{ width: size, height: size, borderRadius: 16, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
       <Svg width={size} height={size} viewBox={`0 0 ${n} ${n}`}>
         <Rect width={n} height={n} fill="#FFFFFF" />
         <Path d={d} fill="#1B131C" />

@@ -1,6 +1,7 @@
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import type { HealthDay } from '@avelune/core';
+import { t } from '../i18n';
 import { secure } from '../secure';
 import { localDate, sleepWindow, type Provider } from './types';
 
@@ -49,7 +50,7 @@ async function get<T>(path: string): Promise<T> {
 export function makeFitbit(clientId: () => string): Provider {
   return {
     id: 'fitbit',
-    available: async () => (clientId() ? { ok: true } : { ok: false, reason: 'Add your Fitbit app Client ID first.' }),
+    available: async () => (clientId() ? { ok: true } : { ok: false, reason: t('Add your Fitbit app Client ID first.') }),
     connect: async () => {
       const id = clientId();
       if (!id) return false;

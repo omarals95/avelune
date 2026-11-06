@@ -1,6 +1,7 @@
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import type { HealthDay } from '@avelune/core';
+import { t as tr } from '../i18n';
 import { secure } from '../secure';
 import { localDate, type Provider } from './types';
 
@@ -30,7 +31,7 @@ async function token(): Promise<Stored | null> {
   const raw = await secure.get(KEY);
   if (!raw) return null;
   const t = JSON.parse(raw) as Stored;
-  if (t.expiresAt && Date.now() > t.expiresAt) throw new Error('Oura sign-in expired. Disconnect and connect again.');
+  if (t.expiresAt && Date.now() > t.expiresAt) throw new Error(tr('Oura sign-in expired. Disconnect and connect again.'));
   return t;
 }
 
@@ -44,9 +45,9 @@ async function list<T>(path: string, start: string, end: string): Promise<T[]> {
   do {
     const q = new URLSearchParams({ start_date: start, end_date: end, ...(next ? { next_token: next } : {}) });
     const res = await fetch(`https://api.ouraring.com/v2/usercollection/${path}?${q}`, { headers: { authorization: `Bearer ${t.accessToken}` } });
-    if (res.status === 401) throw new Error('Oura sign-in expired. Disconnect and connect again.');
-    if (res.status === 403) throw new Error('Oura did not allow this data (check your membership and the permissions you granted).');
-    if (res.status === 429) throw new Error('Oura rate limit reached; try again later.');
+    if (res.status === 401) throw new Error(tr('Oura sign-in expired. Disconnect and connect again.'));
+    if (res.status === 403) throw new Error(tr('Oura did not allow this data (check your membership and the permissions you granted).'));
+    if (res.status === 429) throw new Error(tr('Oura rate limit reached; try again later.'));
     if (!res.ok) throw new Error(`oura_http_${res.status}`);
     const page = (await res.json()) as Page<T>;
     out.push(...page.data);
@@ -66,7 +67,7 @@ interface Spo2 { day: string; spo2_percentage?: { average?: number } | null }
 export function makeOura(clientId: () => string): Provider {
   return {
     id: 'oura',
-    available: async () => (clientId() ? { ok: true } : { ok: false, reason: 'Add your Oura app Client ID first.' }),
+    available: async () => (clientId() ? { ok: true } : { ok: false, reason: tr('Add your Oura app Client ID first.') }),
     connect: async () => {
       const id = clientId();
       if (!id) return false;

@@ -3,6 +3,7 @@ import { Platform, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Text } from './text';
 import { colors } from './theme';
+import { t } from './i18n';
 import { Btn, Muted } from './ui';
 
 export const scanSupported = Platform.OS !== 'web';
@@ -16,9 +17,9 @@ export function QRScanner({ onCode, onCancel }: { onCode: (text: string) => void
   if (!perm.granted) {
     return (
       <View style={{ paddingVertical: 8 }}>
-        <Muted style={{ color: colors.text }}>Avelune needs the camera only to read your partner’s QR code. Nothing is recorded or saved.</Muted>
-        {perm.canAskAgain ? <Btn icon="scan" title="Allow camera" onPress={() => void request()} style={{ marginTop: 8 }} /> : <Muted style={{ marginTop: 8, color: colors.danger }}>Camera access is off for Avelune. Turn it on in your phone settings, or paste the code instead.</Muted>}
-        <Btn kind="ghost" title="Cancel" onPress={onCancel} />
+        <Muted style={{ color: colors.text }}>{t('Avelune needs the camera only to read your partner’s QR code. Nothing is recorded or saved.')}</Muted>
+        {perm.canAskAgain ? <Btn icon="scan" title={t('Allow camera')} onPress={() => void request()} style={{ marginTop: 8 }} /> : <Muted style={{ marginTop: 8, color: colors.danger }}>{t('Camera access is off for Avelune. Turn it on in your phone settings, or paste the code instead.')}</Muted>}
+        <Btn kind="ghost" title={t('Cancel')} onPress={onCancel} />
       </View>
     );
   }
@@ -28,15 +29,15 @@ export function QRScanner({ onCode, onCancel }: { onCode: (text: string) => void
         <CameraView style={{ flex: 1 }} facing="back" barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
           onBarcodeScanned={(r) => {
             if (done.current || !r.data) return;
-            if (!/avelune-partner:|avelune:\/\/partner/.test(r.data)) { setErr('That QR code is not an Avelune invite.'); return; }
+            if (!/avelune-partner:|avelune:\/\/partner/.test(r.data)) { setErr(t('That QR code is not an Avelune invite.')); return; }
             done.current = true;
             onCode(r.data);
           }} />
         <View pointerEvents="none" style={{ position: 'absolute', left: 40, top: 40, right: 40, bottom: 40, borderRadius: 18, borderWidth: 3, borderColor: 'rgba(255,255,255,0.85)' }} />
       </View>
-      <Text style={{ fontSize: 15, color: colors.text, marginTop: 10, textAlign: 'center' }}>Point the camera at the QR code on your partner’s phone.</Text>
+      <Text style={{ fontSize: 15, color: colors.text, marginTop: 10, textAlign: 'center' }}>{t('Point the camera at the QR code on your partner’s phone.')}</Text>
       {err ? <Muted style={{ color: colors.danger, marginTop: 4 }}>{err}</Muted> : null}
-      <Btn kind="ghost" title="Cancel" onPress={onCancel} style={{ alignSelf: 'stretch' }} />
+      <Btn kind="ghost" title={t('Cancel')} onPress={onCancel} style={{ alignSelf: 'stretch' }} />
     </View>
   );
 }

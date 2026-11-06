@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
+import { t } from './i18n';
 
 const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
@@ -32,7 +33,7 @@ export async function saveFile(name: string, mime: string, data: Uint8Array | st
     const a = document.createElement('a');
     a.href = url; a.download = name; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
-    return `Downloaded ${name}.`;
+    return t('Downloaded {name}.', { name });
   }
   const write = (uri: string) => (bytes
     ? FileSystem.writeAsStringAsync(uri, toBase64(bytes), { encoding: FileSystem.EncodingType.Base64 })
@@ -43,11 +44,11 @@ export async function saveFile(name: string, mime: string, data: Uint8Array | st
     if (!perm.granted) return '';
     const uri = await saf.createFileAsync(perm.directoryUri, name.replace(/\.[^.]+$/, ''), mime);
     await write(uri);
-    return `Saved ${name}. You can find it in the folder you chose.`;
+    return t('Saved {name}. You can find it in the folder you chose.', { name });
   }
   const dest = `${FileSystem.cacheDirectory}${name.replace(/[\\/:*?"<>|]/g, '-')}`;
   await write(dest);
-  if (!(await Sharing.isAvailableAsync())) return 'Sharing is not available on this device.';
+  if (!(await Sharing.isAvailableAsync())) return t('Sharing is not available on this device.');
   await Sharing.shareAsync(dest, { mimeType: mime, UTI: UTI[mime], dialogTitle: name });
   return '';
 }

@@ -6,6 +6,7 @@ import { makeFitbit } from './fitbit';
 import { makeOura } from './oura';
 import { healthConnect } from './healthconnect';
 import { healthKit } from './healthkit';
+import { t } from '../i18n';
 import type { Provider, ProviderId } from './types';
 
 export type WidgetId =
@@ -52,12 +53,12 @@ export const useHealth = create<HealthState>()(
         if (!av.ok) return av;
         let ok = false;
         try { ok = await p.connect(); } catch (e) { return { ok: false, reason: (e as Error).message }; }
-        if (!ok) return { ok: false, reason: 'Permission was not granted.' };
+        if (!ok) return { ok: false, reason: t('Permission was not granted.') };
         set((s) => ({ connections: { ...s.connections, [id]: { since: Date.now(), lastSync: null, error: null } } }));
         await get().sync(true);
         const days = Object.values(get().days).filter((d) => Object.values(d.sources ?? {}).includes(id)).length;
         const error = get().connections[id]?.error;
-        return error ? { ok: false, reason: `Connected, but reading data failed: ${error}` } : { ok: true, days };
+        return error ? { ok: false, reason: t('Connected, but reading data failed: {error}', { error }) } : { ok: true, days };
       },
 
       disconnect: async (id) => {
@@ -109,6 +110,7 @@ export function withManual(days: Record<DateStr, HealthDay>, logs: DayLog[]): Re
   return mergeHealthDays(days, manual, 'manual');
 }
 
+/** English names and details; translated with t() where shown. */
 export const PROVIDER_INFO: Record<ProviderId, { name: string; detail: string; icon: 'apple' | 'android' | 'watch-variant' | 'ring' }> = {
   oura: { name: 'Oura ring', detail: 'Sign in to Oura directly: sleep, resting heart rate, HRV, temperature deviation, SpO₂ and activity.', icon: 'ring' },
   appleHealth: { name: 'Apple Health', detail: 'iPhone and Apple Watch: steps, sleep, heart, weight, temperature, water.', icon: 'apple' },

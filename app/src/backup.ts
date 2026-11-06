@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { backupFileName, createBackupKey, openBackup, openBackupWithKey, readBackupHeader, sealBackup, type BackupKey, type BackupPayload } from '@avelune/core';
+import { t } from './i18n';
 import { secure } from './secure';
 import { useStore } from './store';
 
@@ -45,7 +46,7 @@ export async function chooseBackupFolder(): Promise<{ uri: string; label: string
   const perm = await SAF.requestDirectoryPermissionsAsync();
   if (!perm.granted) return null;
   const decoded = decodeURIComponent(perm.directoryUri);
-  const label = decoded.split(/tree\//).pop()?.replace(/^primary:/, 'Phone storage/') ?? 'Chosen folder';
+  const label = decoded.split(/tree\//).pop()?.replace(/^primary:/, `${t('Phone storage')}/`) ?? t('Chosen folder');
   return { uri: perm.directoryUri, label };
 }
 
@@ -133,13 +134,14 @@ export async function readBackup(text: string, passphrase: string) {
   return openBackup(text, passphrase);
 }
 
-export const BACKUP_ERRORS: Record<string, string> = {
-  no_key: 'Set a backup passphrase first.',
-  no_folder: 'Choose a folder for your backups first.',
-  short_passphrase: `Use at least ${MIN_BACKUP_PASSPHRASE} characters.`,
-  wrong_passphrase: 'That passphrase does not open this backup.',
-  not_a_backup: 'That file is not an Avelune backup.',
-  nothing_to_verify: 'There is no backup on this device to check yet.',
-  mismatch: 'The two passphrases do not match.',
-};
-export const backupError = (e: unknown) => BACKUP_ERRORS[(e as Error)?.message] ?? `Something went wrong (${(e as Error)?.message ?? e}).`;
+/** Message for a backup error code (undefined when the code is unknown). */
+export const backupErrorText = (code: string): string | undefined => ({
+  no_key: t('Set a backup passphrase first.'),
+  no_folder: t('Choose a folder for your backups first.'),
+  short_passphrase: t('Use at least {n} characters.', { n: MIN_BACKUP_PASSPHRASE }),
+  wrong_passphrase: t('That passphrase does not open this backup.'),
+  not_a_backup: t('That file is not an Avelune backup.'),
+  nothing_to_verify: t('There is no backup on this device to check yet.'),
+  mismatch: t('The two passphrases do not match.'),
+} as Record<string, string>)[code];
+export const backupError = (e: unknown) => backupErrorText((e as Error)?.message) ?? t('Something went wrong ({error}).', { error: String((e as Error)?.message ?? e) });

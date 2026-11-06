@@ -4,18 +4,20 @@ import { MIN_PASSPHRASE } from '@avelune/core';
 import { useStore } from './store';
 import { Btn, Field, Muted } from './ui';
 import { colors } from './theme';
+import { t } from './i18n';
 
-const ERRORS: Record<string, string> = {
-  invalid_credentials: 'Wrong email or password.',
-  email_taken: 'That email is already registered.',
-  weak_password: 'Use an account password of at least 8 characters.',
-  invalid_email: 'Enter a valid email.',
-  registration_disabled: 'This server has registration turned off.',
-  weak_passphrase: `Use an encryption passphrase of at least ${MIN_PASSPHRASE} characters.`,
-  same_passphrase: 'The encryption passphrase must be different from your account password.',
-  wrong_passphrase: 'That encryption passphrase does not match this account.',
-  mismatch: 'The two encryption passphrases do not match.',
-};
+/** Messages for server error codes (built when shown, so they follow the current language). */
+const errors = (): Record<string, string> => ({
+  invalid_credentials: t('Wrong email or password.'),
+  email_taken: t('That email is already registered.'),
+  weak_password: t('Use an account password of at least 8 characters.'),
+  invalid_email: t('Enter a valid email.'),
+  registration_disabled: t('This server has registration turned off.'),
+  weak_passphrase: t('Use an encryption passphrase of at least {n} characters.', { n: MIN_PASSPHRASE }),
+  same_passphrase: t('The encryption passphrase must be different from your account password.'),
+  wrong_passphrase: t('That encryption passphrase does not match this account.'),
+  mismatch: t('The two encryption passphrases do not match.'),
+});
 
 export function ServerForm({ allowRegister = true }: { allowRegister?: boolean }) {
   const connect = useStore((s) => s.connect);
@@ -28,25 +30,25 @@ export function ServerForm({ allowRegister = true }: { allowRegister?: boolean }
   const [msg, setMsg] = useState('');
 
   const go = async (mode: 'login' | 'register') => {
-    if (mode === 'register' && pass !== pass2) return setMsg(ERRORS.mismatch);
+    if (mode === 'register' && pass !== pass2) return setMsg(errors().mismatch);
     setBusy(true); setMsg('');
     try { await connect(url, email, password, pass, mode); setPassword(''); setPass(''); setPass2(''); }
-    catch (e) { setMsg(ERRORS[(e as Error).message] ?? `Could not reach the server (${(e as Error).message}).`); }
+    catch (e) { setMsg(errors()[(e as Error).message] ?? t('Could not reach the server ({error}).', { error: (e as Error).message })); }
     setBusy(false);
   };
   const disabled = busy || !url || !email || !password || !pass;
   return (
     <>
-      <Muted>Run the Avelune server on your own machine and sign in to sync between devices. Your data is end-to-end encrypted on this device before it is uploaded. Without a server, everything stays on this device.</Muted>
-      <Field label="Server URL" value={url} onChangeText={setUrl} placeholder="https://avelune.example.com" keyboardType="url" />
-      <Field label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
-      <Field label="Account password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" />
-      <Field label="Encryption passphrase" value={pass} onChangeText={setPass} secureTextEntry />
-      {allowRegister && <Field label="Confirm encryption passphrase (new accounts)" value={pass2} onChangeText={setPass2} secureTextEntry />}
-      <Muted style={{ marginBottom: 8 }}>The passphrase never leaves your device and cannot be recovered. If you forget it, your synced data cannot be read by anyone, including you. Use the same passphrase on every device.</Muted>
+      <Muted>{t('Run the Avelune server on your own machine and sign in to sync between devices. Your data is end-to-end encrypted on this device before it is uploaded. Without a server, everything stays on this device.')}</Muted>
+      <Field label={t('Server URL')} value={url} onChangeText={setUrl} placeholder="https://avelune.example.com" keyboardType="url" />
+      <Field label={t('Email')} value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
+      <Field label={t('Account password')} value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" />
+      <Field label={t('Encryption passphrase')} value={pass} onChangeText={setPass} secureTextEntry />
+      {allowRegister && <Field label={t('Confirm encryption passphrase (new accounts)')} value={pass2} onChangeText={setPass2} secureTextEntry />}
+      <Muted style={{ marginBottom: 8 }}>{t('The passphrase never leaves your device and cannot be recovered. If you forget it, your synced data cannot be read by anyone, including you. Use the same passphrase on every device.')}</Muted>
       {msg ? <Muted style={{ color: colors.danger }}>{msg}</Muted> : null}
-      <Btn title={busy ? 'Working…' : 'Sign in'} onPress={() => void go('login')} disabled={disabled} />
-      {allowRegister && <Btn kind="ghost" title="Create account on this server" onPress={() => void go('register')} disabled={disabled || !pass2} />}
+      <Btn title={busy ? t('Working…') : t('Sign in')} onPress={() => void go('login')} disabled={disabled} />
+      {allowRegister && <Btn kind="ghost" title={t('Create account on this server')} onPress={() => void go('register')} disabled={disabled || !pass2} />}
     </>
   );
 }

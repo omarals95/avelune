@@ -1,5 +1,6 @@
 import AppleHealthKit, { type HealthInputOptions, type HealthKitPermissions, type HealthValue } from 'react-native-health';
 import type { HealthDay } from '@avelune/core';
+import { t } from '../i18n';
 import { averageByDay, localDate, sleepWindow, type Provider } from './types';
 
 const P = AppleHealthKit.Constants.Permissions;
@@ -17,7 +18,7 @@ const ASLEEP = new Set(['ASLEEP', 'CORE', 'DEEP', 'REM']);
 
 export const healthKit: Provider = {
   id: 'appleHealth',
-  available: () => new Promise((res) => AppleHealthKit.isAvailable((_e, ok) => res(ok ? { ok: true } : { ok: false, reason: 'Health data is not available on this device.' }))),
+  available: () => new Promise((res) => AppleHealthKit.isAvailable((_e, ok) => res(ok ? { ok: true } : { ok: false, reason: t('Health data is not available on this device.') }))),
   connect: () => new Promise((res) => AppleHealthKit.initHealthKit(PERMS, (err) => res(!err))),
   fetch: async (start, end) => {
     const o: HealthInputOptions = { startDate: start.toISOString(), endDate: end.toISOString(), includeManuallyAdded: true };
