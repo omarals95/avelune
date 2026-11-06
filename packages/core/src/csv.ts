@@ -1,5 +1,6 @@
 import { addDays, diffDays, isDateStr } from './dates';
 import type { HealthDay } from './health';
+import { tr } from './i18n';
 import type { DateStr, DayLog, Flow } from './types';
 
 /** RFC 4180-style CSV parser: quoted fields, escaped quotes, CRLF/LF, BOM; delimiter auto-detected (, ; tab). */
@@ -198,7 +199,7 @@ export function importRows(input: string[][], opts: ImportOptions): ImportResult
   const order: 'dmy' | 'mdy' = opts.dateOrder && opts.dateOrder !== 'auto' ? opts.dateOrder : guessed === 'mdy' ? 'mdy' : 'dmy';
   const result: ImportResult = { logs: [], health: [], columns: cols, header, dateOrder: guessed, rows: body.length, skipped: [], unknownLabels: [], range: null, periodDays: 0 };
   if (cols.date == null && cols.start == null) {
-    result.skipped.push({ row: 1, reason: 'No date column found (expected a header like "date" or "start date").' });
+    result.skipped.push({ row: 1, reason: tr('No date column found (expected a header like "date" or "start date").') });
     return result;
   }
   const logs = new Map<DateStr, DayLog>();
@@ -214,15 +215,15 @@ export function importRows(input: string[][], opts: ImportOptions): ImportResult
     const cell = (f: Field) => (cols[f] != null ? (r[cols[f]!] ?? '').trim() : '');
     if (rangeMode) {
       const s = parseDateLoose(cell('start'), order);
-      if (!s) return void result.skipped.push({ row: rowNo, reason: `Unreadable start date "${cell('start')}"` });
+      if (!s) return void result.skipped.push({ row: rowNo, reason: tr('Unreadable start date "{value}"', { value: cell('start') }) });
       const e = cell('end') ? parseDateLoose(cell('end'), order) : addDays(s, (opts.periodLength ?? 5) - 1);
-      if (!e || diffDays(s, e) < 0 || diffDays(s, e) > 15) return void result.skipped.push({ row: rowNo, reason: `Unreadable or implausible end date "${cell('end')}"` });
+      if (!e || diffDays(s, e) < 0 || diffDays(s, e) > 15) return void result.skipped.push({ row: rowNo, reason: tr('Unreadable or implausible end date "{value}"', { value: cell('end') }) });
       const f = parseFlow(cell('flow')) ?? 3;
       for (let k = 0; k <= diffDays(s, e); k++) { const l = get(addDays(s, k)); l.flow = Math.max(l.flow, f || 3) as Flow; }
       return;
     }
     const d = parseDateLoose(cell('date'), order);
-    if (!d) return void result.skipped.push({ row: rowNo, reason: `Unreadable date "${cell('date')}"` });
+    if (!d) return void result.skipped.push({ row: rowNo, reason: tr('Unreadable date "{value}"', { value: cell('date') }) });
     const l = get(d);
     const flow = parseFlow(cell('flow'));
     if (flow != null) l.flow = flow;

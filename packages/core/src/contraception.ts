@@ -1,4 +1,5 @@
 import { addDays, diffDays } from './dates';
+import { tr } from './i18n';
 import type { CycleProfile, DateStr, PillPack } from './types';
 
 /**
@@ -29,28 +30,28 @@ export function contraceptionEvents(p: CycleProfile, today: DateStr, days = 120)
   if (m === 'combined-pill') {
     const pack = PACK[p.pillPack ?? '21+7'];
     cyc(p.packStart, pack.total, (s) => {
-      push(s, 'pack-start', 'Start a new pill pack today.');
-      if (pack.active < pack.total) push(addDays(s, pack.active), 'break-start', 'Your pill-free days start today.');
+      push(s, 'pack-start', tr('Start a new pill pack today.'));
+      if (pack.active < pack.total) push(addDays(s, pack.active), 'break-start', tr('Your pill-free days start today.'));
     });
   } else if (m === 'ring') {
     cyc(p.packStart ?? p.contraceptionSince, 28, (s) => {
-      push(addDays(s, 21), 'ring-out', 'Take your ring out today.');
-      push(s, 'ring-in', 'Insert a new ring today.');
+      push(addDays(s, 21), 'ring-out', tr('Take your ring out today.'));
+      push(s, 'ring-in', tr('Insert a new ring today.'));
     });
   } else if (m === 'patch') {
     cyc(p.packStart ?? p.contraceptionSince, 28, (s) => {
-      push(s, 'patch-change', 'Apply a new patch today.');
-      push(addDays(s, 7), 'patch-change', 'Change your patch today.');
-      push(addDays(s, 14), 'patch-change', 'Change your patch today.');
-      push(addDays(s, 21), 'patch-free', 'Your patch-free week starts today.');
+      push(s, 'patch-change', tr('Apply a new patch today.'));
+      push(addDays(s, 7), 'patch-change', tr('Change your patch today.'));
+      push(addDays(s, 14), 'patch-change', tr('Change your patch today.'));
+      push(addDays(s, 21), 'patch-free', tr('Your patch-free week starts today.'));
     });
   } else if (m === 'injection' && p.contraceptionSince) {
     // Every 12–13 weeks; remind at 12 weeks.
-    cyc(p.contraceptionSince, 91, (s) => { if (s > p.contraceptionSince!) push(addDays(s, -7), 'injection', 'Your next injection is due within about a week.'); });
+    cyc(p.contraceptionSince, 91, (s) => { if (s > p.contraceptionSince!) push(addDays(s, -7), 'injection', tr('Your next injection is due within about a week.')); });
   } else if (DEVICE_YEARS[m] && p.contraceptionSince) {
     const due = addYears(p.contraceptionSince, DEVICE_YEARS[m]!);
-    push(addDays(due, -60), 'replace', `Your ${m === 'implant' ? 'implant' : 'IUD'} is due for replacement in about two months. Check the date with your clinic.`);
-    push(due, 'replace', `Your ${m === 'implant' ? 'implant' : 'IUD'} reaches its usual replacement date today.`);
+    push(addDays(due, -60), 'replace', m === 'implant' ? tr('Your implant is due for replacement in about two months. Check the date with your clinic.') : tr('Your IUD is due for replacement in about two months. Check the date with your clinic.'));
+    push(due, 'replace', m === 'implant' ? tr('Your implant reaches its usual replacement date today.') : tr('Your IUD reaches its usual replacement date today.'));
   }
   return out.sort((a, b) => (a.date < b.date ? -1 : 1));
 }
@@ -63,18 +64,18 @@ export function contraceptionStatus(p: CycleProfile, today: DateStr): string | n
     const pack = PACK[p.pillPack ?? '21+7'];
     const d = dayIn(p.packStart, pack.total);
     if (!d) return null;
-    return d <= pack.active ? `Pill pack day ${d} of ${pack.active}` : `Pill-free day ${d - pack.active} of ${pack.total - pack.active}`;
+    return d <= pack.active ? tr('Pill pack day {day} of {total}', { day: d, total: pack.active }) : tr('Pill-free day {day} of {total}', { day: d - pack.active, total: pack.total - pack.active });
   }
   if (m === 'ring' || m === 'patch') {
     const d = dayIn(p.packStart ?? p.contraceptionSince, 28);
     if (!d) return null;
-    if (m === 'ring') return d <= 21 ? `Ring week ${Math.ceil(d / 7)} of 3` : `Ring-free day ${d - 21} of 7`;
-    return d <= 21 ? `Patch ${Math.ceil(d / 7)} of 3 (day ${((d - 1) % 7) + 1})` : `Patch-free day ${d - 21} of 7`;
+    if (m === 'ring') return d <= 21 ? tr('Ring week {week} of 3', { week: Math.ceil(d / 7) }) : tr('Ring-free day {day} of 7', { day: d - 21 });
+    return d <= 21 ? tr('Patch {patch} of 3 (day {day})', { patch: Math.ceil(d / 7), day: ((d - 1) % 7) + 1 }) : tr('Patch-free day {day} of 7', { day: d - 21 });
   }
   if (m === 'injection' && p.contraceptionSince) {
     const next = addDays(p.contraceptionSince, Math.ceil((diffDays(p.contraceptionSince, today) + 1) / 91) * 91);
-    return `Next injection around ${next}`;
+    return tr('Next injection around {date}', { date: next });
   }
-  if (DEVICE_YEARS[m] && p.contraceptionSince) return `Replacement due ${addYears(p.contraceptionSince, DEVICE_YEARS[m]!)}`;
+  if (DEVICE_YEARS[m] && p.contraceptionSince) return tr('Replacement due {date}', { date: addYears(p.contraceptionSince, DEVICE_YEARS[m]!) });
   return null;
 }

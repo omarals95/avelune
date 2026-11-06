@@ -15,11 +15,14 @@ const nonLiteral = [];
 for (const f of files) {
   const sf = ts.createSourceFile(f, fs.readFileSync(f, 'utf8'), ts.ScriptTarget.Latest, true);
   const visit = (n) => {
-    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && (f.includes(path.join('packages', 'core')) ? ['tr', 'trn'] : ['t', 'tn', 'tr', 'trn']).includes(n.expression.text)) {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && (f.includes(path.join('packages', 'core')) ? ['tr', 'trn', 'trc'] : ['t', 'tn', 'tc', 'tr', 'trn', 'trc']).includes(n.expression.text)) {
       const isPlural = n.expression.text === 'tn' || n.expression.text === 'trn';
-      const arg = n.arguments[isPlural ? 1 : 0];
+      const isCtx = n.expression.text === 'tc' || n.expression.text === 'trc';
+      const arg = n.arguments[isPlural || isCtx ? 1 : 0];
+      const ctx = isCtx && n.arguments[0] && ts.isStringLiteral(n.arguments[0]) ? n.arguments[0].text + '::' : '';
       if (arg && (ts.isStringLiteral(arg) || ts.isNoSubstitutionTemplateLiteral(arg))) {
-        if (!keys.has(arg.text)) keys.set(arg.text, { file: path.relative(root, f), plural: isPlural });
+        const key = ctx + arg.text;
+        if (!keys.has(key)) keys.set(key, { file: path.relative(root, f), plural: isPlural });
       } else if (arg) nonLiteral.push(`${path.relative(root, f)}:${sf.getLineAndCharacterOfPosition(n.getStart()).line + 1}  ${n.getText().slice(0, 80)}`);
     }
     ts.forEachChild(n, visit);
@@ -40,7 +43,7 @@ for (const f of fs.readdirSync(arDir).filter((x) => x !== 'index.ts' && x.endsWi
 const missing = [...keys].filter(([k]) => !(k in dict));
 const badPlural = [...keys].filter(([k, v]) => v.plural && k in dict && dict[k].split('|').length !== 6);
 const placeholders = [...keys].filter(([k]) => k in dict).filter(([k]) => {
-  const want = new Set(k.match(/\{\w+\}/g) ?? []);
+  const want = new Set(k.replace(/^.*::/, '').match(/\{\w+\}/g) ?? []);
   const forms = dict[k].split('|');
   return forms.some((f) => [...(f.match(/\{\w+\}/g) ?? [])].some((p) => !want.has(p) && p !== '{n}'));
 });

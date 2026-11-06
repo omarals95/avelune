@@ -1,6 +1,7 @@
 import { DecodeUTF8, Unzip, UnzipInflate } from 'fflate';
 import { addDays, diffDays } from './dates';
 import { importRows, parseCSV, parseDateLoose, parseFlow, type ImportOptions, type ImportResult } from './csv';
+import { tr } from './i18n';
 import type { HealthDay } from './health';
 import type { DateStr, DayLog, Flow, SyncRecord } from './types';
 
@@ -21,6 +22,9 @@ export type ImportSource = 'avelune' | 'drip' | 'apple-health' | 'clue' | 'flo' 
 export const SOURCE_LABEL: Record<ImportSource, string> = {
   avelune: 'Avelune export', garmin: 'Garmin Connect export', drip: 'drip.', 'apple-health': 'Apple Health', clue: 'Clue', flo: 'Flo', 'natural-cycles': 'Natural Cycles', json: 'JSON file', csv: 'Spreadsheet (CSV)',
 };
+/** SOURCE_LABEL in the current language (shown in the import preview). */
+const sourceLabel = (s: ImportSource): string =>
+  s === 'avelune' ? tr('Avelune export') : s === 'garmin' ? tr('Garmin Connect export') : s === 'json' ? tr('JSON file') : s === 'csv' ? tr('Spreadsheet (CSV)') : SOURCE_LABEL[s];
 
 /** Accumulates day logs and builds an ImportResult. */
 class Collector {
@@ -59,7 +63,7 @@ class Collector {
     const all = [...logs.map((l) => l.date), ...health.map((h) => h.date)].sort();
     return {
       logs, health, columns: {}, header: [], dateOrder: 'dmy', rows: this.rows, skipped: this.skipped, unknownLabels: [...this.unknown].slice(0, 50),
-      range: all.length ? [all[0], all[all.length - 1]] : null, periodDays: logs.filter((l) => l.flow >= 2).length, source: SOURCE_LABEL[source],
+      range: all.length ? [all[0], all[all.length - 1]] : null, periodDays: logs.filter((l) => l.flow >= 2).length, source: sourceLabel(source),
     };
   }
 }
@@ -93,7 +97,7 @@ export function importDripCsv(text: string, opts: ImportOptions): ImportResult {
     c.rows++;
     const at = (k: string) => { const i = col(k); return i >= 0 ? (r[i] ?? '').trim() : ''; };
     const d = isoDay(at('date'));
-    if (!d) { if (r.some((x) => x.trim())) c.skipped.push({ row: c.rows + 1, reason: `Unreadable date "${at('date')}"` }); continue; }
+    if (!d) { if (r.some((x) => x.trim())) c.skipped.push({ row: c.rows + 1, reason: tr('Unreadable date "{value}"', { value: at('date') }) }); continue; }
     const b = at('bleeding.value');
     if (b !== '' && at('bleeding.exclude') !== 'true') c.flow(d, (Math.min(3, Math.max(0, +b)) + 1) as Flow);
     const t = parseFloat(at('temperature.value'));
@@ -320,7 +324,7 @@ export function importText(name: string, text: string, opts: ImportOptions): Imp
   }
   if (isDripCsv(t)) return importDripCsv(t, opts);
   const r = importRows(parseCSV(t), opts);
-  r.source = /natural|nc_|daily_?entries/i.test(lower) ? SOURCE_LABEL['natural-cycles'] : SOURCE_LABEL.csv;
+  r.source = /natural|nc_|daily_?entries/i.test(lower) ? sourceLabel('natural-cycles') : sourceLabel('csv');
   return r;
 }
 
@@ -408,7 +412,7 @@ export async function importZip(
     return importText(e.name, text, opts);
   });
   const r = mergeResults(parts.length ? parts : [new Collector(opts).result('csv')]);
-  if (small.some((e) => /natural|nc_|daily/i.test(e.name))) r.source = SOURCE_LABEL['natural-cycles'];
+  if (small.some((e) => /natural|nc_|daily/i.test(e.name))) r.source = sourceLabel('natural-cycles');
   return r;
 }
 

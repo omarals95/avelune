@@ -1,4 +1,5 @@
 import { addDays, diffDays } from './dates';
+import { tr } from './i18n';
 import type { DateStr, DayLog } from './types';
 
 /**
@@ -83,7 +84,9 @@ export function detectOvulation(logs: Map<DateStr, DayLog>, start: DateStr, end:
 
 /** Short human description: "temperature rise and positive LH test". */
 export function describeSources(s: OvSource[]): string {
-  const name: Record<OvSource, string> = { bbt: 'temperature rise', lh: 'positive LH test', mucus: 'fertile cervical mucus' };
+  const name: Record<OvSource, string> = { bbt: tr('temperature rise'), lh: tr('positive LH test'), mucus: tr('fertile cervical mucus') };
   const parts = s.map((x) => name[x]);
-  return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : parts[0];
+  if (parts.length === 2) return tr('{a} and {b}', { a: parts[0], b: parts[1] });
+  if (parts.length === 3) return tr('{a}, {b} and {c}', { a: parts[0], b: parts[1], c: parts[2] });
+  return parts.length > 1 ? tr('{a} and {b}', { a: parts.slice(0, -1).join(tr(', ')), b: parts[parts.length - 1] }) : parts[0];
 }

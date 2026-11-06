@@ -1,4 +1,5 @@
 import { addDays, diffDays } from './dates';
+import { dayMonth, tr, trn } from './i18n';
 import { describeSources, detectOvulation, type DetectedOvulation } from './ovulation';
 import type { Condition, Contraception, DateStr, DayLog, Settings } from './types';
 
@@ -42,8 +43,9 @@ function stdev(xs: number[]) {
   const m = mean(xs);
   return Math.sqrt(mean(xs.map((x) => (x - m) ** 2)));
 }
-const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const short = (d: DateStr) => `${+d.slice(8)} ${MON[+d.slice(5, 7) - 1]}`;
+const short = (d: DateStr) => dayMonth(d, true);
+/** "14 days" (for counts that are never 1, or where English always said "days"). */
+const days = (n: number) => trn(n, '{n} day|{n} days');
 
 export type ExcludeReason = 'manual' | 'unusual' | 'pregnancy' | 'contraception' | 'postpartum';
 
@@ -182,30 +184,30 @@ function contextEffects(settings: Settings, now: DateStr) {
   let cap: Confidence = 'high';
   const lower = (c: Confidence) => { if (c === 'low' || (c === 'medium' && cap === 'high')) cap = c; };
   const pr = settings.profile ?? {};
-  if (has(settings, 'pcos')) { widen += 4; lower('low'); notes.push('PCOS: cycles can vary a lot, so the estimate is a wider range.'); }
+  if (has(settings, 'pcos')) { widen += 4; lower('low'); notes.push(tr('PCOS: cycles can vary a lot, so the estimate is a wider range.')); }
   if (has(settings, 'perimenopause')) {
     widen += 5; lower('low');
-    notes.push(pr.hrt ? 'Perimenopause on HRT: bleeding may follow your HRT pattern more than ovulation.' : 'Perimenopause: cycles often lengthen, shorten or skip, so treat this as a rough guide.');
+    notes.push(pr.hrt ? tr('Perimenopause on HRT: bleeding may follow your HRT pattern more than ovulation.') : tr('Perimenopause: cycles often lengthen, shorten or skip, so treat this as a rough guide.'));
   }
-  if (has(settings, 'thyroid')) { widen += 2; lower('medium'); notes.push('Thyroid conditions can shift cycle length.'); }
-  if (has(settings, 'endometriosis')) notes.push('Endometriosis does not usually change timing, but pain tracking by cycle day can help your doctor.');
+  if (has(settings, 'thyroid')) { widen += 2; lower('medium'); notes.push(tr('Thyroid conditions can shift cycle length.')); }
+  if (has(settings, 'endometriosis')) notes.push(tr('Endometriosis does not usually change timing, but pain tracking by cycle day can help your doctor.'));
   const stopped = pr.stoppedHormonalOn;
   if (stopped && diffDays(stopped, now) >= 0 && diffDays(stopped, now) < 180) {
     widen += 4; lower('low');
-    notes.push(`You stopped hormonal birth control on ${short(stopped)}. Cycles often take a few months to settle; earlier bleeds are not counted.`);
-  } else if (stopped) notes.push(`Bleeds before you stopped hormonal birth control (${short(stopped)}) are not counted.`);
+    notes.push(tr('You stopped hormonal birth control on {date}. Cycles often take a few months to settle; earlier bleeds are not counted.', { date: short(stopped) }));
+  } else if (stopped) notes.push(tr('Bleeds before you stopped hormonal birth control ({date}) are not counted.', { date: short(stopped) }));
   const c = pr.contraception ?? 'none';
-  if (c === 'combined-pill' || c === 'ring' || c === 'patch') notes.push('On the pill, ring or patch, bleeding is a withdrawal bleed set by your pack schedule, not a natural period.');
-  if (c === 'mini-pill') { widen += 3; lower('medium'); notes.push('The mini pill can make bleeding irregular.'); }
-  if (c === 'implant' || c === 'injection') { widen += 6; lower('low'); notes.push('The implant and injection often make bleeding unpredictable or stop it.'); }
-  if (c === 'hormonal-iud') { widen += 4; lower('low'); notes.push('A hormonal IUD often makes periods lighter, irregular or absent.'); }
-  if (c === 'copper-iud') notes.push('A copper IUD can make periods heavier or longer, but timing usually stays the same.');
-  if (pr.fertilityTreatment) { lower('low'); notes.push('During fertility treatment your clinic’s plan sets the timing; use this only as a rough guide.'); }
+  if (c === 'combined-pill' || c === 'ring' || c === 'patch') notes.push(tr('On the pill, ring or patch, bleeding is a withdrawal bleed set by your pack schedule, not a natural period.'));
+  if (c === 'mini-pill') { widen += 3; lower('medium'); notes.push(tr('The mini pill can make bleeding irregular.')); }
+  if (c === 'implant' || c === 'injection') { widen += 6; lower('low'); notes.push(tr('The implant and injection often make bleeding unpredictable or stop it.')); }
+  if (c === 'hormonal-iud') { widen += 4; lower('low'); notes.push(tr('A hormonal IUD often makes periods lighter, irregular or absent.')); }
+  if (c === 'copper-iud') notes.push(tr('A copper IUD can make periods heavier or longer, but timing usually stays the same.'));
+  if (pr.fertilityTreatment) { lower('low'); notes.push(tr('During fertility treatment your clinic’s plan sets the timing; use this only as a rough guide.')); }
   const st = settings.stage;
-  if (st?.kind === 'postpartum') { widen += 5; lower('low'); notes.push('The first cycles after birth are often irregular.'); }
-  if (st?.kind === 'loss') { widen += 4; lower('low'); notes.push('After a pregnancy loss the first cycle can be longer or shorter than usual.'); }
+  if (st?.kind === 'postpartum') { widen += 5; lower('low'); notes.push(tr('The first cycles after birth are often irregular.')); }
+  if (st?.kind === 'loss') { widen += 4; lower('low'); notes.push(tr('After a pregnancy loss the first cycle can be longer or shorter than usual.')); }
   const fertileHidden = SUPPRESSING.includes(c);
-  if (fertileHidden) notes.push('Your contraception normally prevents ovulation, so no fertile window is shown.');
+  if (fertileHidden) notes.push(tr('Your contraception normally prevents ovulation, so no fertile window is shown.'));
   return { widen, cap, notes, fertileHidden };
 }
 
@@ -229,24 +231,24 @@ export function predict(logs: DayLog[], settings: Settings, now: DateStr): Predi
     phase: inPeriod ? 'menstrual' : null, confidence: 'low', noForecast: why, notes,
   });
 
-  if (!last) return { ...off('no-data', ['Log a period to start predictions.']), lastPeriodStart: null, cycleDay: null };
-  if (settings.pregnancyLmp) return off('pregnant', ['Cycle predictions are paused during pregnancy.']);
-  if (has(settings, 'no-uterus')) return off('no-uterus', ['No periods are expected, so there is no period forecast. You can still log symptoms and bleeding.']);
+  if (!last) return { ...off('no-data', [tr('Log a period to start predictions.')]), lastPeriodStart: null, cycleDay: null };
+  if (settings.pregnancyLmp) return off('pregnant', [tr('Cycle predictions are paused during pregnancy.')]);
+  if (has(settings, 'no-uterus')) return off('no-uterus', [tr('No periods are expected, so there is no period forecast. You can still log symptoms and bleeding.')]);
   const st = settings.stage;
-  if (st?.kind === 'paused') return off('paused', ['Tracking is paused. Logs are still saved; predictions return when you resume.']);
+  if (st?.kind === 'paused') return off('paused', [tr('Tracking is paused. Logs are still saved; predictions return when you resume.')]);
   if (st?.kind === 'postpartum') {
     // Bleeding in the first six weeks is postpartum bleeding (lochia); a later bleed, or "my period is back", restarts predictions.
     const back = st.returnedOn ?? periods.find((p) => p.start > addDays(st.since, 42))?.start ?? null;
     if (!back || last.start < back) {
       return off('postpartum', [st.breastfeeding
-        ? 'While breastfeeding, periods often stay away for months. Predictions start again with your first period.'
-        : 'Predictions start again with your first period after birth (often 6–12 weeks).']);
+        ? tr('While breastfeeding, periods often stay away for months. Predictions start again with your first period.')
+        : tr('Predictions start again with your first period after birth (often 6–12 weeks).')]);
     }
   }
   if (st?.kind === 'loss' && last.start <= st.since) {
-    return off('loss', ['Predictions will start again from your next period. There is no “late” warning in the meantime.']);
+    return off('loss', [tr('Predictions will start again from your next period. There is no “late” warning in the meantime.')]);
   }
-  if (settings.forecastMode === 'off') return off('user', ['Forecast is off: Avelune shows days since your last period only.']);
+  if (settings.forecastMode === 'off') return off('user', [tr('Forecast is off: Avelune shows days since your last period only.')]);
 
   const cycleLen = stats.avgCycle;
   // Roll forward if the predicted start is long past without a logged period.
@@ -279,17 +281,21 @@ export function predict(logs: DayLog[], settings: Settings, now: DateStr): Predi
   const notes: string[] = [];
   if (detected) {
     notes.push(detected.confirmed
-      ? `Ovulation confirmed by your ${describeSources(detected.sources)} around ${short(detected.date)}, so your period is expected about ${lutealLen} days later.`
-      : `Your ${describeSources(detected.sources)} suggests ovulation around ${short(detected.date)}. A temperature rise over the next days would confirm it.`);
+      ? tr('Ovulation confirmed by your {sources} around {date}, so your period is expected about {days} later.', { sources: describeSources(detected.sources), date: short(detected.date), days: days(lutealLen) })
+      : tr('Your {sources} suggests ovulation around {date}. A temperature rise over the next days would confirm it.', { sources: describeSources(detected.sources), date: short(detected.date) }));
   }
-  if (luteal.n >= 2) notes.push(`Your luteal phase is about ${lutealLen} days, learned from ${luteal.n} cycles with detected ovulation.`);
-  if (n === 0) notes.push(`Based on your settings (${cycleLen}-day cycle) until you have logged two or more periods.`);
-  else notes.push(`Based on your last ${Math.min(n, 6)} cycle${n === 1 ? '' : 's'} (typical length ${cycleLen} days).`);
-  if (stats.variability > 2) notes.push(`Your cycles vary by about ${Math.round(stats.variability)} days, so the window is ±${spread} days.`);
-  else notes.push(`Likely window: ±${spread} day${spread === 1 ? '' : 's'}.`);
+  if (luteal.n >= 2) notes.push(trn(luteal.n, 'Your luteal phase is about {days}, learned from {n} cycle with detected ovulation.|Your luteal phase is about {days}, learned from {n} cycles with detected ovulation.', { days: days(lutealLen) }));
+  if (n === 0) notes.push(tr('Based on your settings ({n}-day cycle) until you have logged two or more periods.', { n: cycleLen }));
+  else notes.push(trn(Math.min(n, 6), 'Based on your last {n} cycle (typical length {days}).|Based on your last {n} cycles (typical length {days}).', { days: days(cycleLen) }));
+  if (stats.variability > 2) notes.push(trn(spread, 'Your cycles vary by about {days}, so the window is ±{n} days.|Your cycles vary by about {days}, so the window is ±{n} days.', { days: days(Math.round(stats.variability)) }));
+  else notes.push(trn(spread, 'Likely window: ±{n} day.|Likely window: ±{n} days.'));
   for (const c of stats.cycles.filter((x) => x.excluded).slice(-3)) {
-    const why = c.reason === 'manual' ? 'you left it out' : c.reason === 'pregnancy' ? 'it overlaps a pregnancy' : c.reason === 'contraception' ? 'it was before you stopped hormonal birth control' : c.reason === 'postpartum' ? 'it was postpartum bleeding' : 'it looked unusual';
-    notes.push(`Not counted: the ${c.length}-day cycle from ${short(c.start)} (${why}).`);
+    const v = { n: c.length, date: short(c.start) };
+    notes.push(c.reason === 'manual' ? tr('Not counted: the {n}-day cycle from {date} (you left it out).', v)
+      : c.reason === 'pregnancy' ? tr('Not counted: the {n}-day cycle from {date} (it overlaps a pregnancy).', v)
+      : c.reason === 'contraception' ? tr('Not counted: the {n}-day cycle from {date} (it was before you stopped hormonal birth control).', v)
+      : c.reason === 'postpartum' ? tr('Not counted: the {n}-day cycle from {date} (it was postpartum bleeding).', v)
+      : tr('Not counted: the {n}-day cycle from {date} (it looked unusual).', v));
   }
   notes.push(...ctx.notes);
 

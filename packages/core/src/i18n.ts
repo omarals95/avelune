@@ -44,6 +44,14 @@ export function tr(key: string, vars?: Vars): string {
   return fill(active.dict[key] ?? key, vars);
 }
 
+/**
+ * Translate a short word whose meaning depends on context (e.g. 'Light' flow vs 'Light' theme).
+ * Looks up `context::key` first, then the plain key; English shows the key itself.
+ */
+export function trc(context: string, key: string, vars?: Vars): string {
+  return fill(active.dict[`${context}::${key}`] ?? active.dict[key] ?? key, vars);
+}
+
 /** Translate a plural key (`'{n} day|{n} days'`) for the count n. `{n}` is filled automatically. */
 export function trn(n: number, key: string, vars?: Vars): string {
   const own = active.dict[key];

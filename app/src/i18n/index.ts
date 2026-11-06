@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import { languageCode, setLanguage, tr, trn, type Language } from '@avelune/core';
 import { ar } from './ar';
 
-export { tr as t, trn as tn, monthName, monthShort, dayMonth } from '@avelune/core';
+export { tr as t, trn as tn, trc as tc, monthName, monthShort, dayMonth } from '@avelune/core';
 export type Lang = 'en' | 'ar';
 export type LangPref = Lang | 'system';
 

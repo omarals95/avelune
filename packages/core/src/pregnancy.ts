@@ -1,4 +1,5 @@
 import { addDays, diffDays } from './dates';
+import { tr } from './i18n';
 import type { DateStr } from './types';
 
 export interface PregnancyStatus {
@@ -39,6 +40,8 @@ export function pregnancyStage(completedWeeks: number): PregnancyStage {
 }
 
 export const TRIMESTER_NAME = { 1: 'First trimester', 2: 'Second trimester', 3: 'Third trimester' } as const;
+/** Translated trimester name. */
+export const trimesterName = (t: 1 | 2 | 3) => (t === 1 ? tr('First trimester') : t === 2 ? tr('Second trimester') : tr('Third trimester'));
 
 /**
  * Everything the pregnancy Today view shows, from one calculation so the image and the caption can never disagree.
@@ -57,5 +60,5 @@ export function pregnancyView(lmp: DateStr | null | undefined, now: DateStr): Pr
   const s = pregnancyStatus(lmp, now);
   if (!Number.isFinite(s.week)) return null;
   const stage = pregnancyStage(s.week);
-  return { ...s, stage, caption: `Week ${s.week} · Month ${stage} · ${TRIMESTER_NAME[s.trimester]}`, postTerm: s.daysToGo < 0 };
+  return { ...s, stage, caption: tr('Week {week} · Month {month} · {trimester}', { week: s.week, month: stage, trimester: trimesterName(s.trimester) }), postTerm: s.daysToGo < 0 };
 }

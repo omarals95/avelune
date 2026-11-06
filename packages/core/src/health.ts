@@ -1,5 +1,9 @@
 import { addDays, diffDays, parseDate, toDateStr } from './dates';
 import type { DateStr } from './types';
+import { languageCode, monthShort, tr } from './i18n';
+
+/** One-letter month label for charts ("J"); Arabic has no such abbreviation, so it gets the month name. */
+const monthInitial = (m: number) => (languageCode() === 'ar' ? monthShort(m) : monthShort(m).charAt(0));
 
 /** Where a value came from. `manual` = logged in Avelune, `sample` = demo data (never mixed with real sources). */
 export type HealthSource = 'appleHealth' | 'healthConnect' | 'fitbit' | 'oura' | 'garmin' | 'manual' | 'sample';
@@ -94,7 +98,7 @@ export function series(days: Record<DateStr, HealthDay>, metric: HealthMetric, e
     const vals: number[] = [];
     for (let k = 0; k <= diffDays(s, e); k++) { const v = days[addDays(s, k)]?.[metric]; if (typeof v === 'number') vals.push(v); }
     const value = !vals.length ? null : SUMMED.has(metric) && bucket !== 'day' ? vals.reduce((a, b) => a + b, 0) / vals.length : vals.reduce((a, b) => a + b, 0) / vals.length;
-    const label = bucket === 'day' ? String(+s.slice(8)) : bucket === 'week' ? `${+s.slice(8)}/${+s.slice(5, 7)}` : ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][+s.slice(5, 7) - 1];
+    const label = bucket === 'day' ? String(+s.slice(8)) : bucket === 'week' ? `${+s.slice(8)}/${+s.slice(5, 7)}` : monthInitial(+s.slice(5, 7) - 1);
     points.push({ label, start: s, value: value == null ? null : Math.round(value * 100) / 100 });
   }
   return points;
@@ -110,7 +114,7 @@ export function latest(days: Record<DateStr, HealthDay>, metric: HealthMetric, d
   return null;
 }
 
-export const fmtSleep = (min: number) => `${Math.floor(min / 60)} h ${String(Math.round(min % 60)).padStart(2, '0')} m`;
+export const fmtSleep = (min: number) => tr('{h} h {m} m', { h: Math.floor(min / 60), m: String(Math.round(min % 60)).padStart(2, '0') });
 export const fmtThousands = (n: number) => Math.round(n).toLocaleString('en-US');
 
 /** Deterministic, clearly-labelled sample data so widgets can be previewed before connecting a tracker. */
