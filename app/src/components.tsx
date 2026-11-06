@@ -7,11 +7,16 @@ import { addDays, diffDays, parseDate, type DateStr, type DayKind, type LifeStag
 import { FadeIn, ND, PressScale, useLoop, usePop, useReduceMotion } from './anim';
 import { Icon, type IconName } from './icons';
 import { blobColor, circleFill, colors, phaseGradient, scheme, shadow, type Mood, themed } from './theme';
+import { dayMonth, lang, rtl, t, tn } from './i18n';
 
+/** English month names (data / non-display use). For display use monthName / monthShort from './i18n'. */
 export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+/** English weekday initials. For display use dowInitials() from './i18n'. */
 export const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-export const fmtDay = (d: DateStr) => `${+d.slice(8)} ${MONTHS[+d.slice(5, 7) - 1]}`;
-export const fmtShort = (d: DateStr) => `${+d.slice(8)} ${MONTHS[+d.slice(5, 7) - 1].slice(0, 3)}`;
+/** "4 November" in the active language. */
+export const fmtDay = (d: DateStr) => dayMonth(d);
+/** "4 Nov" in the active language. */
+export const fmtShort = (d: DateStr) => dayMonth(d, true);
 /** Monday-based weekday index 0..6 */
 export const mondayIndex = (d: DateStr) => (parseDate(d).getDay() + 6) % 7;
 export const weekStart = (d: DateStr) => addDays(d, -mondayIndex(d));
@@ -35,35 +40,37 @@ export interface StatusInput {
   noForecast?: NoForecast | null;
   stage?: LifeStage;
 }
-export interface Status { mood: Mood; kicker: string; big: string; sub: string }
-
-const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
+export interface Status {
+  mood: Mood; kicker: string; big: string; sub: string;
+  /** Which template produced the copy (the text itself is translated, so callers branch on this). */
+  tag?: 'in-period' | 'ovulation-in' | 'period-in';
+}
 
 /** Copy + colour mood for the big circle, for today or any selected day. */
 export function statusFor(i: StatusInput): Status {
-  if (!i.hasData) return { mood: 'none', kicker: 'Welcome', big: 'Log your period', sub: 'Predictions start after your first logged period' };
+  if (!i.hasData) return { mood: 'none', kicker: t('Welcome'), big: t('Log your period'), sub: t('Predictions start after your first logged period') };
   if (i.date !== i.today) {
-    const cd = i.cycleDay ? `Cycle day ${i.cycleDay}` : fmtDay(i.date);
+    const cd = i.cycleDay ? t('Cycle day {n}', { n: i.cycleDay }) : fmtDay(i.date);
     const map: Record<DayKind, Status> = {
-      period: { mood: 'menstrual', kicker: cd, big: 'Period', sub: 'Logged period day' },
-      'predicted-period': { mood: 'menstrual', kicker: cd, big: 'Period', sub: 'Predicted period day' },
-      fertile: { mood: 'fertile', kicker: cd, big: 'Fertile', sub: 'Higher chance of getting pregnant' },
-      ovulation: { mood: 'ovulation', kicker: cd, big: 'Ovulation', sub: 'Estimated ovulation day' },
-      none: { mood: i.dayPhase === 'follicular' || i.dayPhase === 'luteal' ? i.dayPhase : 'none', kicker: fmtDay(i.date), big: i.cycleDay ? `Day ${i.cycleDay}` : '—', sub: 'Lower chance of getting pregnant' },
+      period: { mood: 'menstrual', kicker: cd, big: t('Period'), sub: t('Logged period day') },
+      'predicted-period': { mood: 'menstrual', kicker: cd, big: t('Period'), sub: t('Predicted period day') },
+      fertile: { mood: 'fertile', kicker: cd, big: t('Fertile'), sub: t('Higher chance of getting pregnant') },
+      ovulation: { mood: 'ovulation', kicker: cd, big: t('Ovulation'), sub: t('Estimated ovulation day') },
+      none: { mood: i.dayPhase === 'follicular' || i.dayPhase === 'luteal' ? i.dayPhase : 'none', kicker: fmtDay(i.date), big: i.cycleDay ? t('Day {n}', { n: i.cycleDay }) : '—', sub: t('Lower chance of getting pregnant') },
     };
     return map[i.kind];
   }
-  if (i.inPeriod) return { mood: 'menstrual', kicker: 'Period', big: `Day ${i.cycleDay ?? 1}`, sub: 'Log your flow and how you feel' };
-  const cd = i.cycleDay ? `Day ${i.cycleDay}` : '—';
+  if (i.inPeriod) return { mood: 'menstrual', kicker: t('Period'), big: t('Day {n}', { n: i.cycleDay ?? 1 }), sub: t('Log your flow and how you feel'), tag: 'in-period' };
+  const cd = i.cycleDay ? t('Day {n}', { n: i.cycleDay }) : '—';
   switch (i.noForecast) {
-    case 'paused': return { mood: 'none', kicker: 'Tracking paused', big: cd, sub: 'since your last period' };
+    case 'paused': return { mood: 'none', kicker: t('Tracking paused'), big: cd, sub: t('since your last period') };
     case 'postpartum': {
       const wk = i.stage?.kind === 'postpartum' ? Math.floor(diffDays(i.stage.since, i.today) / 7) + 1 : null;
-      return { mood: 'follicular', kicker: 'After birth', big: wk ? `Week ${wk}` : 'Postpartum', sub: i.stage?.kind === 'postpartum' && i.stage.breastfeeding ? 'Breastfeeding' : 'Log bleeding any time' };
+      return { mood: 'follicular', kicker: t('After birth'), big: wk ? t('Week {n}', { n: wk }) : t('Postpartum'), sub: i.stage?.kind === 'postpartum' && i.stage.breastfeeding ? t('Breastfeeding') : t('Log bleeding any time') };
     }
-    case 'loss': return { mood: 'none', kicker: 'Be gentle with yourself', big: cd, sub: 'Predictions return after your next period' };
-    case 'no-uterus': return { mood: 'none', kicker: 'Today', big: 'Check in', sub: 'No period forecast' };
-    case 'user': return { mood: 'none', kicker: 'Since your last period', big: cd, sub: 'Forecast off' };
+    case 'loss': return { mood: 'none', kicker: t('Be gentle with yourself'), big: cd, sub: t('Predictions return after your next period') };
+    case 'no-uterus': return { mood: 'none', kicker: t('Today'), big: t('Check in'), sub: t('No period forecast') };
+    case 'user': return { mood: 'none', kicker: t('Since your last period'), big: cd, sub: t('Forecast off') };
     default: break;
   }
   const d = i.daysUntilPeriod;
@@ -71,22 +78,23 @@ export function statusFor(i: StatusInput): Status {
   // The 'ovulation' phase spans the whole fertile window; only the ovulation day itself gets the ovulation mood.
   const phase = i.dayPhase !== undefined ? i.dayPhase : i.phase;
   const ph: Mood | null = phase === 'ovulation' ? (i.ovulationDate === i.date ? 'ovulation' : 'fertile') : phase;
-  if (i.lateBy && !i.lateDismissed) return { mood: 'late', kicker: 'Period not started', big: cd, sub: `${plural(i.lateBy, 'day')} past your likely window` };
-  if (d != null && d < 0 && i.lateDismissed) return { mood: ph ?? 'none', kicker: 'Cycle', big: cd, sub: 'No period logged yet' };
-  if (d != null && d < 0) return { mood: 'menstrual', kicker: 'Period', big: 'Due any day', sub: 'Within your likely window' };
-  if (d === 0) return { mood: 'menstrual', kicker: 'Period', big: 'Expected today', sub: 'Log it when it starts' };
+  if (i.lateBy && !i.lateDismissed) return { mood: 'late', kicker: t('Period not started'), big: cd, sub: tn(i.lateBy, '{n} day past your likely window|{n} days past your likely window') };
+  if (d != null && d < 0 && i.lateDismissed) return { mood: ph ?? 'none', kicker: t('Cycle'), big: cd, sub: t('No period logged yet') };
+  if (d != null && d < 0) return { mood: 'menstrual', kicker: t('Period'), big: t('Due any day'), sub: t('Within your likely window') };
+  if (d === 0) return { mood: 'menstrual', kicker: t('Period'), big: t('Expected today'), sub: t('Log it when it starts') };
   if (i.fertileWindow && i.ovulationDate && i.date >= i.fertileWindow[0] && i.date <= i.fertileWindow[1]) {
     const toOv = diffDays(i.date, i.ovulationDate);
     return {
-      mood: toOv === 0 ? 'ovulation' : 'fertile', kicker: 'Fertile window',
-      big: toOv > 0 ? `Ovulation in ${plural(toOv, 'day')}` : toOv === 0 ? 'Ovulation today' : 'High chance',
-      sub: 'Higher chance of getting pregnant',
+      mood: toOv === 0 ? 'ovulation' : 'fertile', kicker: t('Fertile window'),
+      big: toOv > 0 ? tn(toOv, 'Ovulation in {n} day|Ovulation in {n} days') : toOv === 0 ? t('Ovulation today') : t('High chance'),
+      sub: t('Higher chance of getting pregnant'),
+      ...(toOv > 0 ? { tag: 'ovulation-in' as const } : {}),
     };
   }
   // Fertile window hidden in settings: the ovulation day is still marked.
-  if (i.kind === 'ovulation') return { mood: 'ovulation', kicker: 'Ovulation', big: 'Ovulation today', sub: 'Estimated ovulation day' };
-  if (d == null) return { mood: ph ?? 'none', kicker: 'Cycle', big: cd, sub: 'No forecast' };
-  return { mood: ph ?? 'none', kicker: 'Period in', big: plural(d, 'day'), sub: i.fertileWindow ? 'Lower chance of getting pregnant' : 'Based on your recent cycles' };
+  if (i.kind === 'ovulation') return { mood: 'ovulation', kicker: t('Ovulation'), big: t('Ovulation today'), sub: t('Estimated ovulation day') };
+  if (d == null) return { mood: ph ?? 'none', kicker: t('Cycle'), big: cd, sub: t('No forecast') };
+  return { mood: ph ?? 'none', kicker: t('Period in'), big: tn(d, '{n} day|{n} days'), sub: i.fertileWindow ? t('Lower chance of getting pregnant') : t('Based on your recent cycles'), tag: 'period-in' };
 }
 
 /** Phase-tinted gradient with slowly drifting soft blobs. Cross-fades when the mood changes. */
@@ -126,14 +134,18 @@ export function WeekStrip({ today, selected, onSelect, kindOf }: {
   const ref = useRef<ScrollView>(null);
   const WEEKS = 13, MID = 6;
   const base = weekStart(today);
+  // The scroller stays left-to-right so paging offsets behave the same everywhere; in RTL the weeks are laid out
+  // reversed (earliest on the right) and each week's row runs right-to-left (Monday on the right).
+  // WEEKS is odd, so the current week (MID) sits at the same offset either way.
   useEffect(() => { requestAnimationFrame(() => ref.current?.scrollTo({ x: MID * w, animated: false })); }, [w]);
   return (
     <View onLayout={(e) => setW(e.nativeEvent.layout.width)}>
-      <ScrollView ref={ref} horizontal pagingEnabled showsHorizontalScrollIndicator={false} contentOffset={{ x: MID * w, y: 0 }}>
-        {Array.from({ length: WEEKS }, (_, wi) => {
+      <ScrollView ref={ref} horizontal pagingEnabled showsHorizontalScrollIndicator={false} contentOffset={{ x: MID * w, y: 0 }} style={{ direction: 'ltr' }}>
+        {Array.from({ length: WEEKS }, (_, pos) => {
+          const wi = rtl ? WEEKS - 1 - pos : pos;
           const start = addDays(base, (wi - MID) * 7);
           return (
-            <View key={wi} style={{ width: w, flexDirection: 'row', paddingHorizontal: 8 }}>
+            <View key={wi} style={{ width: w, flexDirection: 'row', paddingHorizontal: 8, direction: rtl ? 'rtl' : 'ltr' }}>
               {Array.from({ length: 7 }, (_, i) => {
                 const d = addDays(start, i);
                 const kind = kindOf(d);
@@ -141,9 +153,9 @@ export function WeekStrip({ today, selected, onSelect, kindOf }: {
                 const k = KIND_STYLE[kind];
                 return (
                   <PressScale key={d} accessibilityRole="button" accessibilityState={{ selected: sel }}
-                    accessibilityLabel={`${fmtDay(d)}${d === today ? ', today' : ''}${kind !== 'none' ? `, ${KIND_LABEL[kind]}` : ''}`} onPress={() => onSelect(d)} style={{ flex: 1, alignItems: 'center' }}>
+                    accessibilityLabel={`${fmtDay(d)}${d === today ? t(', today') : ''}${kind !== 'none' ? t(', {label}', { label: t(KIND_LABEL[kind]) }) : ''}`} onPress={() => onSelect(d)} style={{ flex: 1, alignItems: 'center' }}>
                     <View style={[ws.col, sel && ws.colSel]}>
-                      <Text style={[ws.dow, sel && ws.dowSel]} numberOfLines={1} maxFontSizeMultiplier={1.1}>{DOW3[i]}</Text>
+                      <Text style={[ws.dow, sel && ws.dowSel]} numberOfLines={1} maxFontSizeMultiplier={1.1}>{dow3(i)}</Text>
                       <View style={[ws.day, sel && ws.daySel]}>
                         <Text style={[ws.dayT, sel && ws.dayTSel, d === today && !sel && { fontWeight: '700' }]} maxFontSizeMultiplier={1.15}>{+d.slice(8)}</Text>
                       </View>
@@ -160,7 +172,7 @@ export function WeekStrip({ today, selected, onSelect, kindOf }: {
   );
 }
 
-/** Day kinds use shape + colour (filled, dashed ring, soft fill) so meaning never relies on colour alone. */
+/** Day kinds use shape + colour (filled, dashed ring, soft fill) so meaning never relies on colour alone. English: translate with t() where shown. */
 export const KIND_LABEL: Record<DayKind, string> = { period: 'period', 'predicted-period': 'predicted period', fertile: 'fertile window', ovulation: 'ovulation', none: '' };
 export const KIND_STYLE: Record<DayKind, { box: object; color: string }> = themed(() => ({
   period: { box: { backgroundColor: colors.period }, color: colors.white },
@@ -171,6 +183,9 @@ export const KIND_STYLE: Record<DayKind, { box: object; color: string }> = theme
 }));
 
 const DOW3 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+/** Arabic weekday names without the article, so they fit the narrow week-strip column (like dowInitials). */
+const DOW3_AR = ['إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت', 'أحد'];
+const dow3 = (i: number) => (lang === 'ar' ? DOW3_AR[i] : DOW3[i]);
 
 /** Small marker under each day: shape + colour (filled dot, ring, or soft dot) so meaning never relies on colour alone. */
 function KindDot({ kind, today }: { kind: DayKind; today: boolean }) {
@@ -218,7 +233,7 @@ export function StatusCircle({ status, celebrateKey, ring, children }: {
         {showPop ? (
           <Animated.View accessibilityLiveRegion="polite" style={{ alignItems: 'center', opacity: pop, transform: [{ scale: pop }] }}>
             <Icon name="check-bold" size={72} color={fertile ? '#fff' : colors.text} />
-            <Text style={[cs.sub, { fontSize: 20, marginTop: 6 }, fertile && { color: '#fff' }]}>Predictions updated!</Text>
+            <Text style={[cs.sub, { fontSize: 20, marginTop: 6 }, fertile && { color: '#fff' }]}>{t('Predictions updated!')}</Text>
           </Animated.View>
         ) : (
           <FadeIn key={status.kicker + status.big} style={{ alignItems: 'center', paddingHorizontal: 22 }} from={8}>
@@ -280,7 +295,7 @@ export function StoryCard({ title, tint, ink, icon, onPress, art }: { title: str
     <PressScale accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={[sc.wrap]}>
       <View style={[sc.card, { backgroundColor: tint }]}>
         <Text style={sc.t} numberOfLines={3} maxFontSizeMultiplier={1.2}>{title}</Text>
-        <Animated.View style={{ position: 'absolute', right: 12, bottom: 12, transform: [{ translateY: floaty.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }] }}>
+        <Animated.View style={{ position: 'absolute', end: 12, bottom: 12, transform: [{ translateY: floaty.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }] }}>
           {art ?? (icon ? <Icon name={icon} size={60} color={ink} /> : null)}
         </Animated.View>
       </View>
@@ -288,7 +303,7 @@ export function StoryCard({ title, tint, ink, icon, onPress, art }: { title: str
   );
 }
 const sc = themed(() => StyleSheet.create({
-  wrap: { marginRight: 12, padding: 3, borderRadius: 24, borderWidth: 2, borderColor: colors.accent },
+  wrap: { marginEnd: 12, padding: 3, borderRadius: 24, borderWidth: 2, borderColor: colors.accent },
   card: { width: 150, height: 178, borderRadius: 18, padding: 14, overflow: 'hidden' },
   t: { fontSize: 16, fontWeight: '700', color: colors.text, lineHeight: 21 },
 }));
@@ -301,7 +316,7 @@ export function useNow() {
 
 export const ago = (ts: number, now: number) => {
   const m = Math.round((now - ts) / 60000);
-  return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`;
+  return m < 1 ? t('just now') : m < 60 ? tn(m, '{n} min ago|{n} min ago') : m < 1440 ? tn(Math.round(m / 60), '{n} h ago|{n} h ago') : tn(Math.round(m / 1440), '{n} d ago|{n} d ago');
 };
 
 export const useStable = <T,>(v: T) => useMemo(() => v, [JSON.stringify(v)]);

@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { dailyReminders, planReminders, type Prediction, type ReminderPrefs, type Settings } from '@avelune/core';
+import { t } from './i18n';
 
 export const remindersSupported = true;
 
@@ -12,7 +13,7 @@ const CHANNEL = 'reminders';
 
 export async function ensurePermission(): Promise<boolean> {
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: Notifications.AndroidImportance.DEFAULT });
+    await Notifications.setNotificationChannelAsync(CHANNEL, { name: t('Reminders'), importance: Notifications.AndroidImportance.DEFAULT });
   }
   const cur = await Notifications.getPermissionsAsync();
   if (cur.granted) return true;

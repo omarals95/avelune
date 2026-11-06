@@ -10,6 +10,7 @@ import { PressScale, useReduceMotion } from './anim';
 import { Icon, type IconName } from './icons';
 import { Text } from './text';
 import { bloomTint, colors, flowers, font, scheme, shadow, themed, type Bloom } from './theme';
+import { rtl, t } from './i18n';
 
 const AnimatedCircle = Reanimated.createAnimatedComponent(Circle);
 
@@ -124,7 +125,7 @@ export function BloomCircle({ bloom, progress, kicker, big, sub, glyph, celebrat
         {pop ? (
           <>
             <Icon name="check-circle" size={44} color={tint} />
-            <Text style={[b.sub, { marginTop: 6 }]}>Predictions updated</Text>
+            <Text style={[b.sub, { marginTop: 6 }]}>{t('Predictions updated')}</Text>
           </>
         ) : (
           <>
@@ -207,20 +208,20 @@ export function ActionPill({ icon, label, onPress }: { icon: IconName; label: st
 }
 
 /** Daily insight card with the theme's card petals along the right edge. */
-export function InsightCard({ title, onPress, eyebrow = 'Daily insight' }: { title: string; onPress: () => void; eyebrow?: string }) {
+export function InsightCard({ title, onPress, eyebrow = t('Daily insight') }: { title: string; onPress: () => void; eyebrow?: string }) {
   return (
     <PressScale accessibilityRole="button" accessibilityLabel={`${eyebrow}: ${title}`} onPress={onPress}>
       <View style={b2.insight}>
         <CardPetals />
-        <LinearGradient colors={[colors.card, colors.card, 'transparent']} locations={[0, 0.34, 0.56]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
-        <View style={{ flex: 1, paddingRight: 120 }}>
+        <LinearGradient colors={[colors.card, colors.card, 'transparent']} locations={[0, 0.34, 0.56]} start={{ x: rtl ? 1 : 0, y: 0.5 }} end={{ x: rtl ? 0 : 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
+        <View style={{ flex: 1, paddingEnd: 120 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
             <Icon name="sprout" size={18} color={colors.muted} />
             <Text style={b2.eyebrow}>{eyebrow}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={b2.insightT} numberOfLines={3} maxFontSizeMultiplier={1.2}>{title}</Text>
-            <View style={{ marginLeft: 6 }}><Icon name="chevron-right" size={16} color={colors.muted} /></View>
+            <View style={{ marginStart: 6 }}><Icon name="chevron-right" size={16} color={colors.muted} /></View>
           </View>
         </View>
       </View>
@@ -230,15 +231,15 @@ export function InsightCard({ title, onPress, eyebrow = 'Daily insight' }: { tit
 
 const b2 = themed(() => StyleSheet.create({
   pill: {
-    flexDirection: 'row', alignItems: 'center', minHeight: 58, borderRadius: 999, paddingLeft: 10, paddingRight: 12,
+    flexDirection: 'row', alignItems: 'center', minHeight: 58, borderRadius: 999, paddingStart: 10, paddingEnd: 12,
     backgroundColor: scheme === 'dark' ? colors.card : colors.tile, borderWidth: 1, borderColor: colors.border,
   },
-  disc: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 6 },
+  disc: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginEnd: 6 },
   label: { flex: 1, fontSize: 15.5, color: colors.heading, fontWeight: '500' },
   insight: {
     flexDirection: 'row', alignItems: 'center', minHeight: 126, borderRadius: 24, padding: 20, overflow: 'hidden',
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, ...shadow,
   },
-  eyebrow: { fontSize: 14, color: colors.muted, marginLeft: 8 },
+  eyebrow: { fontSize: 14, color: colors.muted, marginStart: 8 },
   insightT: { flexShrink: 1, fontSize: 21, lineHeight: 27, color: colors.heading, fontWeight: '700' },
 }));

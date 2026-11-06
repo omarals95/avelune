@@ -6,6 +6,7 @@ import { useReduceMotion } from './anim';
 import { fmtDay } from './components';
 import { Text } from './text';
 import { colors, flowers, themed } from './theme';
+import { t, tn } from './i18n';
 
 /**
  * The single place that maps pregnancy stages to artwork (assets/pregnancy/emb-0x.webp, optimized copies of
@@ -23,7 +24,7 @@ export const PREGNANCY_ART: Record<PregnancyStage, ImageSourcePropType | null> =
   9: require('../assets/pregnancy/emb-09.webp'),
 };
 
-/** Screen-reader descriptions (no medical measurements). */
+/** Screen-reader descriptions (no medical measurements). English; translated with t() where shown. */
 const ALT: Record<PregnancyStage, string> = {
   1: 'Month 1 illustration: a tiny early form in a small sac, cradled inside a pink flower and joined to the placenta.',
   2: 'Month 2 illustration: a small curled embryo in its sac, inside a pink flower and joined to the placenta.',
@@ -84,7 +85,7 @@ export function PregnancyIllustration({ stage, size: fixed }: { stage: Pregnancy
   if (!art && __DEV__) console.warn(`[pregnancy] No illustration for stage ${stage} (assets/pregnancy/emb-0${stage}). Showing the flower instead.`);
   return (
     <View accessible accessibilityRole="image" testID="pregnancy-illustration"
-      accessibilityLabel={art ? ALT[stage] : `Month ${stage}: a pink flower (the illustration for this month is not available yet).`}
+      accessibilityLabel={art ? t(ALT[stage]) : t('Month {n}: a pink flower (the illustration for this month is not available yet).', { n: stage })}
       style={{ width: size, height: size, alignSelf: 'center' }}>
       {layers.map((l) => (
         <Layer key={l.k} source={l.src} size={size} leaving={l.leaving} onGone={() => setLayers((ls) => ls.filter((x) => x.k !== l.k))} />
@@ -99,9 +100,13 @@ export function PregnancyCaption({ view }: { view: PregnancyView }) {
   const narrow = width < 360;
   const toGo = view.daysToGo;
   const due = `${fmtDay(view.dueDate)} ${view.dueDate.slice(0, 4)}`;
+  const overWeeks = Math.floor(-toGo / 7);
+  const overDays = -toGo % 7;
   const detail = view.postTerm
-    ? `${Math.floor(-toGo / 7) ? `${Math.floor(-toGo / 7)} wk ` : ''}${-toGo % 7} day${-toGo % 7 === 1 ? '' : 's'} past your due date (${due})`
-    : toGo === 0 ? `Due today (${due})` : `${view.week} weeks ${view.day} day${view.day === 1 ? '' : 's'} · due ${due}`;
+    ? overWeeks
+      ? t('{weeks} {days} past your due date ({due})', { weeks: tn(overWeeks, '{n} wk|{n} wk'), days: tn(overDays, '{n} day|{n} days'), due })
+      : tn(overDays, '{n} day past your due date ({due})|{n} days past your due date ({due})', { due })
+    : toGo === 0 ? t('Due today ({due})', { due }) : t('{weeks} {days} · due {due}', { weeks: tn(view.week, '{n} weeks|{n} weeks'), days: tn(view.day, '{n} day|{n} days'), due });
   return (
     <View style={c.row} testID="pregnancy-caption">
       <Text selectable style={[c.caption, narrow && { fontSize: 16 }]} accessibilityRole="header">{view.caption}</Text>
@@ -115,9 +120,9 @@ export function PregnancySetup({ onSetup }: { onSetup: () => void }) {
   const size = useArtSize();
   return (
     <View style={[c.setup, { width: size, minHeight: size * 0.6 }]}>
-      <Text style={c.caption}>Add your pregnancy dates</Text>
-      <Text style={[c.detail, { marginBottom: 12 }]}>Enter the first day of your last period or your due date to see your baby’s month.</Text>
-      <Text accessibilityRole="button" onPress={onSetup} style={c.link}>Set pregnancy dates</Text>
+      <Text style={c.caption}>{t('Add your pregnancy dates')}</Text>
+      <Text style={[c.detail, { marginBottom: 12 }]}>{t('Enter the first day of your last period or your due date to see your baby’s month.')}</Text>
+      <Text accessibilityRole="button" onPress={onSetup} style={c.link}>{t('Set pregnancy dates')}</Text>
     </View>
   );
 }

@@ -40,6 +40,7 @@ import { Settings } from './screens/Settings';
 import { ArticleSheet, WeekSheet } from './screens/Sheets';
 import { Today } from './screens/Today';
 
+/** Tab id, English label (translated when shown), icon, active icon. */
 const TABS: [Tab, string, IconName, IconName][] = [
   ['today', 'Today', 'home', 'home-fill'],
   ['health', 'Health', 'chart-bar', 'chart-bar-fill'],
@@ -82,7 +83,8 @@ function Root() {
   useAppLock(hydrated);
   if (!ready) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
   return (
-    <View key={`${eff}-${lang}`} style={{ flex: 1, backgroundColor: colors.bg, direction: rtl ? 'rtl' : 'ltr' }}>
+    // On web, react-native-web resolves logical styles (marginStart, start, …) from the nearest `dir` prop, not the CSS direction.
+    <View key={`${eff}-${lang}`} {...(Platform.OS === 'web' ? ({ dir: rtl ? 'rtl' : 'ltr' } as object) : {})} style={{ flex: 1, backgroundColor: colors.bg, direction: rtl ? 'rtl' : 'ltr' }}>
       <StatusBar style={eff === 'dark' ? 'light' : 'dark'} />
       {!agreed ? <Welcome /> : partner && !onboarded ? <PartnerRoot /> : !onboarded ? <Onboarding /> : <Main />}
       <SystemBarBackdrop />
@@ -173,8 +175,9 @@ function Main() {
       <View pointerEvents="box-none" style={[st.navWrap, { bottom: Math.max(insets.bottom, 8) + 4 }]}>
         <View style={st.bar}>
           <View style={st.tabs} accessibilityRole="tablist">
-            {TABS.map(([k, l, icon, active]) => {
+            {TABS.map(([k, en, icon, active]) => {
               const on = tab === k;
+              const l = t(en);
               const tint = on ? colors.navIconActive : colors.navIcon;
               return (
                 <PressScale key={k} accessibilityRole="tab" accessibilityLabel={l} accessibilityState={{ selected: on }} style={st.tab} onPress={() => go(k)}>
@@ -187,7 +190,7 @@ function Main() {
               );
             })}
           </View>
-          <PressScale accessibilityRole="button" accessibilityLabel="Log today" onPress={() => setLogDate(todayISO())} style={st.fab}>
+          <PressScale accessibilityRole="button" accessibilityLabel={t('Log today')} onPress={() => setLogDate(todayISO())} style={st.fab}>
             <Icon name="plus" size={30} color={colors.fabIcon} />
           </PressScale>
         </View>
@@ -208,12 +211,12 @@ function Main() {
 
 const st = themed(() => StyleSheet.create({
   navWrap: { position: 'absolute', left: 10, right: 10, alignItems: 'center' },
-  bar: { flexDirection: 'row', alignItems: 'center', width: '100%', maxWidth: 560, backgroundColor: colors.navBg, borderRadius: 30, paddingVertical: 8, paddingLeft: 6, paddingRight: 8, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: scheme === 'dark' ? 0.4 : 0.08, shadowRadius: 20, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
+  bar: { flexDirection: 'row', alignItems: 'center', width: '100%', maxWidth: 560, backgroundColor: colors.navBg, borderRadius: 30, paddingVertical: 8, paddingStart: 6, paddingEnd: 8, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: scheme === 'dark' ? 0.4 : 0.08, shadowRadius: 20, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
   tabs: { flexDirection: 'row', flex: 1 },
   tab: { flex: 1 },
   tabInner: { alignItems: 'center', justifyContent: 'center', minHeight: 62, borderRadius: 999, marginHorizontal: 2, paddingHorizontal: 2 },
   tabActive: { backgroundColor: colors.navActive, width: 70, height: 68, alignSelf: 'center' },
   tabT: { fontSize: 12.5, marginTop: 3 },
   tabUnderline: { position: 'absolute', bottom: 0, width: 22, height: 3, borderRadius: 2, backgroundColor: colors.navIconActive },
-  fab: { width: 62, height: 62, borderRadius: 31, backgroundColor: colors.fab, alignItems: 'center', justifyContent: 'center', marginLeft: 6, shadowColor: colors.fab, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
+  fab: { width: 62, height: 62, borderRadius: 31, backgroundColor: colors.fab, alignItems: 'center', justifyContent: 'center', marginStart: 6, shadowColor: colors.fab, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
 }));

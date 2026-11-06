@@ -13,6 +13,7 @@ import { secure } from './secure';
 import { useStore } from './store';
 import { Text } from './text';
 import { colors, scheme, themed } from './theme';
+import { t } from './i18n';
 
 /**
  * App lock (PIN, optionally Face ID / fingerprint), a privacy cover in the app switcher, and screenshot blocking.
@@ -46,12 +47,12 @@ async function checkPin(pin: string) {
 }
 
 export async function biometricsAvailable(): Promise<{ ok: boolean; label: string }> {
-  if (Platform.OS === 'web') return { ok: false, label: 'Biometrics' };
+  if (Platform.OS === 'web') return { ok: false, label: t('Biometrics') };
   try {
     const [hw, enrolled, types] = await Promise.all([LocalAuthentication.hasHardwareAsync(), LocalAuthentication.isEnrolledAsync(), LocalAuthentication.supportedAuthenticationTypesAsync()]);
     const face = types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
-    return { ok: hw && enrolled, label: Platform.OS === 'ios' ? (face ? 'Face ID' : 'Touch ID') : face ? 'face unlock' : 'fingerprint' };
-  } catch { return { ok: false, label: 'Biometrics' }; }
+    return { ok: hw && enrolled, label: Platform.OS === 'ios' ? (face ? 'Face ID' : 'Touch ID') : face ? t('face unlock') : t('fingerprint') };
+  } catch { return { ok: false, label: t('Biometrics') }; }
 }
 
 /** Mount once at the root: wires launch/resume locking, the app-switcher cover and screenshot blocking. */
@@ -114,7 +115,7 @@ function LockScreen() {
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
 
   const tryBio = useCallback(async () => {
-    const r = await LocalAuthentication.authenticateAsync({ promptMessage: 'Unlock Avelune', cancelLabel: 'Use PIN', disableDeviceFallback: true }).catch(() => null);
+    const r = await LocalAuthentication.authenticateAsync({ promptMessage: t('Unlock Avelune'), cancelLabel: t('Use PIN'), disableDeviceFallback: true }).catch(() => null);
     if (r?.success) set({ locked: false });
   }, [set]);
   useEffect(() => {
@@ -130,19 +131,19 @@ function LockScreen() {
     setPinText(next); setMsg('');
     if (next.length < PIN_LENGTH) return;
     if (await checkPin(next)) { set({ locked: false }); setPinText(''); setTries(0); return; }
-    const t = tries + 1;
-    setTries(t); setPinText('');
-    if (t >= MAX_TRIES) { setWaitUntil(Date.now() + 30000); setTries(0); setMsg('Too many tries. Wait 30 seconds.'); }
-    else setMsg('Wrong PIN. Try again.');
+    const n = tries + 1;
+    setTries(n); setPinText('');
+    if (n >= MAX_TRIES) { setWaitUntil(Date.now() + 30000); setTries(0); setMsg(t('Too many tries. Wait 30 seconds.')); }
+    else setMsg(t('Wrong PIN. Try again.'));
   };
   const wait = Math.max(0, Math.ceil((waitUntil - now) / 1000));
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'bio', '0', 'del'];
   return (
     <View style={[StyleSheet.absoluteFill, l.lock, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 24 }]} accessibilityViewIsModal>
       <Image source={require('../assets/symbol.png')} style={{ width: 56, height: 58, tintColor: scheme === 'dark' ? colors.primary : undefined }} resizeMode="contain" />
-      <Text style={l.title} accessibilityRole="header">Avelune is locked</Text>
-      <Text style={l.sub}>{wait ? `Try again in ${wait} s` : 'Enter your PIN'}</Text>
-      <View style={l.dots} accessible accessibilityLabel={`${pin.length} of ${PIN_LENGTH} digits entered`}>
+      <Text style={l.title} accessibilityRole="header">{t('Avelune is locked')}</Text>
+      <Text style={l.sub}>{wait ? t('Try again in {n} s', { n: wait }) : t('Enter your PIN')}</Text>
+      <View style={l.dots} accessible accessibilityLabel={t('{n} of {total} digits entered', { n: pin.length, total: PIN_LENGTH })}>
         {Array.from({ length: PIN_LENGTH }, (_, i) => <View key={i} style={[l.dot, i < pin.length && l.dotOn]} />)}
       </View>
       <Text style={[l.sub, { color: colors.danger, minHeight: 22 }]} accessibilityLiveRegion="polite">{msg}</Text>
@@ -151,10 +152,10 @@ function LockScreen() {
           <View key={k} style={l.keyWrap}>
             {k === 'bio' ? (
               bio.ok && sec.biometrics ? (
-                <PressScale accessibilityRole="button" accessibilityLabel={`Unlock with ${bio.label}`} onPress={() => void tryBio()} style={l.key}><Icon name="fingerprint" size={30} color={colors.heading} /></PressScale>
+                <PressScale accessibilityRole="button" accessibilityLabel={t('Unlock with {method}', { method: bio.label })} onPress={() => void tryBio()} style={l.key}><Icon name="fingerprint" size={30} color={colors.heading} /></PressScale>
               ) : null
             ) : k === 'del' ? (
-              <PressScale accessibilityRole="button" accessibilityLabel="Delete digit" onPress={() => setPinText(pin.slice(0, -1))} style={l.key}><Icon name="backspace" size={28} color={colors.heading} /></PressScale>
+              <PressScale accessibilityRole="button" accessibilityLabel={t('Delete digit')} onPress={() => setPinText(pin.slice(0, -1))} style={l.key}><Icon name="backspace" size={28} color={colors.heading} /></PressScale>
             ) : (
               <PressScale accessibilityRole="button" accessibilityLabel={k} disabled={!!wait} onPress={() => void press(k)} style={[l.key, l.keyNum]}><Text style={l.keyT}>{k}</Text></PressScale>
             )}
@@ -175,20 +176,20 @@ export function PinSetup({ onDone, onCancel }: { onDone: () => void; onCancel: (
     setPinText(next); setMsg('');
     if (next.length < PIN_LENGTH) return;
     if (!first) { setFirst(next); setPinText(''); return; }
-    if (next !== first) { setFirst(null); setPinText(''); setMsg('The PINs did not match. Start again.'); return; }
+    if (next !== first) { setFirst(null); setPinText(''); setMsg(t('The PINs did not match. Start again.')); return; }
     await setPin(next);
     onDone();
   };
   return (
     <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-      <Text style={l.sub}>{first ? 'Enter the same PIN again' : `Choose a ${PIN_LENGTH}-digit PIN`}</Text>
+      <Text style={l.sub}>{first ? t('Enter the same PIN again') : t('Choose a {n}-digit PIN', { n: PIN_LENGTH })}</Text>
       <View style={l.dots}>{Array.from({ length: PIN_LENGTH }, (_, i) => <View key={i} style={[l.dot, i < pin.length && l.dotOn]} />)}</View>
       <Text style={[l.sub, { color: colors.danger, minHeight: 22 }]}>{msg}</Text>
       <View style={[l.pad, { maxWidth: 300 }]}>
         {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'x', '0', 'del'].map((k) => (
           <View key={k} style={l.keyWrap}>
-            {k === 'x' ? <PressScale accessibilityRole="button" accessibilityLabel="Cancel" onPress={onCancel} style={l.key}><Icon name="close" size={26} color={colors.heading} /></PressScale>
-              : k === 'del' ? <PressScale accessibilityRole="button" accessibilityLabel="Delete digit" onPress={() => setPinText(pin.slice(0, -1))} style={l.key}><Icon name="backspace" size={26} color={colors.heading} /></PressScale>
+            {k === 'x' ? <PressScale accessibilityRole="button" accessibilityLabel={t('Cancel')} onPress={onCancel} style={l.key}><Icon name="close" size={26} color={colors.heading} /></PressScale>
+              : k === 'del' ? <PressScale accessibilityRole="button" accessibilityLabel={t('Delete digit')} onPress={() => setPinText(pin.slice(0, -1))} style={l.key}><Icon name="backspace" size={26} color={colors.heading} /></PressScale>
                 : <PressScale accessibilityRole="button" accessibilityLabel={k} onPress={() => void press(k)} style={[l.key, l.keyNum]}><Text style={l.keyT}>{k}</Text></PressScale>}
           </View>
         ))}
@@ -202,10 +203,11 @@ const l = themed(() => StyleSheet.create({
   lock: { backgroundColor: colors.bg, alignItems: 'center', zIndex: 1000, elevation: 1000, paddingHorizontal: 24 },
   title: { fontSize: 26, fontWeight: '700', color: colors.heading, marginTop: 18 },
   sub: { fontSize: 16, color: colors.text, marginTop: 8, textAlign: 'center' },
-  dots: { flexDirection: 'row', gap: 16, marginTop: 22 },
+  dots: { flexDirection: 'row', gap: 16, marginTop: 22, direction: 'ltr' },
   dot: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: colors.heading },
   dotOn: { backgroundColor: colors.heading },
-  pad: { flexDirection: 'row', flexWrap: 'wrap', width: '100%', maxWidth: 320, marginTop: 12 },
+  // Number pads keep 1-2-3 left to right in every language, like the phone's own keypad.
+  pad: { flexDirection: 'row', flexWrap: 'wrap', width: '100%', maxWidth: 320, marginTop: 12, direction: 'ltr' },
   keyWrap: { width: '33.33%', alignItems: 'center', paddingVertical: 8 },
   key: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center' },
   keyNum: { backgroundColor: colors.tile, borderWidth: 1, borderColor: colors.border },

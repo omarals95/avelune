@@ -46,7 +46,7 @@ export function FadeIn({ children, delay = 0, style, from = 14 }: { children: Re
   );
 }
 
-const OUTER_KEYS = new Set(['flex', 'flexGrow', 'flexShrink', 'flexBasis', 'width', 'minWidth', 'maxWidth', 'alignSelf', 'position', 'top', 'left', 'right', 'bottom']);
+const OUTER_KEYS = new Set(['flex', 'flexGrow', 'flexShrink', 'flexBasis', 'width', 'minWidth', 'maxWidth', 'alignSelf', 'position', 'top', 'left', 'right', 'bottom', 'start', 'end']);
 
 /** Pressable that springs down slightly when touched. */
 export function PressScale({ children, style, scaleTo = 0.94, ...rest }: PressableProps & { style?: StyleProp<ViewStyle>; scaleTo?: number; children: React.ReactNode }) {

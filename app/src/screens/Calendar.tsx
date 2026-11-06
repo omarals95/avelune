@@ -3,23 +3,24 @@ import { Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Text } from '../text';
 import { addDays, classifyDay, cycleDayOf, predict, toDateStr, today as todayFn, type DateStr, type DayKind } from '@avelune/core';
 import { ND, PressScale } from '../anim';
-import { DOW, KIND_LABEL, KIND_STYLE, MONTHS, mondayIndex } from '../components';
+import { KIND_LABEL, KIND_STYLE, mondayIndex } from '../components';
 import { Icon } from '../icons';
 import { useNav } from '../nav';
 import { selectLogs, selectSettings, useStore } from '../store';
 import { colors, shadow, themed } from '../theme';
 import { Segmented, TopBar } from '../ui';
+import { dowInitials, monthName, monthShort, t } from '../i18n';
 
-const fmtA11y = (d: DateStr) => `${+d.slice(8)} ${MONTHS[+d.slice(5, 7) - 1]} ${d.slice(0, 4)}`;
+const fmtA11y = (d: DateStr) => `${+d.slice(8)} ${monthName(+d.slice(5, 7) - 1)} ${d.slice(0, 4)}`;
 
 /** Visible key for the calendar symbols (shape + colour). */
 function Legend() {
-  const items: [DayKind, string][] = [['period', 'Period'], ['predicted-period', 'Predicted'], ['fertile', 'Fertile'], ['ovulation', 'Ovulation']];
+  const items: [DayKind, string][] = [['period', t('Period')], ['predicted-period', t('Predicted')], ['fertile', t('Fertile')], ['ovulation', t('Ovulation')]];
   return (
-    <View style={cal.legend} accessibilityRole="text" accessibilityLabel="Legend: filled rose is a logged period, dashed rose ring is predicted, green fill is fertile, dashed violet ring is ovulation">
+    <View style={cal.legend} accessibilityRole="text" accessibilityLabel={t('Legend: filled rose is a logged period, dashed rose ring is predicted, green fill is fertile, dashed violet ring is ovulation')}>
       {items.map(([k, l]) => (
         <View key={k} style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 6 }}>
-          <View style={[{ width: 16, height: 16, borderRadius: 8, marginRight: 6 }, KIND_STYLE[k].box]} />
+          <View style={[{ width: 16, height: 16, borderRadius: 8, marginEnd: 6 }, KIND_STYLE[k].box]} />
           <Text style={{ fontSize: 13, color: colors.text }}>{l}</Text>
         </View>
       ))}
@@ -86,12 +87,12 @@ export function CalendarView({ startEditing, onClose, onDay, kindOf: kindOverrid
   return (
     <View style={{ flex: 1, backgroundColor: colors.card }}>
       <TopBar onClose={onClose} title={title}
-        right={!readOnly ? <PressScale accessibilityLabel="Cycle settings" onPress={() => { onClose(); nav?.openSettings('cycle'); }} style={{ padding: 8 }}><Icon name="cog-outline" size={28} color={colors.text} /></PressScale> : null} />
+        right={!readOnly ? <PressScale accessibilityLabel={t('Cycle settings')} onPress={() => { onClose(); nav?.openSettings('cycle'); }} style={{ padding: 8 }}><Icon name="cog-outline" size={28} color={colors.text} /></PressScale> : null} />
       <View style={{ alignItems: 'center', marginTop: -50, marginBottom: 8 }} pointerEvents="box-none">
-        {!title && <Segmented options={[['month', 'Month'], ['year', 'Year']]} value={mode} onChange={(m) => { if (m === 'month') { offsets.current = {}; setReady(false); setTarget(monthKey(ty, tm)); } setMode(m); }} />}
+        {!title && <Segmented options={[['month', t('Month')], ['year', t('Year')]]} value={mode} onChange={(m) => { if (m === 'month') { offsets.current = {}; setReady(false); setTarget(monthKey(ty, tm)); } setMode(m); }} />}
       </View>
       <Legend />
-      <View style={cal.dowRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{DOW.map((d, i) => <Text key={i} style={cal.dow} maxFontSizeMultiplier={1.2}>{d}</Text>)}</View>
+      <View style={cal.dowRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{dowInitials().map((d, i) => <Text key={i} style={cal.dow} maxFontSizeMultiplier={1.2}>{d}</Text>)}</View>
 
       {mode === 'month' ? (
         <ScrollView ref={scroll} contentContainerStyle={{ paddingBottom: 120 }} onContentSizeChange={settle} style={{ opacity: ready || !target ? 1 : 0 }}>
@@ -105,7 +106,7 @@ export function CalendarView({ startEditing, onClose, onDay, kindOf: kindOverrid
       ) : (
         <ScrollView contentContainerStyle={{ padding: 12, flexDirection: 'row', flexWrap: 'wrap', paddingBottom: 60 }}>
           {Array.from({ length: 12 }, (_, m) => (
-            <Pressable key={m} style={{ width: '33.3%', padding: 6 }} accessibilityLabel={`${MONTHS[m]} ${ty}`} onPress={() => { offsets.current = {}; setReady(false); setTarget(monthKey(ty, m)); setMode('month'); }}>
+            <Pressable key={m} style={{ width: '33.3%', padding: 6 }} accessibilityLabel={`${monthName(m)} ${ty}`} onPress={() => { offsets.current = {}; setReady(false); setTarget(monthKey(ty, m)); setMode('month'); }}>
               <MiniMonth y={ty} m={m} today={today} kindOf={kindOf} />
             </Pressable>
           ))}
@@ -116,11 +117,11 @@ export function CalendarView({ startEditing, onClose, onDay, kindOf: kindOverrid
         <View style={cal.fabWrap} pointerEvents="box-none">
           {editing ? (
             <View style={{ flexDirection: 'row' }}>
-              <PressScale onPress={() => setEditing(false)} style={[cal.fab, { backgroundColor: colors.tile, marginRight: 12 }]}><Text style={[cal.fabT, { color: colors.primary }]}>Cancel</Text></PressScale>
-              <PressScale onPress={save} style={cal.fab}><Text style={cal.fabT}>Save</Text></PressScale>
+              <PressScale onPress={() => setEditing(false)} style={[cal.fab, { backgroundColor: colors.tile, marginEnd: 12 }]}><Text style={[cal.fabT, { color: colors.primary }]}>{t('Cancel')}</Text></PressScale>
+              <PressScale onPress={save} style={cal.fab}><Text style={cal.fabT}>{t('Save')}</Text></PressScale>
             </View>
           ) : (
-            <PressScale onPress={() => setEditing(true)} style={cal.fab}><Text style={cal.fabT}>Edit period dates</Text></PressScale>
+            <PressScale onPress={() => setEditing(true)} style={cal.fab}><Text style={cal.fabT}>{t('Edit period dates')}</Text></PressScale>
           )}
         </View>
       )}
@@ -140,7 +141,7 @@ function Month({ y, m, today, kindOf, editing, draft, onDay, showCycleDays, cycl
   while (cells.length % 7) cells.push(null);
   return (
     <View style={{ paddingTop: 18, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-      <Text style={cal.mTitle}>{MONTHS[m]}{y !== +today.slice(0, 4) ? ` ${y}` : ''}</Text>
+      <Text style={cal.mTitle}>{monthName(m)}{y !== +today.slice(0, 4) ? ` ${y}` : ''}</Text>
       <View style={cal.grid}>
         {cells.map((d, i) => d ? (
           <DayCell key={d} d={d} today={today} kind={kindOf(d)} editing={editing} checked={draft.has(d)} onPress={() => onDay(d)}
@@ -162,8 +163,8 @@ function DayCell({ d, today, kind, editing, checked, onPress, cycleDay }: {
   const txt = isToday && !editing ? colors.onPrimary : editing ? colors.text : k.color;
   return (
     <Pressable style={cal.cell} onPress={press} disabled={editing && future} accessibilityRole={editing ? 'checkbox' : 'button'} accessibilityState={editing ? { checked, disabled: future } : undefined}
-      accessibilityLabel={`${fmtA11y(d)}${isToday ? ', today' : ''}${kind !== 'none' ? ', ' + KIND_LABEL[kind] : ''}`}>
-      <Text style={[cal.cd, isToday && !editing && { color: colors.text, fontWeight: '700' }]} numberOfLines={1} maxFontSizeMultiplier={1.1}>{isToday && !editing ? 'Today' : cycleDay ?? ' '}</Text>
+      accessibilityLabel={`${fmtA11y(d)}${isToday ? t(', today') : ''}${kind !== 'none' ? t(', {label}', { label: t(KIND_LABEL[kind]) }) : ''}`}>
+      <Text style={[cal.cd, isToday && !editing && { color: colors.text, fontWeight: '700' }]} numberOfLines={1} maxFontSizeMultiplier={1.1}>{isToday && !editing ? t('Today') : cycleDay ?? ' '}</Text>
       <Animated.View style={[cal.day, { transform: [{ scale: pop }] }, !editing && k.box,
         !editing && isToday && { backgroundColor: colors.today, borderWidth: 0 }]}>
         <Text style={[cal.dayT, { color: txt }, editing && future && { color: colors.faint }]} maxFontSizeMultiplier={1.2}>{+d.slice(8)}</Text>
@@ -183,7 +184,7 @@ function MiniMonth({ y, m, today, kindOf }: { y: number; m: number; today: DateS
   const cells: (DateStr | null)[] = [...Array(mondayIndex(first)).fill(null), ...Array.from({ length: days }, (_, i) => toDateStr(new Date(y, m, i + 1)))];
   return (
     <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Text style={{ fontWeight: '700', fontSize: 15, marginBottom: 4, color: colors.heading }}>{MONTHS[m].slice(0, 3)}</Text>
+      <Text style={{ fontWeight: '700', fontSize: 15, marginBottom: 4, color: colors.heading }}>{monthShort(m)}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
         {cells.map((d, i) => {
           const k = d ? kindOf(d) : 'none';

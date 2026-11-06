@@ -4,6 +4,7 @@ import { Text } from './text';
 import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { ND, useReduceMotion } from './anim';
 import { colors } from './theme';
+import { flipX, rtl, t, tn } from './i18n';
 
 export interface Pt { i: number; y: number | null }
 
@@ -24,7 +25,7 @@ function useGrow(deps: unknown) {
 }
 
 /** Shared frame: y-axis ticks, gridlines, x labels, optional dotted target line, "no data" message. */
-export function Chart({ points, kind, yMin, yMax, ticks = 6, target, markers = [], color = colors.primary, xLabels, empty, digits = 0, height = 360, valueLabels, targetLabel = 'Goal' }: {
+export function Chart({ points, kind, yMin, yMax, ticks = 6, target, markers = [], color = colors.primary, xLabels, empty, digits = 0, height = 360, valueLabels, targetLabel = t('Goal') }: {
   points: Pt[]; kind: 'line' | 'bar'; yMin: number; yMax: number; ticks?: number; target?: number; markers?: { i: number; label: string; color: string }[];
   color?: string; xLabels: string[]; empty?: boolean; digits?: number; height?: number; valueLabels?: boolean; targetLabel?: string;
 }) {
@@ -95,7 +96,7 @@ export function Chart({ points, kind, yMin, yMax, ticks = 6, target, markers = [
           <Text style={{ color: colors.onPrimary, fontSize: 12, fontWeight: '600' }}>{targetLabel}</Text>
         </View>
       )}
-      {empty && <View style={{ position: 'absolute', left: 48, right: 0, top: 0, bottom: 30, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.muted, fontSize: 18, textAlign: 'center' }}>No data for this cycle</Text></View>}
+      {empty && <View style={{ position: 'absolute', left: 48, right: 0, top: 0, bottom: 30, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.muted, fontSize: 18, textAlign: 'center' }}>{t('No data for this cycle')}</Text></View>}
     </View>
   );
 }
@@ -106,15 +107,15 @@ export function CycleBar({ label, length, periodDays, max, current }: { label: s
   const pct = Math.min(1, length / max);
   return (
     <View style={{ marginBottom: 22 }}>
-      <Text style={{ fontSize: 15, color: colors.muted, fontWeight: '700', marginBottom: 8 }}>{current ? 'CURRENT CYCLE: ' : ''}<Text style={{ fontWeight: '400' }}>{label}</Text></Text>
+      <Text style={{ fontSize: 15, color: colors.muted, fontWeight: '700', marginBottom: 8 }}>{current ? t('CURRENT CYCLE: ') : ''}<Text style={{ fontWeight: '400' }}>{label}</Text></Text>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={{ flex: 1, height: 26, borderRadius: 13, backgroundColor: colors.primarySoft, overflow: 'hidden' }}>
           <Animated.View style={{ height: 26, width: `${pct * 100}%`, borderRadius: 13, flexDirection: 'row', overflow: 'hidden', backgroundColor: colors.fertileSoft,
-            transform: [{ translateX: grow.interpolate({ inputRange: [0, 1], outputRange: [-240, 0] }) }] }}>
+            transform: [{ translateX: grow.interpolate({ inputRange: [0, 1], outputRange: [flipX(-240), 0] }) }] }}>
             <View style={{ width: `${Math.min(100, (periodDays / Math.max(1, length)) * 100)}%`, backgroundColor: colors.period }} />
           </Animated.View>
         </View>
-        <Text style={{ width: 86, textAlign: 'right', fontSize: 18, color: colors.text }}><Text style={{ fontWeight: '800', fontSize: 22 }}>{length}</Text> days</Text>
+        <Text style={{ width: 86, textAlign: rtl ? 'left' : 'right', fontSize: 18, color: colors.text }}><Text style={{ fontWeight: '800', fontSize: 22 }}>{length}</Text> {tn(length, 'days|days')}</Text>
       </View>
     </View>
   );
