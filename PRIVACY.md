@@ -18,7 +18,7 @@ Encrypted sync: if you connect a server, your records are encrypted on your devi
 
 Partner sharing: an encrypted summary that you control is stored on your server. Only someone with your invite code can read it. You choose what is included and can stop sharing at any time.
 
-Health connections: data is read on your device from Apple Health or Health Connect. If you sign in to Fitbit or Oura, your device talks to them directly. Nothing passes through the Avelune project.
+Health connections: data is read on your device from Apple Health or Health Connect. If you sign in to Fitbit or Oura, your device talks to them directly. Nothing passes through the Avelune project. Health data is used only to show it in Avelune next to your cycle; it is never sold, used for ads or shared. Use of information received from Health Connect follows the Health Connect Permissions policy, including the Limited Use requirements.
 
 Backups and exports: files are saved where you choose. Backups are encrypted with your passphrase. Exports (CSV, JSON, PDF) are not encrypted, so store and share them carefully.
 

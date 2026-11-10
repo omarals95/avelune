@@ -7,6 +7,7 @@ import { Icon } from '../icons';
 import { dayMonth, lang, t } from '../i18n';
 import { CONTRIBUTE, DONATE, DONATE_URL, HIGHLIGHTS, PRIVACY, REPO_URL, TERMS, TERMS_DATE, TERMS_VERSION, WHY, type LegalSection } from '../legal';
 import { useStore } from '../store';
+import { useLinks } from '../links';
 import { Text } from '../text';
 import { colors, themed } from '../theme';
 import { Btn, Card, Muted, Page, Row } from '../ui';
@@ -122,6 +123,8 @@ export function Welcome() {
 
 /** Settings → About Avelune: the same notice, policies and ways to help. */
 export function AboutPage() {
+  // Opened from Health Connect's privacy link: show the privacy policy expanded.
+  const [privacyOpen] = useState(() => useLinks.getState().takePrivacy());
   return (
     <Page>
       <Card>
@@ -145,7 +148,7 @@ export function AboutPage() {
       <DonateBox />
       <Card>
         <Doc title={t('Terms of use')} sections={TERMS} />
-        <Doc title={t('Privacy policy')} sections={PRIVACY} />
+        <Doc title={t('Privacy policy')} sections={PRIVACY} open={privacyOpen} />
       </Card>
       <Muted style={{ textAlign: 'center' }}>{t('Free and open source under the MIT License. Not affiliated with any other tracking app.')}</Muted>
     </Page>

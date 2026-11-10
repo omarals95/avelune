@@ -1,0 +1,40 @@
+Avelune is a free, private and open-source tracker for your period, ovulation, fertile window and pregnancy. It is a personal open-source project, not a company: there are no subscriptions, ads, in-app purchases or premium features, and there never will be.
+
+PRIVATE BY DESIGN
+• No account. Your data is stored on your phone.
+• No ads, analytics or trackers.
+• App lock with PIN or biometrics, and screenshot blocking.
+• Optional end-to-end encrypted sync to a server you host yourself.
+• Encrypted backups, and export to Excel, CSV or JSON at any time.
+
+UNDERSTAND YOUR CYCLE
+• A flower on the Today screen that changes with your cycle: rose for period days, sage for the fertile window, lavender on ovulation day.
+• Forecasts shown as an honest range, with a plain explanation of how they were made.
+• Calendar with logged and predicted periods, the fertile window and ovulation.
+• Fits your life: irregular cycles, PCOS, perimenopause, contraception, after birth or after a loss.
+
+LOG WHAT MATTERS
+• Flow, symptoms, mood, sex, discharge, tests, pill and medication doses, water, basal temperature, weight, sleep and notes.
+• Automatic ovulation detection from your temperature.
+• Graphs of cycle length, temperature, weight, activity, water and sleep.
+• A PDF report to share with your doctor.
+
+PREGNANCY MODE
+• Month-by-month illustrations, week-by-week notes and your due date.
+
+HEALTH CONNECT
+• Read steps, sleep, heart rate, weight, temperature and water from Health Connect (Samsung Health, Fitbit, Google and more). Health data stays on your phone.
+
+PARTNER SHARING
+• Share a view-only, end-to-end encrypted view of your cycle with one person, and stop sharing at any time.
+
+REMINDERS
+• Period, ovulation, fertile window, pill, water and more, with discreet wording.
+
+ENGLISH AND ARABIC
+• Full Arabic translation with a right-to-left layout. Follows your phone's language, or choose in Settings.
+
+IMPORTANT
+Avelune is not a medical device. Do not use it as contraception or to diagnose anything. Predictions are estimates.
+
+Source code and how to help: https://github.com/omarals95/avelune

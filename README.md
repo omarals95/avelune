@@ -149,7 +149,8 @@ passphrase ──scrypt(N=2^14,r=8,p=1, public salt)──▶ master ──HKDF�
 GitHub → **Actions → Android APK → Run workflow**. When it finishes, download `avelune-android-apk` from the run page,
 unzip it and install `app-release.apk` on your phone (allow "install unknown apps").
 The generated project signs release builds with Expo's debug keystore, which is fine for sideloading but not for Play Store
-upload; for that, configure your own keystore. Locally (Android SDK + JDK 17 required):
+upload. For Google Play, **Actions → Google Play bundle** builds an App Bundle signed with your upload key; see
+[docs/google-play.md](docs/google-play.md) for the full publishing checklist. Locally (Android SDK + JDK 17 required):
 `cd app && npx expo prebuild --platform android && cd android && ./gradlew assembleRelease`.
 
 ## Build the iOS app

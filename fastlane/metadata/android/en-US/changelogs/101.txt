@@ -1,0 +1,1 @@
+First release: period, ovulation and pregnancy tracking, Health Connect, partner sharing, reminders, Excel import and export, and English and Arabic.

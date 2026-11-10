@@ -37,8 +37,12 @@
         "android.permission.CAMERA"
       ],
       "blockedPermissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
@@ -98,11 +102,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Avelune uses the camera only to scan your partner\u2019s sharing QR code.",
+          "cameraPermission": "Avelune uses the camera only to scan your partner’s sharing QR code.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
-      ]
+      ],
+      "./plugins/withReleaseSigning",
+      "./plugins/withHealthPrivacyLink"
     ],
     "icon": "./assets/icon.png",
     "backgroundColor": "#FCF8F5",

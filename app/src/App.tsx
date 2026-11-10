@@ -27,7 +27,7 @@ import { applyLang, resolveLang, rtl, t } from './i18n';
 import { Sheet } from './ui';
 import { SheetOutlet } from './sheet';
 import { LockLayer, useAppLock } from './lock';
-import { startLinkListener } from './links';
+import { startLinkListener, useLinks } from './links';
 import { maybeAutoBackup } from './backup';
 import { CalendarView } from './screens/Calendar';
 import { ChartScreen, Insights } from './screens/Insights';
@@ -117,6 +117,9 @@ function Main() {
   const [healthTab, setHealthTab] = useState<HealthTab | undefined>();
   const [healthKey, setHealthKey] = useState(0);
   const [connections, setConnections] = useState(false);
+  // Health Connect's "privacy policy" link for Avelune lands here (see links.ts).
+  const wantsPrivacy = useLinks((s) => s.privacy);
+  useEffect(() => { if (wantsPrivacy) setSettings('about'); }, [wantsPrivacy]);
   const healthSync = useHealth((s) => s.sync);
   const hasTrackers = useHealth((s) => Object.keys(s.connections).length > 0);
   useEffect(() => { if (hasTrackers) void healthSync(); }, [hasTrackers, healthSync]);
