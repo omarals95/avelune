@@ -1,0 +1,56 @@
+# Publishes the website to GitHub Pages: landing page, privacy policy and terms (English and Arabic),
+# and the web demo at /app (opening /app/?demo fills a fresh browser with sample data).
+# One-time setup: Settings → Pages → Build and deployment → Source: GitHub Actions.
+name: Website
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ['app/**', 'packages/core/**', 'site/**', 'scripts/build-site.mjs', 'docs/screenshots/**', 'fastlane/**', '.github/workflows/pages.yml']
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build the web demo
+        working-directory: app
+        run: npx expo export --platform web --output-dir dist
+        env:
+          AVELUNE_BASE_URL: /${{ github.event.repository.name }}/app
+      - name: Build the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_JSON=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '{tagName: .tag_name, assets: [.assets[] | {name, url: .browser_download_url}]}' 2>/dev/null || echo '')
+          export RELEASE_JSON
+          node scripts/build-site.mjs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

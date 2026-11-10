@@ -10,7 +10,7 @@ What is already in the repository:
 | Release signing and version code | `app/plugins/withReleaseSigning.js` |
 | Health Connect privacy-policy link (required by Google) | `app/plugins/withHealthPrivacyLink.js` + `avelune://privacy` in the app |
 | Store texts, icon, feature graphic, screenshots (English + Arabic) | `fastlane/metadata/android/en-US/` and `fastlane/metadata/android/ar/` |
-| Privacy policy | `PRIVACY.md` (and the GitHub Pages site, once it is set up) |
+| Privacy policy | `PRIVACY.md` and <https://omarals95.github.io/avelune/privacy/> |
 
 ## 1. Create the developer account
 
@@ -87,13 +87,13 @@ The GitHub APK (Actions → Android APK, and the GitHub releases) stays signed w
 Then **Manage translations → Add your own translation → Arabic (ar)** and use the files in `fastlane/metadata/android/ar/` (Arabic text, feature graphic and right-to-left screenshots).
 
 - **Category:** Health & Fitness. **Tags:** e.g. *period tracker*, *women's health*.
-- **Contact details:** email (required); website `https://github.com/omarals95/avelune` (or the GitHub Pages site later).
+- **Contact details:** email (required); website `https://omarals95.github.io/avelune/`.
 
 ## 7. App content (Policy → App content)
 
 Answer every section truthfully; these are the facts about Avelune to answer with.
 
-- **Privacy policy URL:** `https://github.com/omarals95/avelune/blob/main/PRIVACY.md` (switch to the GitHub Pages address once it exists).
+- **Privacy policy URL:** `https://omarals95.github.io/avelune/privacy/` (from the Website workflow; `https://github.com/omarals95/avelune/blob/main/PRIVACY.md` also works). The Arabic version is at `https://omarals95.github.io/avelune/ar/privacy/`.
 - **Ads:** No ads.
 - **App access:** All functionality is available without special access (no login). Partner sharing and sync are optional and need a server the person sets up.
 - **Content rating:** fill in the IARC questionnaire. Avelune has no violence, gambling or user-to-user chat. It does let people **log sexual activity in text** (no images), and it has health information. Answer those questions accordingly; the rating is decided by the questionnaire.

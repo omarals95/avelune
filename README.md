@@ -5,7 +5,7 @@
 Avelune is a private, local-first period, ovulation, fertile-window and pregnancy tracker for **iPhone, Android and the web**,
 with an optional **self-hosted, end-to-end encrypted sync server**. Available in **English and Arabic** (العربية), with a full right-to-left layout.
 
-**[⬇ Download Avelune 0.1.0](https://github.com/omarals95/avelune/releases/tag/v0.1.0)**: [Android APK](https://github.com/omarals95/avelune/releases/download/v0.1.0/Avelune-0.1.0-android.apk) · [iPhone (.ipa)](https://github.com/omarals95/avelune/releases/download/v0.1.0/Avelune-0.1.0-ios-unsigned.ipa) · [all releases](https://github.com/omarals95/avelune/releases)
+**[Website](https://omarals95.github.io/avelune/)** · **[Try the web demo](https://omarals95.github.io/avelune/app/?demo)** · **[⬇ Download Avelune 0.1.0](https://github.com/omarals95/avelune/releases/tag/v0.1.0)**: [Android APK](https://github.com/omarals95/avelune/releases/download/v0.1.0/Avelune-0.1.0-android.apk) · [iPhone (.ipa)](https://github.com/omarals95/avelune/releases/download/v0.1.0/Avelune-0.1.0-ios-unsigned.ipa) · [all releases](https://github.com/omarals95/avelune/releases)
 
 > **A free, personal open-source project, not a paid product.**
 > Avelune is not a company. There are no subscriptions, ads, in-app purchases or premium features, and there never will be. Anyone is free to use it.
@@ -49,7 +49,7 @@ Maintainers publish a release from Actions → **Release** → Run workflow; it 
 | <img src="docs/screenshots/ar-welcome.webp" width="200" alt="First-use notice in Arabic"><br>الترحيب · First-use notice | <img src="docs/screenshots/ar-today.webp" width="200" alt="Today screen in Arabic, laid out right to left"><br>اليوم · Today | <img src="docs/screenshots/ar-today-dark.webp" width="200" alt="Today screen in Arabic, dark mode"><br>الوضع الداكن · Dark mode | <img src="docs/screenshots/ar-calendar.webp" width="200" alt="Calendar in Arabic with Monday on the right"><br>التقويم · Calendar |
 | <img src="docs/screenshots/ar-log.webp" width="200" alt="Daily log in Arabic"><br>السجل اليومي · Daily log | <img src="docs/screenshots/ar-insights.webp" width="200" alt="Insights in Arabic"><br>رؤى · Insights | <img src="docs/screenshots/ar-pregnancy.webp" width="200" alt="Pregnancy mode in Arabic"><br>الحمل · Pregnancy | <img src="docs/screenshots/ar-language.webp" width="200" alt="Language setting: match phone, English or Arabic"><br>اللغة · Language |
 
-<sub>Screenshots from the web build with made-up demo data.</sub>
+<sub>Screenshots from the web build with made-up demo data. Try it yourself in the [web demo](https://omarals95.github.io/avelune/app/?demo): it runs in your browser with sample data.</sub>
 
 ## Features
 
@@ -86,6 +86,15 @@ Brand tokens, typography and accessibility rules: [`design-system/avelune/MASTER
 | `packages/core` | Shared TypeScript: prediction engine, date helpers, sync merge rules (tested) |
 | `server` | Fastify + SQLite: register/login, `/api/sync`, serves the web build (tested) |
 | `app` | Expo / React Native app for iOS, Android and web |
+
+## Website and web demo
+
+The site at <https://omarals95.github.io/avelune/> is built by **Actions → Website** (`.github/workflows/pages.yml`) on every push to `main` that touches the app or the site, and on every release. It has:
+- a landing page in English and Arabic;
+- the privacy policy and terms, generated from `app/src/legal.ts`;
+- the web demo at `/app/`. Opening `/app/?demo` fills a fresh browser with made-up sample data.
+
+One-time setup: **Settings → Pages → Source: GitHub Actions**. To preview locally, run `AVELUNE_BASE_URL=/avelune/app npx expo export --platform web --output-dir dist` in `app/`, then `node scripts/build-site.mjs`, then serve the `_site/` folder at `/avelune/`.
 
 ## Run the server + web app (Docker)
 
