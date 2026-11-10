@@ -5,6 +5,8 @@
 Avelune is a private, local-first period, ovulation, fertile-window and pregnancy tracker for **iPhone, Android and the web**,
 with an optional **self-hosted, end-to-end encrypted sync server**. Available in **English and Arabic** (العربية), with a full right-to-left layout.
 
+**[⬇ Download Avelune 0.1.0](https://github.com/omarals95/avelune/releases/tag/v0.1.0)**: [Android APK](https://github.com/omarals95/avelune/releases/download/v0.1.0/Avelune-0.1.0-android.apk) · [iPhone (.ipa)](https://github.com/omarals95/avelune/releases/download/v0.1.0/Avelune-0.1.0-ios-unsigned.ipa) · [all releases](https://github.com/omarals95/avelune/releases)
+
 > **A free, personal open-source project, not a paid product.**
 > Avelune is not a company. There are no subscriptions, ads, in-app purchases or premium features, and there never will be. Anyone is free to use it.
 >
@@ -18,12 +20,19 @@ with an optional **self-hosted, end-to-end encrypted sync server**. Available in
 
 ## Download
 
-Get the latest Android APK and iPhone build from **[Releases](https://github.com/omarals95/avelune/releases/latest)**:
+**Latest release: [Avelune 0.1.0](https://github.com/omarals95/avelune/releases/tag/v0.1.0)** ([all releases](https://github.com/omarals95/avelune/releases))
 
-- **Android:** download `Avelune-<version>-android.apk` on your phone and open it (allow installing unknown apps if asked).
-- **iPhone:** `Avelune-<version>-ios-unsigned.ipa` is not on the App Store, so install it with a tool that signs it with your Apple ID, such as Sideloadly or AltStore.
+| File | For |
+|---|---|
+| [Avelune-0.1.0-android.apk](https://github.com/omarals95/avelune/releases/download/v0.1.0/Avelune-0.1.0-android.apk) (96 MB) | Android 8.0 or later |
+| [Avelune-0.1.0-ios-unsigned.ipa](https://github.com/omarals95/avelune/releases/download/v0.1.0/Avelune-0.1.0-ios-unsigned.ipa) (14 MB) | iPhone, installed with a sideloading tool |
+| [Avelune-0.1.0-ios-simulator.zip](https://github.com/omarals95/avelune/releases/download/v0.1.0/Avelune-0.1.0-ios-simulator.zip) (20 MB) | The iOS Simulator on a Mac (developers) |
+| [SHA256SUMS.txt](https://github.com/omarals95/avelune/releases/download/v0.1.0/SHA256SUMS.txt) | Checksums to verify the downloads |
 
-Maintainers publish a release from Actions → **Release** → Run workflow; it packages the newest Android and iOS builds with the notes in `docs/releases/<version>.md`.
+- **Android:** open the APK link on your phone, then open the downloaded file (allow installing unknown apps if asked). Installing over an earlier version keeps your data.
+- **iPhone:** the `.ipa` is not on the App Store, so install it with a tool that signs it with your Apple ID, such as Sideloadly or AltStore.
+
+Maintainers publish a release from Actions → **Release** → Run workflow; it packages the newest Android and iOS builds with the notes in `docs/releases/<version>.md`. Update the version in the links above when you publish a new release.
 
 ## Screenshots
 
