@@ -1,0 +1,68 @@
+# Publishes a GitHub release with the Android APK and iOS builds.
+# Run it from Actions → Release → Run workflow. It does not build anything itself: it takes the newest commit
+# on the branch that has both a successful "Android APK" and a successful "iOS build" run, and releases those files.
+# Release notes come from docs/releases/<version>.md when that file exists.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version number, without the v (for example 0.1.0)
+        required: true
+      prerelease:
+        description: Mark as a pre-release
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 200
+
+      - name: Check the version and tag
+        run: |
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then echo "::error::Version must look like 0.1.0"; exit 1; fi
+          if gh release view "v$VERSION" >/dev/null 2>&1; then echo "::error::Release v$VERSION already exists"; exit 1; fi
+
+      - name: Find the newest commit with both builds
+        run: |
+          runs() { gh run list --workflow "$1" --branch "$GITHUB_REF_NAME" --status success --limit 40 --json databaseId,headSha --jq '.[] | "\(.headSha) \(.databaseId)"'; }
+          runs android.yml > android.txt; runs ios.yml > ios.txt
+          # Newest commit first: walk the branch history and take the first commit built by both workflows.
+          for sha in $(git log --format=%H -n 200); do
+            A=$(awk -v s="$sha" '$1==s {print $2; exit}' android.txt); I=$(awk -v s="$sha" '$1==s {print $2; exit}' ios.txt)
+            if [ -n "$A" ] && [ -n "$I" ]; then SHA=$sha; ANDROID=$A; IOS=$I; break; fi
+          done
+          if [ -z "$SHA" ]; then echo "::error::No commit has both a successful Android APK and iOS build run. Run both workflows first."; exit 1; fi
+          echo "SHA=$SHA" >> "$GITHUB_ENV"; echo "ANDROID=$ANDROID" >> "$GITHUB_ENV"; echo "IOS=$IOS" >> "$GITHUB_ENV"
+          echo "Releasing ${SHA::7}: Android run $ANDROID, iOS run $IOS"
+
+      - name: Download and name the files
+        run: |
+          mkdir -p dl out
+          gh run download "$ANDROID" -n avelune-android-apk -D dl/android
+          gh run download "$IOS" -n avelune-ios-unsigned-ipa -D dl/ipa
+          gh run download "$IOS" -n avelune-ios-simulator -D dl/sim
+          cp dl/android/*.apk "out/Avelune-$VERSION-android.apk"
+          cp dl/ipa/*.ipa "out/Avelune-$VERSION-ios-unsigned.ipa"
+          cp dl/sim/*.zip "out/Avelune-$VERSION-ios-simulator.zip"
+          (cd out && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt)
+
+      - name: Publish the release
+        run: |
+          NOTES="docs/releases/$VERSION.md"
+          if [ -f "$NOTES" ]; then cp "$NOTES" notes.md; else echo "Avelune $VERSION" > notes.md; fi
+          printf '\n\nBuilt from commit %s by the Android APK (run %s) and iOS build (run %s) workflows.\n' "${SHA::7}" "$ANDROID" "$IOS" >> notes.md
+          FLAGS=(); if [ "${{ inputs.prerelease }}" = "true" ]; then FLAGS+=(--prerelease); fi
+          gh release create "v$VERSION" out/* --target "$SHA" --title "Avelune $VERSION" --notes-file notes.md "${FLAGS[@]}"

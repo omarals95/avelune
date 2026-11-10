@@ -16,6 +16,15 @@ with an optional **self-hosted, end-to-end encrypted sync server**. Available in
 > Avelune is **not a medical device** and must not be used as contraception or to diagnose anything. By using it you agree to the
 > [terms of use](TERMS.md) and [privacy policy](PRIVACY.md). The app shows the same notice the first time it opens.
 
+## Download
+
+Get the latest Android APK and iPhone build from **[Releases](https://github.com/omarals95/avelune/releases/latest)**:
+
+- **Android:** download `Avelune-<version>-android.apk` on your phone and open it (allow installing unknown apps if asked).
+- **iPhone:** `Avelune-<version>-ios-unsigned.ipa` is not on the App Store, so install it with a tool that signs it with your Apple ID, such as Sideloadly or AltStore.
+
+Maintainers publish a release from Actions → **Release** → Run workflow; it packages the newest Android and iOS builds with the notes in `docs/releases/<version>.md`.
+
 ## Screenshots
 
 | | | | |
